@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+package-lock.json
+yarn.lock
+npm-debug.log*
+
+# Editor/OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docker stesso
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentazione extra (opzionale)
+# README.md

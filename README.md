@@ -7,10 +7,28 @@ Solitario a carte in **p5.js** con riconoscimento **QR code** tramite webcam.
 
 La webcam richiede un server HTTP locale.
 
+### Con Node.js
+
 ```bash
 cd card-recognition-app
 npm run serve
 # Apri l'indirizzo mostrato (di solito http://localhost:3000)
+```
+
+### Con Docker Compose
+
+Se hai Docker e Docker Compose installati:
+
+```bash
+cd card-recognition-app
+docker compose up --build
+# Apri http://localhost:3000
+```
+
+Per fermare:
+
+```bash
+docker compose down
 ```
 
 ## Unit test

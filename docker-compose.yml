@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  deck-of-shadows:
+    build: .
+    container_name: deck-of-shadows
+    ports:
+      - "3000:80"
+    restart: unless-stopped
