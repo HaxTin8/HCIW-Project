@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deck of Shadows — Carte da stampare</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f4f4;
+      color: #222;
+    }
+
+    .no-print {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .no-print h1 {
+      margin-top: 0;
+      color: #e63946;
+    }
+
+    .no-print p {
+      margin: 6px 0;
+      color: #555;
+    }
+
+    .no-print button {
+      padding: 10px 20px;
+      background: #e63946;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .card-sheet {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      width: 220px;
+      height: 320px;
+      background: #fff;
+      border-radius: 14px;
+      border: 3px solid #333;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      margin: 0 auto;
+    }
+
+    .card-header {
+      text-align: center;
+      padding: 6px 0;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    .card-emoji {
+      font-size: 72px;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .card-power {
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      text-align: center;
+      color: #555;
+      padding: 0 6px;
+    }
+
+    .card-qr {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 90px;
+    }
+
+    .card-qr img {
+      max-width: 90px;
+      max-height: 90px;
+      image-rendering: pixelated;
+    }
+
+    .card-footer {
+      text-align: center;
+      font-size: 10px;
+      color: #777;
+    }
+
+    @media print {
+      .no-print {
+        display: none;
+      }
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .card {
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <h1>🖨️ Carte da stampare</h1>
+    <p>Ogni carta include il proprio QR code. Usale con Deck of Shadows.</p>
+    <p>Suggerimento: stampa su carta rigida o plastifica le carte.</p>
+    <button onclick="window.print()">Stampa</button>
+  </div>
+
+  <div id="sheet" class="card-sheet"></div>
+
+  <script src="cards.js"></script>
+  <script>
+    const sheet = document.getElementById('sheet');
+
+    function generateQR(text) {
+      const typeNumber = 0;
+      const errorCorrectionLevel = 'M';
+      const qr = qrcode(typeNumber, errorCorrectionLevel);
+      qr.addData(text);
+      qr.make();
+      return qr.createImgTag(4);
+    }
+
+    function createCardElement(template) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const elem = ELEMENTS[template.element];
+      const qrImg = generateQR(template.id);
+
+      card.innerHTML = `
+        <div class="card-header" style="background-color: ${elem.color}">${template.name}</div>
+        <div class="card-emoji">${elem.emoji}</div>
+        <div class="card-power">${template.power}</div>
+        <div class="card-desc">${template.description}</div>
+        <div class="card-qr">${qrImg}</div>
+        <div class="card-footer">${template.element} · ${template.id}</div>
+      `;
+      return card;
+    }
+
+    // Genera due copie di ogni carta base
+    for (let i = 0; i < 2; i++) {
+      for (const template of CARD_TEMPLATES) {
+        sheet.appendChild(createCardElement(template));
+      }
+    }
+
+    // Aggiungi anche una carta speciale RESTART
+    const restartCard = document.createElement('div');
+    restartCard.className = 'card';
+    restartCard.innerHTML = `
+      <div class="card-header" style="background-color: #555">Restart</div>
+      <div class="card-emoji">🔄</div>
+      <div class="card-power">—</div>
+      <div class="card-desc">Mostra questa carta per ricominciare una partita in corso.</div>
+      <div class="card-qr">${generateQR('RESTART')}</div>
+      <div class="card-footer">SPECIAL · RESTART</div>
+    `;
+    sheet.appendChild(restartCard);
+  </script>
+</body>
+</html>

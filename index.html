@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deck of Shadows — Card Recognition Game</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <!-- jsQR per la lettura dei QR code -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>⚔️ Deck of Shadows</h1>
+      <p>Solitario a carte. Nessun click, nessuna tastiera: gioca mostrando le carte fisiche alla webcam.</p>
+    </header>
+
+    <main>
+      <div id="canvas-container"></div>
+
+      <aside id="controls">
+        <h2>Stato</h2>
+
+        <div class="mode-toggle">
+          <label>
+            <input type="checkbox" id="qr-toggle" checked>
+            Riconoscimento QR attivo
+          </label>
+        </div>
+
+        <div class="help">
+          <h3>Come si gioca</h3>
+          <ul>
+            <li>Mostra una carta alla webcam per <strong>iniziare</strong>.</li>
+            <li>Il nemico ha <strong>elemento</strong> e <strong>potere</strong>.</li>
+            <li>Mostra una carta della tua mano per <strong>giocarla</strong>.</li>
+            <li>Se vinci, il nemico entra nel tuo mazzo.</li>
+            <li>Se perdi, perdi 1 HP.</li>
+            <li>Vinci dopo 8 round. A Game Over, mostra una carta per ricominciare.</li>
+          </ul>
+        </div>
+
+        <div id="status" class="status">Mostra una carta alla webcam per iniziare.</div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="cards.js"></script>
+  <script src="game.js"></script>
+  <script src="audio.js"></script>
+  <script src="sketch.js"></script>
+</body>
+</html>

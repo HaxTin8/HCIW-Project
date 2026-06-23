@@ -1,0 +1,13 @@
+{
+  "name": "deck-of-shadows",
+  "version": "1.0.0",
+  "description": "Solitario a carte con riconoscimento QR via webcam, in p5.js",
+  "scripts": {
+    "test": "node test/test-cards.js && node test/test-game.js",
+    "serve": "npx serve ."
+  },
+  "keywords": ["p5js", "qrcode", "card-game", "solitaire", "deck-builder"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {}
+}

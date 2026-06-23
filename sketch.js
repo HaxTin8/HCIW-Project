@@ -1,0 +1,648 @@
+/* =========================================================
+   DECK OF SHADOWS — frontend p5.js, input solo da webcam QR
+   ========================================================= */
+
+var video;
+var hiddenCanvas;
+var qrEnabled = true;
+var statusEl;
+var game;
+
+var resultTimer = 0;
+var idleHintTimer = 0;
+
+var particles = [];
+var floaters = [];
+var lastPlayedCard = null;
+var animProgress = 0;
+var enemyShake = 0;
+var screenFlash = 0;
+
+var webcamState = 'loading'; // loading, active, denied, error, unsupported
+var webcamMessage = 'Avvio webcam in corso...';
+
+function setup() {
+  const container = select('#canvas-container');
+  const canvas = createCanvas(900, 600);
+  canvas.parent(container);
+
+  hiddenCanvas = createGraphics(320, 240);
+  hiddenCanvas.pixelDensity(1);
+
+  statusEl = select('#status');
+  game = new Game();
+
+  const qrToggle = select('#qr-toggle');
+  if (qrToggle) {
+    qrToggle.changed(() => {
+      qrEnabled = qrToggle.checked();
+      logToStatus(qrEnabled ? 'Riconoscimento QR attivato.' : 'Riconoscimento QR disattivato.');
+    });
+  }
+
+  setupWebcam();
+  logToStatus('Mostra una carta alla webcam per iniziare.');
+}
+
+function setupWebcam() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    webcamState = 'unsupported';
+    webcamMessage = 'Questo browser non supporta la webcam. Prova Chrome, Edge o Firefox.';
+    logToStatus(webcamMessage);
+    return;
+  }
+
+  webcamState = 'loading';
+  webcamMessage = 'Richiesta accesso webcam...';
+
+  const constraints = {
+    video: {
+      width: { ideal: 320 },
+      height: { ideal: 240 },
+      facingMode: 'user'
+    },
+    audio: false
+  };
+
+  // Usiamo getUserMedia direttamente per catturare gli errori in modo affidabile
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(() => {
+      // Permesso concesso: creiamo il capture p5.js
+      video = createCapture(constraints, () => {
+        webcamState = 'active';
+        webcamMessage = 'Webcam attiva.';
+        if (video && video.elt) {
+          video.elt.setAttribute('playsinline', '');
+          video.elt.muted = true;
+          video.elt.play().catch(e => console.warn('Autoplay video bloccato:', e));
+        }
+      });
+      if (video) {
+        video.size(320, 240);
+        video.hide();
+      }
+    })
+    .catch((err) => {
+      console.error('Errore webcam:', err.name, err.message);
+      if (err.name === 'NotAllowedError') {
+        webcamState = 'denied';
+        webcamMessage = 'Permesso webcam negato. Concedi il permesso e ricarica la pagina.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        webcamState = 'error';
+        webcamMessage = 'Nessuna webcam trovata. Collegane una e ricarica.';
+      } else if (err.name === 'NotReadableError') {
+        webcamState = 'error';
+        webcamMessage = 'Webcam già in uso da un\'altra applicazione.';
+      } else {
+        webcamState = 'error';
+        webcamMessage = 'Impossibile avviare la webcam. Controlla la console.';
+      }
+      logToStatus(webcamMessage);
+    });
+}
+
+function draw() {
+  background(22, 33, 62);
+
+  // Flash di schermo (rosso/verde/giallo)
+  if (screenFlash > 0) {
+    noStroke();
+    fill(screenFlash.color[0], screenFlash.color[1], screenFlash.color[2], screenFlash.alpha);
+    rect(0, 0, width, height);
+    screenFlash.alpha -= 8;
+    if (screenFlash.alpha <= 0) screenFlash = 0;
+  }
+
+  // Particelle decorative sempre attive
+  updateParticles();
+  drawParticles();
+  updateFloaters();
+  drawFloaters();
+
+  switch (game.state) {
+    case GAME_STATE.IDLE:
+      drawIdle();
+      break;
+    case GAME_STATE.PLAYING:
+      drawPlaying();
+      break;
+    case GAME_STATE.ROUND_RESULT:
+      drawRoundResult();
+      break;
+    case GAME_STATE.GAME_OVER:
+      drawEndScreen('GAME OVER', '#e74c3c', 'Mostra una carta per ricominciare.');
+      break;
+    case GAME_STATE.VICTORY:
+      drawEndScreen('VITTORIA!', '#2ecc71', 'Mostra una carta per una nuova run.');
+      break;
+  }
+}
+
+/* =========================================================
+   SCHERMATE
+   ========================================================= */
+
+function drawIdle() {
+  drawDecorations();
+  drawWebcamPreview();
+  drawWebcamOverlay();
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(42);
+  textStyle(BOLD);
+  text('⚔️ Deck of Shadows ⚔️', width / 2, height / 2 - 80);
+
+  textStyle(NORMAL);
+  textSize(18);
+  fill(200);
+  text('Solitario a carte con riconoscimento QR.', width / 2, height / 2 - 20);
+
+  if (webcamState === 'active') {
+    const t = millis() / 1000;
+    const pulse = sin(t * 3) * 5;
+    fill('#e94560');
+    textSize(20);
+    text('📷 Mostra una carta alla webcam per iniziare', width / 2, height / 2 + 40 + pulse);
+  }
+
+  idleHintTimer++;
+
+  if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
+    readQR();
+  }
+}
+
+function drawPlaying() {
+  drawDecorations();
+  drawHUD();
+  if (game.enemy) drawEnemy();
+  drawHand();
+  drawWebcamPreview();
+  drawWebcamOverlay();
+  drawLog();
+
+  if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
+    readQR();
+  }
+}
+
+function drawRoundResult() {
+  drawPlaying();
+
+  // Animazione carta che colpisce il nemico
+  if (lastPlayedCard) {
+    animProgress += 0.04;
+    const startX = width / 2;
+    const startY = height - 110;
+    const endX = width / 2;
+    const endY = 120;
+    const cx = lerp(startX, endX, animProgress);
+    const cy = lerp(startY, endY, easeOutCubic(animProgress));
+    const rot = animProgress * TWO_PI;
+
+    push();
+    translate(cx, cy);
+    rotate(rot);
+    drawCardFrame(0, 0, 90, 130, lastPlayedCard.color, lastPlayedCard.emoji, lastPlayedCard.name, lastPlayedCard.power, lastPlayedCard.element);
+    pop();
+
+    // Scia luminosa
+    if (animProgress < 0.8) {
+      noStroke();
+      fill(red(lastPlayedCard.color), green(lastPlayedCard.color), blue(lastPlayedCard.color), 80);
+      ellipse(cx, cy, 40 + animProgress * 60, 40 + animProgress * 60);
+    }
+
+    // Impatto
+    if (animProgress >= 0.8 && animProgress < 1.0) {
+      enemyShake = 12;
+      if (particles.length < 40) {
+        spawnParticles(width / 2, 120, lastPlayedCard.color, 30);
+      }
+    }
+  }
+
+  // Shake nemico
+  if (enemyShake > 0) enemyShake *= 0.85;
+  if (enemyShake < 0.5) enemyShake = 0;
+
+  // Overlay risultato
+  fill(0, 0, 0, 160);
+  rect(0, 0, width, height);
+
+  textAlign(CENTER, CENTER);
+  textSize(56);
+  textStyle(BOLD);
+
+  if (game.lastResult === 'win') {
+    fill('#2ecc71');
+    text('VITTORIA!', width / 2, height / 2 - 30);
+    textSize(22);
+    fill(255);
+    text('Il nemico entra nel tuo mazzo.', width / 2, height / 2 + 35);
+  } else if (game.lastResult === 'lose') {
+    fill('#e74c3c');
+    text('SCONFITTA', width / 2, height / 2 - 30);
+    textSize(22);
+    fill(255);
+    text('Hai perso 1 HP.', width / 2, height / 2 + 35);
+  } else {
+    fill('#f1c40f');
+    text('PAREGGIO', width / 2, height / 2 - 30);
+    textSize(22);
+    fill(255);
+    text('Nessuno vince questo round.', width / 2, height / 2 + 35);
+  }
+
+  resultTimer++;
+  if (resultTimer > 140) {
+    resultTimer = 0;
+    lastPlayedCard = null;
+    animProgress = 0;
+    game.endRound();
+    logToStatus(game.state === GAME_STATE.PLAYING ? 'Scegli la prossima carta.' : game.logs[game.logs.length - 1]);
+  }
+}
+
+function drawEndScreen(title, color, subtitle) {
+  drawDecorations();
+  drawWebcamPreview();
+  drawWebcamOverlay();
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(56);
+  textStyle(BOLD);
+  fill(color);
+  text(title, width / 2, height / 2 - 40);
+
+  textStyle(NORMAL);
+  textSize(18);
+  fill(255);
+  const finalSubtitle = webcamState === 'active' ? subtitle : webcamMessage;
+  text(finalSubtitle, width / 2, height / 2 + 30);
+
+  if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
+    readQR();
+  }
+}
+
+/* =========================================================
+    GRAFICA DI SUPPORTO
+   ========================================================= */
+
+function drawDecorations() {
+  stroke(255, 255, 255, 12);
+  strokeWeight(1);
+  for (let x = 0; x < width; x += 40) line(x, 0, x, height);
+  for (let y = 0; y < height; y += 40) line(0, y, width, y);
+}
+
+function drawHUD() {
+  fill(255);
+  textAlign(LEFT, TOP);
+  textSize(18);
+  textStyle(BOLD);
+  text(`HP: ${'❤️'.repeat(max(game.hp, 0))}`, 20, 20);
+  text(`Round: ${game.round}/${game.roundsToWin}`, 20, 48);
+  text(`Mazzo: ${game.deck.length}  |  Cimitero: ${game.discard.length}`, 20, 76);
+  textStyle(NORMAL);
+}
+
+function drawEnemy() {
+  let x = width / 2;
+  let y = 120;
+  const w = 160;
+  const h = 220;
+
+  if (enemyShake > 0) {
+    x += random(-enemyShake, enemyShake);
+    y += random(-enemyShake, enemyShake);
+  }
+
+  push();
+  translate(x, y);
+  drawCardFrame(0, 0, w, h, game.enemy.color, game.enemy.emoji, game.enemy.name, game.enemy.power, game.enemy.element);
+  textSize(14);
+  fill(255);
+  textAlign(CENTER, TOP);
+  text('NEMICO', 0, -h / 2 + 8);
+  pop();
+
+  const elem = ELEMENTS[game.enemy.element];
+  fill(elem.color);
+  noStroke();
+  ellipse(x, y - h / 2 - 20, 36, 36);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(20);
+  text(elem.emoji, x, y - h / 2 - 20);
+}
+
+function drawHand() {
+  const cardW = 110;
+  const cardH = 160;
+  const gap = 20;
+  const totalW = game.hand.length * cardW + (game.hand.length - 1) * gap;
+  const startX = (width - totalW) / 2 + cardW / 2;
+  const y = height - cardH / 2 - 30;
+
+  for (let i = 0; i < game.hand.length; i++) {
+    const card = game.hand[i];
+    const x = startX + i * (cardW + gap);
+
+    push();
+    translate(x, y);
+    drawCardFrame(0, 0, cardW, cardH, card.color, card.emoji, card.name, card.power, card.element);
+    pop();
+  }
+}
+
+function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
+  push();
+  translate(x, y);
+
+  noStroke();
+  fill(0, 0, 0, 80);
+  rect(-w / 2 + 4, -h / 2 + 4, w, h, 10);
+
+  stroke(255, 255, 255, 60);
+  strokeWeight(2);
+  fill(20, 25, 45);
+  rect(-w / 2, -h / 2, w, h, 10);
+
+  noStroke();
+  fill(color);
+  rect(-w / 2 + 4, -h / 2 + 4, w - 8, 28, 6);
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(13);
+  textStyle(BOLD);
+  text(name, 0, -h / 2 + 18);
+  textStyle(NORMAL);
+
+  textSize(48);
+  text(emoji, 0, -5);
+
+  fill(255);
+  textSize(20);
+  textStyle(BOLD);
+  text(power, 0, 45);
+  textStyle(NORMAL);
+
+  fill(color);
+  textSize(11);
+  text(ELEMENTS[element].name, 0, h / 2 - 18);
+
+  pop();
+}
+
+function drawWebcamPreview() {
+  const pw = 160;
+  const ph = 120;
+  const px = width - pw - 20;
+  const py = 20;
+
+  push();
+  translate(px + pw, py);
+  scale(-1, 1);
+  if (video && video.width > 0 && video.elt.readyState >= 2) {
+    image(video, 0, 0, pw, ph);
+  } else {
+    fill(0);
+    rect(0, 0, pw, ph);
+  }
+  pop();
+
+  const isReady = webcamState === 'active' && video && video.width > 0;
+  stroke(isReady ? (qrEnabled ? '#2ecc71' : '#e74c3c') : '#f1c40f');
+  strokeWeight(2);
+  noFill();
+  rect(px, py, pw, ph, 8);
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, TOP);
+  textSize(11);
+  if (isReady) {
+    text(qrEnabled ? 'QR attivo' : 'QR spento', px + pw / 2, py + ph + 6);
+  } else {
+    text(webcamMessage, px + pw / 2, py + ph + 6);
+  }
+}
+
+function drawWebcamOverlay() {
+  if (webcamState === 'active') return;
+
+  const overlayW = 420;
+  const overlayH = 140;
+  const x = width / 2 - overlayW / 2;
+  const y = height / 2 + 60;
+
+  fill(0, 0, 0, 200);
+  noStroke();
+  rect(x, y, overlayW, overlayH, 12);
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(18);
+  textStyle(BOLD);
+  text('📷 Webcam', width / 2, y + 30);
+  textStyle(NORMAL);
+
+  fill(220);
+  textSize(14);
+  text(webcamMessage, width / 2, y + 75);
+
+  if (webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
+    textSize(12);
+    fill('#e94560');
+    text('Concedi il permesso e premi F5 per ricaricare.', width / 2, y + 105);
+  }
+}
+
+function drawLog() {
+  const x = 20;
+  const y = height - 180;
+  const w = 260;
+  const h = 120;
+
+  fill(0, 0, 0, 120);
+  rect(x, y, w, h, 8);
+
+  fill(200);
+  textAlign(LEFT, TOP);
+  textSize(12);
+  const visible = game.logs.slice(-6);
+  for (let i = 0; i < visible.length; i++) {
+    text('• ' + visible[i], x + 10, y + 10 + i * 18);
+  }
+}
+
+/* =========================================================
+    PARTICELLE E EFFETTI
+   ========================================================= */
+
+function spawnParticles(x, y, color, count) {
+  const c = colorObj(color);
+  for (let i = 0; i < count; i++) {
+    const angle = random(TWO_PI);
+    const speed = random(2, 8);
+    particles.push({
+      x: x,
+      y: y,
+      vx: cos(angle) * speed,
+      vy: sin(angle) * speed,
+      life: 255,
+      r: random(3, 8),
+      col: c
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.15; // gravità
+    p.life -= 5;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  noStroke();
+  for (const p of particles) {
+    fill(p.col.r, p.col.g, p.col.b, p.life);
+    ellipse(p.x, p.y, p.r * 2);
+  }
+}
+
+function spawnFloater(text, x, y, color) {
+  const c = colorObj(color);
+  floaters.push({ text, x, y, life: 255, col: c });
+}
+
+function updateFloaters() {
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.y -= 1;
+    f.life -= 4;
+    if (f.life <= 0) floaters.splice(i, 1);
+  }
+}
+
+function drawFloaters() {
+  textAlign(CENTER, CENTER);
+  textSize(20);
+  textStyle(BOLD);
+  for (const f of floaters) {
+    fill(f.col.r, f.col.g, f.col.b, f.life);
+    text(f.text, f.x, f.y);
+  }
+  textStyle(NORMAL);
+}
+
+function colorObj(hex) {
+  return {
+    r: red(hex),
+    g: green(hex),
+    b: blue(hex)
+  };
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+/* =========================================================
+    RICONOSCIMENTO QR
+   ========================================================= */
+
+function readQR() {
+  hiddenCanvas.push();
+  hiddenCanvas.translate(hiddenCanvas.width, 0);
+  hiddenCanvas.scale(-1, 1);
+  hiddenCanvas.image(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+  hiddenCanvas.pop();
+
+  hiddenCanvas.loadPixels();
+  const code = jsQR(
+    hiddenCanvas.pixels,
+    hiddenCanvas.width,
+    hiddenCanvas.height,
+    { inversionAttempts: 'attemptBoth' }
+  );
+
+  if (code && code.data) {
+    const detectedId = code.data.trim().toUpperCase();
+    handleQRDetected(detectedId);
+  }
+}
+
+function handleQRDetected(id) {
+  audio.init(); // attiva AudioContext al primo gesto
+
+  const previousState = game.state;
+  const event = game.handleQR(id);
+
+  if (event.action === 'start' || event.action === 'restart') {
+    audio.playStart();
+    lastPlayedCard = null;
+    animProgress = 0;
+    if (event.action === 'start') {
+      logToStatus('Partita iniziata! Mostra una carta dalla mano per giocarla.');
+    } else {
+      logToStatus('Nuova partita!');
+    }
+  } else if (event.action === 'play' && event.card) {
+    audio.playCard();
+    lastPlayedCard = event.card;
+    animProgress = 0;
+
+    if (game.lastResult === 'win') {
+      setTimeout(() => audio.playWin(), 300);
+      screenFlash = { color: [46, 204, 113], alpha: 120 };
+      spawnFloater('+ NEMICO', width / 2, 120, '#2ecc71');
+    } else if (game.lastResult === 'lose') {
+      setTimeout(() => audio.playLose(), 300);
+      screenFlash = { color: [231, 76, 60], alpha: 120 };
+      spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
+    } else {
+      setTimeout(() => audio.playDraw(), 300);
+      screenFlash = { color: [241, 196, 15], alpha: 100 };
+    }
+  }
+
+  if (game.state === GAME_STATE.ROUND_RESULT) {
+    resultTimer = 0;
+  } else if (game.state === GAME_STATE.GAME_OVER) {
+    logToStatus('Game over. Mostra una carta per ricominciare.');
+  } else if (game.state === GAME_STATE.VICTORY) {
+    logToStatus('Vittoria! Mostra una carta per una nuova run.');
+  }
+}
+
+/* =========================================================
+    UI DOM
+   ========================================================= */
+
+function logToStatus(message) {
+  if (statusEl) statusEl.html(message);
+}
+
+/* =========================================================
+    UTILITY
+   ========================================================= */
+
+function lighten(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+  const B = Math.min(255, (num & 0x0000FF) + amt);
+  return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+}
