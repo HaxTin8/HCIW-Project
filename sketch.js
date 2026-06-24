@@ -59,72 +59,115 @@ function setupWebcam() {
   webcamState = 'loading';
   webcamMessage = 'Richiesta accesso webcam...';
 
+  // Constraints di base: nessun facingMode (su Windows spesso problematico),
+  // risoluzione standard e framerate stabile.
   const constraints = {
     video: {
-      width: { ideal: 320 },
-      height: { ideal: 240 },
-      facingMode: 'user'
+      width: { ideal: 640 },
+      height: { ideal: 480 },
+      frameRate: { ideal: 30 }
     },
     audio: false
   };
 
-  // Timeout di sicurezza: se getUserMedia non risponde entro 10 secondi
-  const timeoutId = setTimeout(() => {
-    if (webcamState === 'loading') {
+  tryCreateCapture(constraints, 1);
+}
+
+function tryCreateCapture(constraints, attempt) {
+  console.log(`[Webcam] Tentativo ${attempt}`, constraints);
+
+  if (video) {
+    try {
+      video.stop();
+    } catch (e) {
+      console.warn('[Webcam] Errore stop video precedente:', e);
+    }
+    video = null;
+  }
+
+  try {
+    video = createCapture(constraints, (stream) => {
+      console.log('[Webcam] createCapture callback:', stream ? 'stream ricevuto' : 'no stream');
+      if (video) {
+        video.size(320, 240);
+        video.hide();
+        if (video.elt) {
+          video.elt.setAttribute('playsinline', '');
+          video.elt.setAttribute('muted', '');
+          video.elt.play().catch(e => console.warn('[Webcam] Autoplay bloccato:', e));
+        }
+      }
+    });
+  } catch (e) {
+    console.error('[Webcam] Errore createCapture:', e);
+    tryFallbackDevice(attempt + 1);
+    return;
+  }
+
+  // Timeout per verificare se il video è effettivamente attivo
+  setTimeout(() => {
+    if (webcamState === 'active') return;
+
+    if (video && video.width > 0 && video.height > 0) {
+      console.log('[Webcam] Video attivo, dimensioni:', video.width, video.height);
+      webcamState = 'active';
+      webcamMessage = 'Webcam attiva.';
+      logToStatus('Webcam attiva. Mostra una carta per iniziare.');
+      return;
+    }
+
+    console.warn(`[Webcam] Video nero o non attivo al tentativo ${attempt}`);
+    if (attempt < 3) {
+      webcamMessage = `Tentativo webcam ${attempt + 1}/3...`;
+      tryFallbackDevice(attempt + 1);
+    } else {
       webcamState = 'error';
-      webcamMessage = 'La webcam non risponde. Ricarica la pagina.';
-      console.error('[Webcam] Timeout dopo 10s');
+      webcamMessage = 'Impossibile attivare la webcam. Prova a cambiare dispositivo nelle impostazioni del browser.';
       logToStatus(webcamMessage);
     }
-  }, 10000);
+  }, 2500);
+}
 
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then((stream) => {
-      clearTimeout(timeoutId);
-      console.log('[Webcam] Permesso concesso, stream ottenuto');
+function tryFallbackDevice(attempt) {
+  navigator.mediaDevices.enumerateDevices()
+    .then(devices => {
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+      console.log('[Webcam] Dispositivi trovati:', videoDevices.map(d => d.label || 'senza nome'));
 
-      const videoEl = document.createElement('video');
-      videoEl.srcObject = stream;
-      videoEl.setAttribute('playsinline', '');
-      videoEl.setAttribute('muted', '');
-      videoEl.width = 320;
-      videoEl.height = 240;
-
-      videoEl.onloadedmetadata = () => {
-        console.log('[Webcam] Metadata caricati');
-        videoEl.play().then(() => {
-          console.log('[Webcam] Video in riproduzione');
-          webcamState = 'active';
-          webcamMessage = 'Webcam attiva.';
-          logToStatus('Webcam attiva. Mostra una carta per iniziare.');
-        }).catch(e => {
-          console.warn('[Webcam] Autoplay bloccato:', e);
-        });
-      };
-
-      videoEl.onerror = (e) => {
-        console.error('[Webcam] Errore video element:', e);
-      };
-
-      video = new p5.MediaElement(videoEl);
-      video.hide();
-    })
-    .catch((err) => {
-      clearTimeout(timeoutId);
-      console.error('[Webcam] Errore:', err.name, err.message);
-      if (err.name === 'NotAllowedError') {
-        webcamState = 'denied';
-        webcamMessage = 'Permesso webcam negato. Concedi il permesso e ricarica la pagina.';
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      if (videoDevices.length === 0) {
         webcamState = 'error';
         webcamMessage = 'Nessuna webcam trovata. Collegane una e ricarica.';
-      } else if (err.name === 'NotReadableError') {
-        webcamState = 'error';
-        webcamMessage = 'Webcam già in uso da un\'altra applicazione.';
+        logToStatus(webcamMessage);
+        return;
+      }
+
+      if (attempt <= videoDevices.length) {
+        // Prova i dispositivi in ordine inverso: su Windows la webcam fisica
+        // è spesso l'ultima, mentre le prime possono essere virtuali.
+        const index = videoDevices.length - attempt;
+        const deviceId = videoDevices[index].deviceId;
+        console.log(`[Webcam] Provo dispositivo ${index}:`, videoDevices[index].label || 'senza nome');
+
+        const constraints = {
+          video: {
+            deviceId: { exact: deviceId },
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 30 }
+          },
+          audio: false
+        };
+        tryCreateCapture(constraints, attempt);
       } else {
         webcamState = 'error';
-        webcamMessage = 'Impossibile avviare la webcam. Controlla la console.';
+        webcamMessage = 'Nessuna webcam funzionante trovata.';
+        logToStatus(webcamMessage);
       }
+    })
+    .catch(err => {
+      console.error('[Webcam] enumerateDevices error:', err);
+      webcamState = 'error';
+      webcamMessage = 'Errore nell\'elenco delle webcam.';
       logToStatus(webcamMessage);
     });
 }
