@@ -54,6 +54,13 @@ npm test
 
 Il meccanismo dello slot evita letture doppie: una carta viene giocata una sola volta, solo dopo essere stata rimossa dalla webcam.
 
+### Modalità di gioco
+
+Puoi cambiare modalità in qualsiasi momento mostrando alla webcam i QR speciali:
+
+- **`SEQUENZIALE`** (default): gioca una carta alla volta con il meccanismo dello slot.
+- **`SIMULTANEO`**: hai **8 secondi** per mostrare tutte le carte che vuoi giocare. Quando il tempo scade, il computer gioca automaticamente tutte le carte lette in sequenza contro i nemici del round.
+
 Puoi anche usare il QR speciale `RESTART` per riavviare in qualsiasi momento.
 
 ## Preparare le carte fisiche

@@ -30,6 +30,15 @@ var slotLocked = false;
 const SLOT_EMPTY_THRESHOLD = 8;      // frame senza QR prima di giocare la carta rimossa
 const SLOT_AUTOPLAY_THRESHOLD = 120; // frame con la stessa carta ferma -> gioca automaticamente
 
+// Modalità simultanea: lettura multipla di carte in una finestra temporale
+var simTimer = 0;
+var simDuration = 8 * 60; // 8 secondi a 60fps
+var simActive = false;
+var simLocked = false;
+var simReadCards = [];
+var simLastReadId = null;
+var simEmptyFrames = 0;
+
 function setup() {
   const container = select('#canvas-container');
   const canvas = createCanvas(900, 600);
@@ -253,8 +262,15 @@ function drawIdle() {
 function drawPlaying() {
   drawDecorations();
   drawHUD();
-  if (game.enemy) drawEnemy();
-  drawSlot();
+  if (game.currentEnemy) drawEnemy();
+
+  if (game.playMode === 'simultaneous') {
+    drawSimMode();
+  } else {
+    drawSlot();
+    updateSlot();
+  }
+
   drawWebcamPreview();
   drawWebcamOverlay();
   drawLog();
@@ -263,7 +279,9 @@ function drawPlaying() {
     readQR();
   }
 
-  updateSlot();
+  if (game.playMode === 'simultaneous' && simActive && !simLocked) {
+    updateSimTimer();
+  }
 }
 
 function drawRoundResult() {
@@ -335,13 +353,18 @@ function drawRoundResult() {
     lastPlayedCard = null;
     animProgress = 0;
     slotLocked = false;
+    simLocked = false;
     const oldRound = game.round;
     game.endRound();
     const newMsg = game.logs[game.logs.length - 1];
     logToStatus(newMsg);
 
-    if (game.state === GAME_STATE.PLAYING && game.currentEnemy && game.round !== oldRound) {
-      tts.speak(`Round ${game.round}. Nemico 1: ${game.currentEnemy.name}, potere ${game.currentEnemy.power}.`);
+    if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
+      if (game.playMode === 'simultaneous') {
+        startSimTimer();
+      } else if (game.round !== oldRound) {
+        tts.speak(`Round ${game.round}. Nemico 1: ${game.currentEnemy.name}, potere ${game.currentEnemy.power}.`);
+      }
     }
   }
 }
@@ -390,6 +413,15 @@ function drawHUD() {
   if (game.enemies.length > 0) {
     text(`Nemico: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, 20, 76);
   }
+  textStyle(NORMAL);
+
+  // Indicatore modalità
+  const modeLabel = game.playMode === 'simultaneous' ? 'SIMULTANEO' : 'SEQUENZIALE';
+  fill(game.playMode === 'simultaneous' ? '#e94560' : '#3498db');
+  textAlign(RIGHT, TOP);
+  textSize(14);
+  textStyle(BOLD);
+  text(modeLabel, width - 20, 20);
   textStyle(NORMAL);
 }
 
@@ -747,6 +779,142 @@ function playSlotCard() {
 }
 
 /* =========================================================
+    MODALITA SIMULTANEA
+   ========================================================= */
+
+function drawSimMode() {
+  const sx = width / 2;
+  const sy = height - 130;
+  const sw = 240;
+  const sh = 170;
+
+  push();
+  translate(sx, sy);
+
+  // Area di raccolta
+  noFill();
+  stroke(255, 255, 255, simActive ? 180 : 60);
+  strokeWeight(3);
+  drawingContext.setLineDash(simActive ? [10, 6] : []);
+  rect(-sw / 2, -sh / 2, sw, sh, 12);
+  drawingContext.setLineDash([]);
+
+  fill(255, 255, 255, 80);
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  text('MOSTRA TUTTE LE CARTE', 0, -30);
+
+  // Timer
+  const seconds = ceil(simTimer / 60);
+  textSize(42);
+  textStyle(BOLD);
+  fill(simActive ? '#e94560' : '#aaa');
+  text(seconds, 0, 10);
+  textStyle(NORMAL);
+
+  // Contatore carte lette
+  textSize(14);
+  fill(255);
+  text(`Carte lette: ${simReadCards.length}`, 0, 45);
+
+  pop();
+}
+
+function startSimTimer() {
+  simTimer = simDuration;
+  simActive = true;
+  simLocked = false;
+  simReadCards = [];
+  simLastReadId = null;
+  simEmptyFrames = 0;
+  tts.speak('Modalità simultanea. Hai 8 secondi per mostrare tutte le carte.');
+  logToStatus('Mostra tutte le carte entro 8 secondi.');
+}
+
+function updateSimTimer() {
+  if (simTimer > 0) {
+    simTimer--;
+    return;
+  }
+
+  if (!simActive || simLocked) return;
+  simActive = false;
+  playAllSimCards();
+}
+
+function playAllSimCards() {
+  simLocked = true;
+
+  if (simReadCards.length === 0) {
+    tts.speak('Nessuna carta letta. Riprova.');
+    logToStatus('Nessuna carta letta. Mostra le carte e riprova.');
+    setTimeout(() => {
+      simLocked = false;
+      startSimTimer();
+    }, 2000);
+    return;
+  }
+
+  tts.speak(`Giochiamo ${simReadCards.length} carte.`);
+  playNextSimCard(0);
+}
+
+function playNextSimCard(index) {
+  if (index >= simReadCards.length) {
+    // Tutte le carte lette sono state giocate
+    simLocked = false;
+    if (game.state === GAME_STATE.PLAYING) {
+      // Forza la fine del round anche se non tutti i nemici sono stati affrontati
+      game.forceEndRound();
+      resultTimer = 0;
+    }
+    return;
+  }
+
+  if (game.state !== GAME_STATE.PLAYING) {
+    // Il round è già finito (es. carte in eccesso)
+    simLocked = false;
+    resultTimer = 0;
+    return;
+  }
+
+  const id = simReadCards[index];
+  const event = game.playCard(id);
+  if (!event || !event.card) {
+    playNextSimCard(index + 1);
+    return;
+  }
+
+  lastPlayedCard = event.card;
+  animProgress = 0;
+
+  tts.speak(`${event.card.name}. ${event.result}.`);
+
+  if (event.result === 'win') {
+    audio.playWin();
+    spawnFloater('VITTORIA', width / 2, 120, '#2ecc71');
+  } else if (event.result === 'lose') {
+    audio.playLose();
+    spawnFloater('SCONFITTA', width / 2, 120, '#e74c3c');
+  } else {
+    audio.playDraw();
+  }
+
+  if (!event.roundContinues) {
+    // Round finito con questa carta
+    simLocked = false;
+    resultTimer = 0;
+    return;
+  }
+
+  setTimeout(() => {
+    lastPlayedCard = null;
+    animProgress = 0;
+    playNextSimCard(index + 1);
+  }, 700);
+}
+
+/* =========================================================
     RICONOSCIMENTO QR
    ========================================================= */
 
@@ -767,10 +935,12 @@ function readQR() {
 
   if (code && code.data) {
     slotEmptyFrames = 0;
+    simEmptyFrames = 0;
     const detectedId = code.data.trim().toUpperCase();
     handleQRDetected(detectedId);
   } else {
     slotEmptyFrames++;
+    simEmptyFrames++;
   }
 }
 
@@ -793,10 +963,22 @@ function handleQRDetected(id) {
       slotFrames = 0;
       slotEmptyFrames = 0;
       slotLocked = false;
+      simReadCards = [];
+      simLastReadId = null;
+      simLocked = false;
       if (game.currentEnemy) {
         tts.speak(`Round ${game.round}. Nemico ${game.currentEnemyIndex + 1}: ${game.currentEnemy.name}, potere ${game.currentEnemy.power}.`);
       }
+      if (game.playMode === 'simultaneous') {
+        startSimTimer();
+      }
       logToStatus(event.action === 'start' ? 'Partita iniziata! Mostra una carta nello slot.' : 'Nuova partita!');
+    } else if (event.action === 'mode') {
+      tts.speak(`Modalità ${event.mode}.`, true);
+      logToStatus(`Modalità ${event.mode} attivata.`);
+      if (event.mode === 'simultaneous' && game.state === GAME_STATE.PLAYING) {
+        startSimTimer();
+      }
     } else if (event.action === 'unknown') {
       logToStatus(`QR ${id} non riconosciuto.`);
     }
@@ -804,11 +986,25 @@ function handleQRDetected(id) {
   }
 
   // Durante un round result lo slot è bloccato
-  if (game.state !== GAME_STATE.PLAYING || slotLocked) return;
+  if (game.state !== GAME_STATE.PLAYING || slotLocked || simLocked) return;
 
-  // Solo carte valide possono entrare nello slot
+  // Solo carte valide possono essere giocate
   if (!TEMPLATE_MAP[id]) return;
 
+  if (game.playMode === 'simultaneous') {
+    if (!simActive) return;
+    if (id !== simLastReadId) {
+      simReadCards.push(id);
+      simLastReadId = id;
+      audio.playCard();
+      const name = TEMPLATE_MAP[id] ? TEMPLATE_MAP[id].name : id;
+      tts.speak(`${name} letta.`);
+      logToStatus(`Lette ${simReadCards.length} carte.`);
+    }
+    return;
+  }
+
+  // Modalità sequenziale: slot singolo
   if (slotCard && slotCard.templateId === id) {
     slotFrames++;
   } else {

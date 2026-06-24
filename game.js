@@ -25,6 +25,7 @@
       this.roundsToWin = options.roundsToWin ?? 8;
       this.cardsPerRound = options.cardsPerRound ?? 3;
       this.startingHp = options.startingHp ?? 3;
+      this.playMode = options.playMode ?? 'sequential'; // 'sequential' | 'simultaneous'
       this.reset();
     }
 
@@ -155,6 +156,32 @@
     }
 
     /**
+     * Forza la fine del round in modalità simultanea,
+     * anche se non tutti i nemici sono stati affrontati.
+     */
+    forceEndRound() {
+      if (this.state !== GAME_STATE.PLAYING) return this.state;
+
+      const wins = this.roundResults.filter(r => r === 'win').length;
+      const losses = this.roundResults.filter(r => r === 'lose').length;
+
+      if (wins > losses) {
+        this.lastResult = 'win';
+        this.log(`Round vinto! ${wins} vittorie, ${losses} sconfitte.`);
+      } else if (losses > wins) {
+        this.lastResult = 'lose';
+        this.hp--;
+        this.log(`Round perso! ${wins} vittorie, ${losses} sconfitte. Perdi 1 HP.`);
+      } else {
+        this.lastResult = 'draw';
+        this.log(`Round in pareggio! ${wins} vittorie, ${losses} sconfitte.`);
+      }
+
+      this.state = GAME_STATE.ROUND_RESULT;
+      return this.state;
+    }
+
+    /**
      * Punto unico di ingresso per gli eventi QR.
      */
     handleQR(qrData) {
@@ -163,6 +190,18 @@
       if (id === 'RESTART') {
         this.start();
         return { action: 'restart', state: this.state };
+      }
+
+      if (id === 'SEQUENZIALE') {
+        this.playMode = 'sequential';
+        this.log('Modalità sequenziale attivata.');
+        return { action: 'mode', mode: 'sequential', state: this.state };
+      }
+
+      if (id === 'SIMULTANEO') {
+        this.playMode = 'simultaneous';
+        this.log('Modalità simultanea attivata.');
+        return { action: 'mode', mode: 'simultaneous', state: this.state };
       }
 
       if (this.state === GAME_STATE.IDLE ||
