@@ -22,6 +22,14 @@ var screenFlash = 0;
 var webcamState = 'loading';
 var webcamMessage = 'Avvio webcam in corso...';
 
+// Slot fisico virtuale: il giocatore mostra una carta, poi la rimuove per giocarla
+var slotCard = null;
+var slotFrames = 0;
+var slotEmptyFrames = 0;
+var slotLocked = false;
+const SLOT_EMPTY_THRESHOLD = 8;      // frame senza QR prima di giocare la carta rimossa
+const SLOT_AUTOPLAY_THRESHOLD = 120; // frame con la stessa carta ferma -> gioca automaticamente
+
 function setup() {
   const container = select('#canvas-container');
   const canvas = createCanvas(900, 600);
@@ -246,6 +254,7 @@ function drawPlaying() {
   drawDecorations();
   drawHUD();
   if (game.enemy) drawEnemy();
+  drawSlot();
   drawWebcamPreview();
   drawWebcamOverlay();
   drawLog();
@@ -253,6 +262,8 @@ function drawPlaying() {
   if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
     readQR();
   }
+
+  updateSlot();
 }
 
 function drawRoundResult() {
@@ -323,6 +334,7 @@ function drawRoundResult() {
     resultTimer = 0;
     lastPlayedCard = null;
     animProgress = 0;
+    slotLocked = false;
     const oldEnemyName = game.enemy ? game.enemy.name : '';
     game.endRound();
     const newMsg = game.logs[game.logs.length - 1];
@@ -608,6 +620,106 @@ function easeOutCubic(t) {
 }
 
 /* =========================================================
+    SLOT CARTE
+   ========================================================= */
+
+function drawSlot() {
+  const sx = width / 2;
+  const sy = height - 130;
+  const sw = 120;
+  const sh = 170;
+
+  push();
+  translate(sx, sy);
+
+  // Area slot
+  noFill();
+  stroke(255, 255, 255, slotCard ? 180 : 60);
+  strokeWeight(3);
+  drawingContext.setLineDash(slotCard ? [] : [10, 6]);
+  rect(-sw / 2, -sh / 2, sw, sh, 12);
+  drawingContext.setLineDash([]);
+
+  if (slotCard) {
+    // Carta caricata nello slot
+    drawCardFrame(0, 0, sw - 10, sh - 10, slotCard.color, slotCard.emoji, slotCard.name, slotCard.power, slotCard.element);
+
+    // Indicatore "togli per giocare"
+    noStroke();
+    fill(255, 255, 255, 200);
+    textAlign(CENTER, CENTER);
+    textSize(11);
+    textStyle(BOLD);
+    text('TOGLI PER GIOCARE', 0, sh / 2 - 14);
+    textStyle(NORMAL);
+  } else {
+    fill(255, 255, 255, 80);
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    text('SLOT', 0, 0);
+    textSize(11);
+    fill(255, 255, 255, 120);
+    text('mostra una carta', 0, 20);
+  }
+
+  pop();
+}
+
+function updateSlot() {
+  if (slotLocked || !slotCard) return;
+
+  // Se la carta è stata rimossa dallo slot (nessun QR per N frame), giocala
+  if (slotEmptyFrames >= SLOT_EMPTY_THRESHOLD) {
+    playSlotCard();
+    return;
+  }
+
+  // Se la carta resta nello slot troppo a lungo, gioca automaticamente
+  if (slotFrames >= SLOT_AUTOPLAY_THRESHOLD) {
+    playSlotCard();
+  }
+}
+
+function playSlotCard() {
+  if (!slotCard || slotLocked) return;
+  slotLocked = true;
+
+  const card = slotCard;
+  slotCard = null;
+  slotFrames = 0;
+  slotEmptyFrames = 0;
+
+  const event = game.playCard(card.templateId);
+  if (!event || !event.card) {
+    slotLocked = false;
+    return;
+  }
+
+  // Feedback
+  audio.playCard();
+  lastPlayedCard = card;
+  animProgress = 0;
+
+  tts.speak(`Hai giocato ${card.name}.`);
+
+  if (game.lastResult === 'win') {
+    setTimeout(() => audio.playWin(), 300);
+    screenFlash = { color: [46, 204, 113], alpha: 120 };
+    spawnFloater('+ NEMICO', width / 2, 120, '#2ecc71');
+    tts.speak('Vittoria! Aggiungi il nemico al tuo mazzo fisico.');
+  } else if (game.lastResult === 'lose') {
+    setTimeout(() => audio.playLose(), 300);
+    screenFlash = { color: [231, 76, 60], alpha: 120 };
+    spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
+    tts.speak('Sconfitta! Perdi un punto vita.');
+  } else {
+    setTimeout(() => audio.playDraw(), 300);
+    screenFlash = { color: [241, 196, 15], alpha: 100 };
+    tts.speak('Pareggio.');
+  }
+}
+
+/* =========================================================
     RICONOSCIMENTO QR
    ========================================================= */
 
@@ -627,58 +739,58 @@ function readQR() {
   );
 
   if (code && code.data) {
+    slotEmptyFrames = 0;
     const detectedId = code.data.trim().toUpperCase();
     handleQRDetected(detectedId);
+  } else {
+    slotEmptyFrames++;
   }
 }
 
 function handleQRDetected(id) {
   audio.init();
 
-  const previousState = game.state;
-  const event = game.handleQR(id);
+  // Gestione start/restart: questi non passano dallo slot
+  if (id === 'RESTART' ||
+      game.state === GAME_STATE.IDLE ||
+      game.state === GAME_STATE.GAME_OVER ||
+      game.state === GAME_STATE.VICTORY) {
+    const event = game.handleQR(id);
 
-  if (event.action === 'start' || event.action === 'restart') {
-    audio.playStart();
-    tts.speak('Partita iniziata.', true);
-    lastPlayedCard = null;
-    animProgress = 0;
-    if (game.enemy) {
-      tts.speak(`Nemico: ${game.enemy.name}, potere ${game.enemy.power}.`);
+    if (event.action === 'start' || event.action === 'restart') {
+      audio.playStart();
+      tts.speak('Partita iniziata.', true);
+      lastPlayedCard = null;
+      animProgress = 0;
+      slotCard = null;
+      slotFrames = 0;
+      slotEmptyFrames = 0;
+      slotLocked = false;
+      if (game.enemy) {
+        tts.speak(`Nemico: ${game.enemy.name}, potere ${game.enemy.power}.`);
+      }
+      logToStatus(event.action === 'start' ? 'Partita iniziata! Mostra una carta nello slot.' : 'Nuova partita!');
+    } else if (event.action === 'unknown') {
+      logToStatus(`QR ${id} non riconosciuto.`);
     }
-    logToStatus(event.action === 'start' ? 'Partita iniziata! Mostra una carta per giocarla.' : 'Nuova partita!');
-  } else if (event.action === 'play' && event.card) {
-    audio.playCard();
-    lastPlayedCard = event.card;
-    animProgress = 0;
-
-    tts.speak(`Hai giocato ${event.card.name}.`);
-
-    if (game.lastResult === 'win') {
-      setTimeout(() => audio.playWin(), 300);
-      screenFlash = { color: [46, 204, 113], alpha: 120 };
-      spawnFloater('+ NEMICO', width / 2, 120, '#2ecc71');
-      tts.speak('Vittoria! Aggiungi il nemico al tuo mazzo fisico.');
-    } else if (game.lastResult === 'lose') {
-      setTimeout(() => audio.playLose(), 300);
-      screenFlash = { color: [231, 76, 60], alpha: 120 };
-      spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
-      tts.speak('Sconfitta! Perdi un punto vita.');
-    } else {
-      setTimeout(() => audio.playDraw(), 300);
-      screenFlash = { color: [241, 196, 15], alpha: 100 };
-      tts.speak('Pareggio.');
-    }
+    return;
   }
 
-  if (game.state === GAME_STATE.ROUND_RESULT) {
-    resultTimer = 0;
-  } else if (game.state === GAME_STATE.GAME_OVER) {
-    logToStatus('Game over. Mostra una carta per ricominciare.');
-    tts.speak('Game over.', true);
-  } else if (game.state === GAME_STATE.VICTORY) {
-    logToStatus('Vittoria! Mostra una carta per una nuova run.');
-    tts.speak('Vittoria!', true);
+  // Durante un round result lo slot è bloccato
+  if (game.state !== GAME_STATE.PLAYING || slotLocked) return;
+
+  // Solo carte valide possono entrare nello slot
+  if (!TEMPLATE_MAP[id]) return;
+
+  if (slotCard && slotCard.templateId === id) {
+    slotFrames++;
+  } else {
+    slotCard = createCard(id);
+    slotFrames = 0;
+    slotEmptyFrames = 0;
+    audio.playCard();
+    tts.speak(`${slotCard.name} caricata. Togli la carta per giocarla.`);
+    logToStatus(`${slotCard.name} caricata nello slot. Togli la carta per giocarla.`);
   }
 }
 
