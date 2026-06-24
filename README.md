@@ -43,13 +43,14 @@ npm test
 
 1. **Le tue carte sono solo fisiche**: stampale da `print.html` e tienile davanti a te. Il computer non mostra mai le carte che hai.
 2. **Inizia**: mostra una carta fisica con QR code alla webcam.
-3. Il computer mostra un **Nemico** con elemento e potere, e lo annuncia a voce.
-4. **Slot carta**: mostra alla webcam la carta che vuoi giocare. La carta viene caricata nello **slot** centrale.
-5. **Gioca la carta**: togli la carta dalla webcam (slot vuoto). Il computer gioca la carta caricata.
-6. Il computer risolve lo scontro e dice il risultato a voce.
-7. **Vittoria**: se la tua carta batte il nemico, aggiungi il nemico al tuo mazzo fisico.
-8. **Sconfitta**: se perdi, perdi 1 HP.
-9. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
+3. Ogni round il computer presenta **3 nemici** (configurabile), uno alla volta.
+4. Il computer annuncia il nemico corrente con elemento e potere.
+5. **Slot carta**: mostra alla webcam la carta che vuoi giocare contro il nemico corrente. La carta viene caricata nello **slot** centrale.
+6. **Gioca la carta**: togli la carta dalla webcam (slot vuoto). Il computer risolve lo scontro.
+7. Affronta tutti e 3 i nemici del round.
+8. **Vittoria del round**: se vinci più scontri di quanti ne perdi, aggiungi i nemici al tuo mazzo fisico.
+9. **Sconfitta del round**: se perdi più scontri di quanti ne vinci, perdi 1 HP.
+10. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
 
 Il meccanismo dello slot evita letture doppie: una carta viene giocata una sola volta, solo dopo essere stata rimossa dalla webcam.
 

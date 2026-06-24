@@ -311,19 +311,19 @@ function drawRoundResult() {
 
   if (game.lastResult === 'win') {
     fill('#2ecc71');
-    text('VITTORIA!', width / 2, height / 2 - 30);
+    text('ROUND VINTO!', width / 2, height / 2 - 30);
     textSize(22);
     fill(255);
-    text(`Aggiungi ${game.enemy ? game.enemy.name : 'il nemico'} al tuo mazzo fisico.`, width / 2, height / 2 + 35);
+    text('Aggiungi i nemici al tuo mazzo fisico.', width / 2, height / 2 + 35);
   } else if (game.lastResult === 'lose') {
     fill('#e74c3c');
-    text('SCONFITTA', width / 2, height / 2 - 30);
+    text('ROUND PERSO', width / 2, height / 2 - 30);
     textSize(22);
     fill(255);
     text('Hai perso 1 HP.', width / 2, height / 2 + 35);
   } else {
     fill('#f1c40f');
-    text('PAREGGIO', width / 2, height / 2 - 30);
+    text('ROUND PAREGGIO', width / 2, height / 2 - 30);
     textSize(22);
     fill(255);
     text('Nessuno vince questo round.', width / 2, height / 2 + 35);
@@ -335,13 +335,13 @@ function drawRoundResult() {
     lastPlayedCard = null;
     animProgress = 0;
     slotLocked = false;
-    const oldEnemyName = game.enemy ? game.enemy.name : '';
+    const oldRound = game.round;
     game.endRound();
     const newMsg = game.logs[game.logs.length - 1];
     logToStatus(newMsg);
 
-    if (game.state === GAME_STATE.PLAYING && game.enemy && game.enemy.name !== oldEnemyName) {
-      tts.speak(`Nuovo nemico: ${game.enemy.name}, potere ${game.enemy.power}.`);
+    if (game.state === GAME_STATE.PLAYING && game.currentEnemy && game.round !== oldRound) {
+      tts.speak(`Round ${game.round}. Nemico 1: ${game.currentEnemy.name}, potere ${game.currentEnemy.power}.`);
     }
   }
 }
@@ -387,10 +387,16 @@ function drawHUD() {
   textStyle(BOLD);
   text(`HP: ${'❤️'.repeat(max(game.hp, 0))}`, 20, 20);
   text(`Round: ${game.round}/${game.roundsToWin}`, 20, 48);
+  if (game.enemies.length > 0) {
+    text(`Nemico: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, 20, 76);
+  }
   textStyle(NORMAL);
 }
 
 function drawEnemy() {
+  const enemy = game.currentEnemy;
+  if (!enemy) return;
+
   let x = width / 2;
   let y = 150;
   const w = 180;
@@ -403,14 +409,14 @@ function drawEnemy() {
 
   push();
   translate(x, y);
-  drawCardFrame(0, 0, w, h, game.enemy.color, game.enemy.emoji, game.enemy.name, game.enemy.power, game.enemy.element);
-  textSize(14);
+  drawCardFrame(0, 0, w, h, enemy.color, enemy.emoji, enemy.name, enemy.power, enemy.element);
+  textSize(13);
   fill(255);
   textAlign(CENTER, TOP);
-  text('NEMICO', 0, -h / 2 + 8);
+  text(`NEMICO ${game.currentEnemyIndex + 1}/${game.enemies.length}`, 0, -h / 2 + 8);
   pop();
 
-  const elem = ELEMENTS[game.enemy.element];
+  const elem = ELEMENTS[enemy.element];
   fill(elem.color);
   noStroke();
   ellipse(x, y - h / 2 - 25, 44, 44);
@@ -695,27 +701,48 @@ function playSlotCard() {
     return;
   }
 
-  // Feedback
-  audio.playCard();
   lastPlayedCard = card;
   animProgress = 0;
 
   tts.speak(`Hai giocato ${card.name}.`);
 
-  if (game.lastResult === 'win') {
-    setTimeout(() => audio.playWin(), 300);
-    screenFlash = { color: [46, 204, 113], alpha: 120 };
-    spawnFloater('+ NEMICO', width / 2, 120, '#2ecc71');
-    tts.speak('Vittoria! Aggiungi il nemico al tuo mazzo fisico.');
-  } else if (game.lastResult === 'lose') {
-    setTimeout(() => audio.playLose(), 300);
-    screenFlash = { color: [231, 76, 60], alpha: 120 };
-    spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
-    tts.speak('Sconfitta! Perdi un punto vita.');
+  // Feedback sul singolo scontro
+  if (event.result === 'win') {
+    audio.playWin();
+    spawnFloater('VITTORIA', width / 2, 120, '#2ecc71');
+  } else if (event.result === 'lose') {
+    audio.playLose();
+    spawnFloater('SCONFITTA', width / 2, 120, '#e74c3c');
   } else {
-    setTimeout(() => audio.playDraw(), 300);
-    screenFlash = { color: [241, 196, 15], alpha: 100 };
-    tts.speak('Pareggio.');
+    audio.playDraw();
+  }
+
+  if (event.roundContinues) {
+    // Il round continua con il prossimo nemico
+    tts.speak(event.result === 'win' ? 'Nemico sconfitto.' : event.result === 'lose' ? 'Nemico ti ha battuto.' : 'Pareggio con il nemico.');
+    setTimeout(() => {
+      slotLocked = false;
+      lastPlayedCard = null;
+      animProgress = 0;
+      if (game.currentEnemy) {
+        tts.speak(`Prossimo nemico: ${game.currentEnemy.name}, potere ${game.currentEnemy.power}.`);
+        logToStatus(`Nemico ${game.currentEnemyIndex + 1}/${game.enemies.length}: ${game.currentEnemy.name}. Mostra una carta.`);
+      }
+    }, 800);
+  } else {
+    // Round finito
+    if (game.lastResult === 'win') {
+      screenFlash = { color: [46, 204, 113], alpha: 120 };
+      spawnFloater('+ NEMICI', width / 2, 120, '#2ecc71');
+      tts.speak('Round vinto! Aggiungi i nemici al tuo mazzo fisico.');
+    } else if (game.lastResult === 'lose') {
+      screenFlash = { color: [231, 76, 60], alpha: 120 };
+      spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
+      tts.speak('Round perso! Perdi un punto vita.');
+    } else {
+      screenFlash = { color: [241, 196, 15], alpha: 100 };
+      tts.speak('Round in pareggio.');
+    }
   }
 }
 
@@ -766,8 +793,8 @@ function handleQRDetected(id) {
       slotFrames = 0;
       slotEmptyFrames = 0;
       slotLocked = false;
-      if (game.enemy) {
-        tts.speak(`Nemico: ${game.enemy.name}, potere ${game.enemy.power}.`);
+      if (game.currentEnemy) {
+        tts.speak(`Round ${game.round}. Nemico ${game.currentEnemyIndex + 1}: ${game.currentEnemy.name}, potere ${game.currentEnemy.power}.`);
       }
       logToStatus(event.action === 'start' ? 'Partita iniziata! Mostra una carta nello slot.' : 'Nuova partita!');
     } else if (event.action === 'unknown') {

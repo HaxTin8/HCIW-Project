@@ -1,7 +1,7 @@
 /**
  * Logica di gioco pura, testabile in Node.js.
- * Versione no-WIMP: il giocatore gestisce fisicamente le proprie carte.
- * Il computer non traccia mano, mazzo o cimitero del giocatore.
+ * Versione no-WIMP con round multi-carta: computer e utente giocano
+ * piu carte a round.
  */
 
 (function (global) {
@@ -23,6 +23,7 @@
   class Game {
     constructor(options = {}) {
       this.roundsToWin = options.roundsToWin ?? 8;
+      this.cardsPerRound = options.cardsPerRound ?? 3;
       this.startingHp = options.startingHp ?? 3;
       this.reset();
     }
@@ -31,7 +32,9 @@
       this.state = GAME_STATE.IDLE;
       this.hp = this.startingHp;
       this.round = 0;
-      this.enemy = null;
+      this.enemies = [];
+      this.currentEnemyIndex = 0;
+      this.roundResults = [];
       this.lastResult = null;
       this.lastPlayedCard = null;
       this.logs = [];
@@ -40,11 +43,11 @@
     start(seedTemplateId = null) {
       this.reset();
       this.state = GAME_STATE.PLAYING;
-      this.log('Partita iniziata. Mostra una carta alla webcam per giocarla.');
+      this.log('Partita iniziata. Mostra una carta nello slot per giocare.');
       if (seedTemplateId && TEMPLATE_MAP[seedTemplateId]) {
         this.log(`Seme rilevato: ${seedTemplateId}.`);
       }
-      this.spawnEnemy();
+      this.spawnEnemies();
       return this.state;
     }
 
@@ -52,25 +55,35 @@
       return this.start();
     }
 
-    spawnEnemy() {
+    spawnEnemies() {
       this.round++;
-      const template = CARD_TEMPLATES[Math.floor(Math.random() * CARD_TEMPLATES.length)];
-      const bonus = Math.floor(this.round / 2);
-      this.enemy = createCard(template.id, bonus);
-      this.log(`Round ${this.round}: appare ${this.enemy.name} (potere ${this.enemy.power}).`);
-      return this.enemy;
+      this.enemies = [];
+      this.currentEnemyIndex = 0;
+      this.roundResults = [];
+      for (let i = 0; i < this.cardsPerRound; i++) {
+        const template = CARD_TEMPLATES[Math.floor(Math.random() * CARD_TEMPLATES.length)];
+        const bonus = Math.floor(this.round / 2);
+        this.enemies.push(createCard(template.id, bonus));
+      }
+      const names = this.enemies.map(e => `${e.name}(${e.power})`).join(', ');
+      this.log(`Round ${this.round}: appare ${this.enemies.length} nemici: ${names}.`);
+      return this.enemies;
+    }
+
+    get currentEnemy() {
+      return this.enemies[this.currentEnemyIndex] || null;
     }
 
     /**
      * Il giocatore gioca una carta mostrandone il QR alla webcam.
-     * Non c'è più controllo "in mano": il giocatore gestisce fisicamente le carte.
+     * La carta combatte contro il nemico corrente del round.
      */
     playCard(templateId) {
       if (this.state !== GAME_STATE.PLAYING) {
         this.log('Non puoi giocare ora.');
         return null;
       }
-      if (!this.enemy) {
+      if (!this.currentEnemy) {
         this.log('Nessun nemico attivo.');
         return null;
       }
@@ -82,20 +95,37 @@
       }
 
       this.lastPlayedCard = card;
-      const result = resolveCombat(card, this.enemy);
+      const result = resolveCombat(card, this.currentEnemy);
       this.lastResult = result;
-      this.state = GAME_STATE.ROUND_RESULT;
+      this.roundResults.push(result);
 
-      if (result === 'win') {
-        this.log(`Hai giocato ${card.name}: vittoria! Aggiungi ${this.enemy.name} al tuo mazzo fisico.`);
-      } else if (result === 'lose') {
-        this.hp--;
-        this.log(`Hai giocato ${card.name}: sconfitta. Perdi 1 HP.`);
-      } else {
-        this.log(`Hai giocato ${card.name}: pareggio.`);
+      const enemyName = this.currentEnemy.name;
+      this.log(`Hai giocato ${card.name} contro ${enemyName}: ${result}.`);
+
+      if (this.currentEnemyIndex < this.enemies.length - 1) {
+        // Il round continua con il prossimo nemico
+        this.currentEnemyIndex++;
+        return { card, result, roundContinues: true };
       }
 
-      return { card, result };
+      // Fine round: calcola il risultato complessivo
+      this.state = GAME_STATE.ROUND_RESULT;
+      const wins = this.roundResults.filter(r => r === 'win').length;
+      const losses = this.roundResults.filter(r => r === 'lose').length;
+
+      if (wins > losses) {
+        this.lastResult = 'win';
+        this.log(`Round vinto! ${wins} vittorie, ${losses} sconfitte.`);
+      } else if (losses > wins) {
+        this.lastResult = 'lose';
+        this.hp--;
+        this.log(`Round perso! ${wins} vittorie, ${losses} sconfitte. Perdi 1 HP.`);
+      } else {
+        this.lastResult = 'draw';
+        this.log(`Round in pareggio! ${wins} vittorie, ${losses} sconfitte.`);
+      }
+
+      return { card, result, roundContinues: false };
     }
 
     endRound() {
@@ -107,16 +137,16 @@
           this.log('Hai vinto!');
           return this.state;
         }
-        this.spawnEnemy();
+        this.spawnEnemies();
       } else if (this.lastResult === 'lose') {
         if (this.hp <= 0) {
           this.state = GAME_STATE.GAME_OVER;
           this.log('Game over.');
           return this.state;
         }
-        // Il nemico resta finché non viene sconfitto
+        // I nemici restano finché non vengono sconfitti
       } else {
-        // Pareggio: nemico resta
+        // Pareggio: nemici restano
       }
 
       this.state = GAME_STATE.PLAYING;
@@ -163,7 +193,9 @@
         state: this.state,
         hp: this.hp,
         round: this.round,
-        enemy: this.enemy ? { name: this.enemy.name, element: this.enemy.element, power: this.enemy.power } : null
+        enemiesCount: this.enemies.length,
+        currentEnemyIndex: this.currentEnemyIndex,
+        enemy: this.currentEnemy ? { name: this.currentEnemy.name, element: this.currentEnemy.element, power: this.currentEnemy.power } : null
       };
     }
   }
