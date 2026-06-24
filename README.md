@@ -41,12 +41,14 @@ npm test
 
 ## Come si gioca
 
-1. **Inizia**: mostra una carta fisica con QR code alla webcam.
-2. Il computer mostra un **Nemico** con elemento e potere.
-3. **Gioca**: mostra alla webcam una carta della tua mano (quelle disegnate in basso).
-4. **Vittoria**: se la tua carta batte il nemico, il nemico entra nel tuo mazzo.
-5. **Sconfitta**: se perdi, perdi 1 HP.
-6. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
+1. **Le tue carte sono solo fisiche**: stampale da `print.html` e tienile davanti a te. Il computer non mostra mai le carte che hai.
+2. **Inizia**: mostra una carta fisica con QR code alla webcam.
+3. Il computer mostra un **Nemico** con elemento e potere, e lo annuncia a voce.
+4. **Gioca**: mostra alla webcam una delle tue carte fisiche.
+5. Il computer legge la carta, risolve lo scontro e dice il risultato a voce.
+6. **Vittoria**: se la tua carta batte il nemico, aggiungi il nemico al tuo mazzo fisico.
+7. **Sconfitta**: se perdi, perdi 1 HP.
+8. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
 
 Puoi anche usare il QR speciale `RESTART` per riavviare in qualsiasi momento.
 
@@ -92,11 +94,14 @@ card-recognition-app/
 ├── cards.js            # Database carte + logica combattimento
 ├── game.js             # Stato del gioco, testabile
 ├── audio.js            # Suoni procedurali Web Audio API
+├── tts.js              # Sintesi vocale (Text-to-Speech)
 ├── sketch.js           # Rendering p5.js + webcam + animazioni
 ├── test/
 │   ├── test-cards.js
 │   └── test-game.js
 ├── package.json
+├── Dockerfile
+├── docker-compose.yml
 └── README.md
 ```
 

@@ -14,7 +14,7 @@
   <div id="app">
     <header>
       <h1>⚔️ Deck of Shadows</h1>
-      <p>Solitario a carte. Nessun click, nessuna tastiera: gioca mostrando le carte fisiche alla webcam.</p>
+      <p>Solitario a carte. Nessun click, nessuna tastiera: gioca mostrando le tue carte fisiche alla webcam. Il computer legge e risponde a voce.</p>
     </header>
 
     <main>
@@ -33,10 +33,10 @@
         <div class="help">
           <h3>Come si gioca</h3>
           <ul>
-            <li>Mostra una carta alla webcam per <strong>iniziare</strong>.</li>
-            <li>Il nemico ha <strong>elemento</strong> e <strong>potere</strong>.</li>
-            <li>Mostra una carta della tua mano per <strong>giocarla</strong>.</li>
-            <li>Se vinci, il nemico entra nel tuo mazzo.</li>
+            <li>Le tue carte sono solo <strong>fisiche</strong>: il computer non le mostra.</li>
+            <li>Mostra una carta alla webcam per <strong>iniziare</strong> o per <strong>giocarla</strong>.</li>
+            <li>Il computer legge la carta e annuncia il risultato a voce.</li>
+            <li>Se vinci, aggiungi il nemico al tuo mazzo fisico.</li>
             <li>Se perdi, perdi 1 HP.</li>
             <li>Vinci dopo 8 round. A Game Over, mostra una carta per ricominciare.</li>
           </ul>
@@ -50,6 +50,7 @@
   <script src="cards.js"></script>
   <script src="game.js"></script>
   <script src="audio.js"></script>
+  <script src="tts.js"></script>
   <script src="sketch.js"></script>
 </body>
 </html>

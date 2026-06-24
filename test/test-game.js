@@ -7,20 +7,19 @@ console.log('Running test-game.js...');
 const g1 = new Game();
 assert.strictEqual(g1.state, GAME_STATE.IDLE);
 assert.strictEqual(g1.hp, 3);
-assert.strictEqual(g1.hand.length, 0);
+assert.strictEqual(g1.round, 0);
 
 // Test: start
 const state = g1.start();
 assert.strictEqual(state, GAME_STATE.PLAYING);
-assert.strictEqual(g1.hand.length, g1.maxHand);
-assert.strictEqual(g1.deck.length + g1.hand.length, 6);
 assert(g1.enemy, 'dovrebbe esserci un nemico');
+assert.strictEqual(g1.round, 1);
 
 // Test: handleQR in idle avvia la partita
 const g2 = new Game();
 g2.handleQR('ROSSO');
 assert.strictEqual(g2.state, GAME_STATE.PLAYING);
-assert.strictEqual(g2.hand.length, g2.maxHand);
+assert(g2.enemy);
 
 // Test: handleQR restart
 const g3 = new Game();
@@ -31,70 +30,81 @@ g3.handleQR('RESTART');
 assert.strictEqual(g3.state, GAME_STATE.PLAYING);
 assert.strictEqual(g3.hp, 3);
 
-// Test: giocare una carta non in mano
+// Test: giocare una carta valida
 const g4 = new Game();
 g4.start();
-const handIds = g4.hand.map(c => c.templateId);
-const missingId = ['ROSSO', 'BLU', 'VERDE', 'GIALLO', 'VIOLA', 'NERO'].find(id => !handIds.includes(id));
-const result = g4.playCard(missingId);
-assert.strictEqual(result, null);
-assert.strictEqual(g4.state, GAME_STATE.PLAYING);
+const event = g4.playCard('ROSSO');
+assert(event, 'playCard dovrebbe restituire un risultato');
+assert(event.card, 'dovrebbe esserci una carta giocata');
+assert.strictEqual(event.card.templateId, 'ROSSO');
+assert(['win', 'lose', 'draw'].includes(event.result));
+assert.strictEqual(g4.state, GAME_STATE.ROUND_RESULT);
 
-// Test: simulazione vittoria
-const g5 = new Game({ roundsToWin: 1 });
+// Test: giocare una carta non valida
+const g5 = new Game();
 g5.start();
+const invalid = g5.playCard('INESISTENTE');
+assert.strictEqual(invalid, null);
+assert.strictEqual(g5.state, GAME_STATE.PLAYING);
+
+// Test: simulazione vittoria in un round
+const g6 = new Game({ roundsToWin: 1 });
+g6.start();
 // Trova una carta che batte il nemico
 let winningId = null;
-for (const card of g5.hand) {
-  if (g5.enemy && require('../cards.js').resolveCombat(card, g5.enemy) === 'win') {
-    winningId = card.templateId;
+const { CARD_TEMPLATES, resolveCombat, createCard } = require('../cards.js');
+for (const template of CARD_TEMPLATES) {
+  const card = createCard(template.id);
+  if (resolveCombat(card, g6.enemy) === 'win') {
+    winningId = template.id;
     break;
   }
 }
-if (winningId) {
-  g5.playCard(winningId);
-  assert.strictEqual(g5.lastResult, 'win');
-  g5.endRound();
-  assert.strictEqual(g5.state, GAME_STATE.VICTORY);
-}
+assert(winningId, 'dovrebbe esistere una carta vincente');
+g6.playCard(winningId);
+g6.endRound();
+assert.strictEqual(g6.state, GAME_STATE.VICTORY);
 
 // Test: simulazione sconfitta/game over
-const g6 = new Game({ startingHp: 1 });
-g6.start();
-// Trova una carta che perde contro il nemico
+const g7 = new Game({ startingHp: 1 });
+g7.start();
 let losingId = null;
-for (const card of g6.hand) {
-  if (g6.enemy && require('../cards.js').resolveCombat(card, g6.enemy) === 'lose') {
-    losingId = card.templateId;
+for (const template of CARD_TEMPLATES) {
+  const card = createCard(template.id);
+  if (resolveCombat(card, g7.enemy) === 'lose') {
+    losingId = template.id;
     break;
   }
 }
-if (losingId) {
-  g6.playCard(losingId);
-  assert.strictEqual(g6.lastResult, 'lose');
-  g6.endRound();
-  assert.strictEqual(g6.state, GAME_STATE.GAME_OVER);
-  assert.strictEqual(g6.hp, 0);
-}
+assert(losingId, 'dovrebbe esistere una carta perdente');
+g7.playCard(losingId);
+g7.endRound();
+assert.strictEqual(g7.state, GAME_STATE.GAME_OVER);
+assert.strictEqual(g7.hp, 0);
 
-// Test: draw ricicla il cimitero
-const g7 = new Game({ maxHand: 10 });
-g7.start();
-// svuota il mano nel cimitero
-while (g7.hand.length > 0) {
-  g7.discard.push(g7.hand.pop());
+// Test: pareggio, il nemico resta
+const g8 = new Game();
+g8.start();
+let drawingId = null;
+for (const template of CARD_TEMPLATES) {
+  const card = createCard(template.id);
+  if (resolveCombat(card, g8.enemy) === 'draw') {
+    drawingId = template.id;
+    break;
+  }
 }
-const drawn = g7.draw(6);
-assert.strictEqual(drawn, 6);
-assert.strictEqual(g7.hand.length, 6);
-assert.strictEqual(g7.deck.length, 0);
-assert.strictEqual(g7.discard.length, 0);
+if (drawingId) {
+  const oldEnemy = g8.enemy;
+  g8.playCard(drawingId);
+  g8.endRound();
+  assert.strictEqual(g8.state, GAME_STATE.PLAYING);
+  assert.strictEqual(g8.enemy.uid, oldEnemy.uid, 'il nemico dovrebbe restare dopo pareggio');
+}
 
 // Test: snapshot
 const snap = g1.snapshot();
 assert.strictEqual(snap.state, GAME_STATE.PLAYING);
 assert.strictEqual(snap.hp, 3);
-assert.strictEqual(snap.handSize, g1.maxHand);
 assert(snap.enemy);
 
 console.log('✅ test-game.js passati');

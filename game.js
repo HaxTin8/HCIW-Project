@@ -1,6 +1,7 @@
 /**
  * Logica di gioco pura, testabile in Node.js.
- * Non dipende da p5.js ne dal DOM.
+ * Versione no-WIMP: il giocatore gestisce fisicamente le proprie carte.
+ * Il computer non traccia mano, mazzo o cimitero del giocatore.
  */
 
 (function (global) {
@@ -22,7 +23,6 @@
   class Game {
     constructor(options = {}) {
       this.roundsToWin = options.roundsToWin ?? 8;
-      this.maxHand = options.maxHand ?? 4;
       this.startingHp = options.startingHp ?? 3;
       this.reset();
     }
@@ -31,59 +31,25 @@
       this.state = GAME_STATE.IDLE;
       this.hp = this.startingHp;
       this.round = 0;
-      this.deck = [];
-      this.hand = [];
-      this.discard = [];
       this.enemy = null;
       this.lastResult = null;
+      this.lastPlayedCard = null;
       this.logs = [];
     }
 
     start(seedTemplateId = null) {
       this.reset();
-
-      for (const template of CARD_TEMPLATES) {
-        this.deck.push(createCard(template.id));
-      }
+      this.state = GAME_STATE.PLAYING;
+      this.log('Partita iniziata. Mostra una carta alla webcam per giocarla.');
       if (seedTemplateId && TEMPLATE_MAP[seedTemplateId]) {
-        this.deck.push(createCard(seedTemplateId));
         this.log(`Seme rilevato: ${seedTemplateId}.`);
       }
-
-      this.shuffle();
-      this.draw(this.maxHand);
       this.spawnEnemy();
-      this.state = GAME_STATE.PLAYING;
-      this.log('Partita iniziata. Mostra una carta alla webcam.');
       return this.state;
     }
 
     restart() {
       return this.start();
-    }
-
-    shuffle() {
-      // Fisher-Yates
-      for (let i = this.deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
-      }
-    }
-
-    draw(n) {
-      let drawn = 0;
-      for (let i = 0; i < n; i++) {
-        if (this.hand.length >= this.maxHand) break;
-        if (this.deck.length === 0) {
-          if (this.discard.length === 0) break;
-          this.deck = this.discard.splice(0);
-          this.shuffle();
-          this.log('Cimitero rimescolato nel mazzo.');
-        }
-        this.hand.push(this.deck.pop());
-        drawn++;
-      }
-      return drawn;
     }
 
     spawnEnemy() {
@@ -95,6 +61,10 @@
       return this.enemy;
     }
 
+    /**
+     * Il giocatore gioca una carta mostrandone il QR alla webcam.
+     * Non c'è più controllo "in mano": il giocatore gestisce fisicamente le carte.
+     */
     playCard(templateId) {
       if (this.state !== GAME_STATE.PLAYING) {
         this.log('Non puoi giocare ora.');
@@ -105,25 +75,23 @@
         return null;
       }
 
-      const idx = this.hand.findIndex(c => c.templateId === templateId);
-      if (idx === -1) {
-        this.log(`Carta ${templateId} non è in mano.`);
+      const card = createCard(templateId);
+      if (!card) {
+        this.log(`Carta ${templateId} non riconosciuta.`);
         return null;
       }
 
-      const card = this.hand.splice(idx, 1)[0];
+      this.lastPlayedCard = card;
       const result = resolveCombat(card, this.enemy);
       this.lastResult = result;
       this.state = GAME_STATE.ROUND_RESULT;
 
       if (result === 'win') {
-        this.log(`Hai giocato ${card.name}: vittoria! ${this.enemy.name} entra nel mazzo.`);
+        this.log(`Hai giocato ${card.name}: vittoria! Aggiungi ${this.enemy.name} al tuo mazzo fisico.`);
       } else if (result === 'lose') {
         this.hp--;
-        this.discard.push(card);
         this.log(`Hai giocato ${card.name}: sconfitta. Perdi 1 HP.`);
       } else {
-        this.discard.push(card);
         this.log(`Hai giocato ${card.name}: pareggio.`);
       }
 
@@ -134,13 +102,11 @@
       if (this.state !== GAME_STATE.ROUND_RESULT) return this.state;
 
       if (this.lastResult === 'win') {
-        this.deck.push(this.enemy);
         if (this.round >= this.roundsToWin) {
           this.state = GAME_STATE.VICTORY;
           this.log('Hai vinto!');
           return this.state;
         }
-        this.draw(1);
         this.spawnEnemy();
       } else if (this.lastResult === 'lose') {
         if (this.hp <= 0) {
@@ -148,24 +114,18 @@
           this.log('Game over.');
           return this.state;
         }
-        this.draw(1);
-        // nemico resta
+        // Il nemico resta finché non viene sconfitto
       } else {
-        this.draw(1);
-        // nemico resta
+        // Pareggio: nemico resta
       }
 
       this.state = GAME_STATE.PLAYING;
-      this.log('Scegli la prossima carta.');
+      this.log('Mostra la prossima carta.');
       return this.state;
     }
 
     /**
      * Punto unico di ingresso per gli eventi QR.
-     * Ritorna un oggetto descrittivo dell'evento:
-     * - { action: 'start' | 'restart', state }
-     * - { action: 'play', card, result, state }
-     * - { action: 'unknown', state }
      */
     handleQR(qrData) {
       const id = String(qrData).trim().toUpperCase();
@@ -203,9 +163,6 @@
         state: this.state,
         hp: this.hp,
         round: this.round,
-        handSize: this.hand.length,
-        deckSize: this.deck.length,
-        discardSize: this.discard.length,
         enemy: this.enemy ? { name: this.enemy.name, element: this.enemy.element, power: this.enemy.power } : null
       };
     }

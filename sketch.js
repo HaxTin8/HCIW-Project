@@ -1,5 +1,6 @@
 /* =========================================================
    DECK OF SHADOWS — frontend p5.js, input solo da webcam QR
+   Versione no-WIMP: il giocatore gestisce fisicamente le carte.
    ========================================================= */
 
 var video;
@@ -18,7 +19,7 @@ var animProgress = 0;
 var enemyShake = 0;
 var screenFlash = 0;
 
-var webcamState = 'loading'; // loading, active, denied, error, unsupported
+var webcamState = 'loading';
 var webcamMessage = 'Avvio webcam in corso...';
 
 function setup() {
@@ -40,71 +41,12 @@ function setup() {
     });
   }
 
-  setupWebcam();
   logToStatus('Mostra una carta alla webcam per iniziare.');
-}
-
-function setupWebcam() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    webcamState = 'unsupported';
-    webcamMessage = 'Questo browser non supporta la webcam. Prova Chrome, Edge o Firefox.';
-    logToStatus(webcamMessage);
-    return;
-  }
-
-  webcamState = 'loading';
-  webcamMessage = 'Richiesta accesso webcam...';
-
-  const constraints = {
-    video: {
-      width: { ideal: 320 },
-      height: { ideal: 240 },
-      facingMode: 'user'
-    },
-    audio: false
-  };
-
-  // Usiamo getUserMedia direttamente per catturare gli errori in modo affidabile
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(() => {
-      // Permesso concesso: creiamo il capture p5.js
-      video = createCapture(constraints, () => {
-        webcamState = 'active';
-        webcamMessage = 'Webcam attiva.';
-        if (video && video.elt) {
-          video.elt.setAttribute('playsinline', '');
-          video.elt.muted = true;
-          video.elt.play().catch(e => console.warn('Autoplay video bloccato:', e));
-        }
-      });
-      if (video) {
-        video.size(320, 240);
-        video.hide();
-      }
-    })
-    .catch((err) => {
-      console.error('Errore webcam:', err.name, err.message);
-      if (err.name === 'NotAllowedError') {
-        webcamState = 'denied';
-        webcamMessage = 'Permesso webcam negato. Concedi il permesso e ricarica la pagina.';
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        webcamState = 'error';
-        webcamMessage = 'Nessuna webcam trovata. Collegane una e ricarica.';
-      } else if (err.name === 'NotReadableError') {
-        webcamState = 'error';
-        webcamMessage = 'Webcam già in uso da un\'altra applicazione.';
-      } else {
-        webcamState = 'error';
-        webcamMessage = 'Impossibile avviare la webcam. Controlla la console.';
-      }
-      logToStatus(webcamMessage);
-    });
 }
 
 function draw() {
   background(22, 33, 62);
 
-  // Flash di schermo (rosso/verde/giallo)
   if (screenFlash > 0) {
     noStroke();
     fill(screenFlash.color[0], screenFlash.color[1], screenFlash.color[2], screenFlash.alpha);
@@ -113,7 +55,6 @@ function draw() {
     if (screenFlash.alpha <= 0) screenFlash = 0;
   }
 
-  // Particelle decorative sempre attive
   updateParticles();
   drawParticles();
   updateFloaters();
@@ -177,7 +118,6 @@ function drawPlaying() {
   drawDecorations();
   drawHUD();
   if (game.enemy) drawEnemy();
-  drawHand();
   drawWebcamPreview();
   drawWebcamOverlay();
   drawLog();
@@ -190,11 +130,10 @@ function drawPlaying() {
 function drawRoundResult() {
   drawPlaying();
 
-  // Animazione carta che colpisce il nemico
   if (lastPlayedCard) {
     animProgress += 0.04;
     const startX = width / 2;
-    const startY = height - 110;
+    const startY = height - 50;
     const endX = width / 2;
     const endY = 120;
     const cx = lerp(startX, endX, animProgress);
@@ -207,14 +146,12 @@ function drawRoundResult() {
     drawCardFrame(0, 0, 90, 130, lastPlayedCard.color, lastPlayedCard.emoji, lastPlayedCard.name, lastPlayedCard.power, lastPlayedCard.element);
     pop();
 
-    // Scia luminosa
     if (animProgress < 0.8) {
       noStroke();
       fill(red(lastPlayedCard.color), green(lastPlayedCard.color), blue(lastPlayedCard.color), 80);
       ellipse(cx, cy, 40 + animProgress * 60, 40 + animProgress * 60);
     }
 
-    // Impatto
     if (animProgress >= 0.8 && animProgress < 1.0) {
       enemyShake = 12;
       if (particles.length < 40) {
@@ -223,11 +160,9 @@ function drawRoundResult() {
     }
   }
 
-  // Shake nemico
   if (enemyShake > 0) enemyShake *= 0.85;
   if (enemyShake < 0.5) enemyShake = 0;
 
-  // Overlay risultato
   fill(0, 0, 0, 160);
   rect(0, 0, width, height);
 
@@ -240,7 +175,7 @@ function drawRoundResult() {
     text('VITTORIA!', width / 2, height / 2 - 30);
     textSize(22);
     fill(255);
-    text('Il nemico entra nel tuo mazzo.', width / 2, height / 2 + 35);
+    text(`Aggiungi ${game.enemy ? game.enemy.name : 'il nemico'} al tuo mazzo fisico.`, width / 2, height / 2 + 35);
   } else if (game.lastResult === 'lose') {
     fill('#e74c3c');
     text('SCONFITTA', width / 2, height / 2 - 30);
@@ -260,8 +195,14 @@ function drawRoundResult() {
     resultTimer = 0;
     lastPlayedCard = null;
     animProgress = 0;
+    const oldEnemyName = game.enemy ? game.enemy.name : '';
     game.endRound();
-    logToStatus(game.state === GAME_STATE.PLAYING ? 'Scegli la prossima carta.' : game.logs[game.logs.length - 1]);
+    const newMsg = game.logs[game.logs.length - 1];
+    logToStatus(newMsg);
+
+    if (game.state === GAME_STATE.PLAYING && game.enemy && game.enemy.name !== oldEnemyName) {
+      tts.speak(`Nuovo nemico: ${game.enemy.name}, potere ${game.enemy.power}.`);
+    }
   }
 }
 
@@ -306,15 +247,14 @@ function drawHUD() {
   textStyle(BOLD);
   text(`HP: ${'❤️'.repeat(max(game.hp, 0))}`, 20, 20);
   text(`Round: ${game.round}/${game.roundsToWin}`, 20, 48);
-  text(`Mazzo: ${game.deck.length}  |  Cimitero: ${game.discard.length}`, 20, 76);
   textStyle(NORMAL);
 }
 
 function drawEnemy() {
   let x = width / 2;
-  let y = 120;
-  const w = 160;
-  const h = 220;
+  let y = 150;
+  const w = 180;
+  const h = 260;
 
   if (enemyShake > 0) {
     x += random(-enemyShake, enemyShake);
@@ -333,30 +273,11 @@ function drawEnemy() {
   const elem = ELEMENTS[game.enemy.element];
   fill(elem.color);
   noStroke();
-  ellipse(x, y - h / 2 - 20, 36, 36);
+  ellipse(x, y - h / 2 - 25, 44, 44);
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(20);
-  text(elem.emoji, x, y - h / 2 - 20);
-}
-
-function drawHand() {
-  const cardW = 110;
-  const cardH = 160;
-  const gap = 20;
-  const totalW = game.hand.length * cardW + (game.hand.length - 1) * gap;
-  const startX = (width - totalW) / 2 + cardW / 2;
-  const y = height - cardH / 2 - 30;
-
-  for (let i = 0; i < game.hand.length; i++) {
-    const card = game.hand[i];
-    const x = startX + i * (cardW + gap);
-
-    push();
-    translate(x, y);
-    drawCardFrame(0, 0, cardW, cardH, card.color, card.emoji, card.name, card.power, card.element);
-    pop();
-  }
+  textSize(24);
+  text(elem.emoji, x, y - h / 2 - 25);
 }
 
 function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
@@ -465,9 +386,9 @@ function drawWebcamOverlay() {
 
 function drawLog() {
   const x = 20;
-  const y = height - 180;
-  const w = 260;
-  const h = 120;
+  const y = height - 150;
+  const w = 320;
+  const h = 110;
 
   fill(0, 0, 0, 120);
   rect(x, y, w, h, 8);
@@ -475,9 +396,9 @@ function drawLog() {
   fill(200);
   textAlign(LEFT, TOP);
   textSize(12);
-  const visible = game.logs.slice(-6);
+  const visible = game.logs.slice(-5);
   for (let i = 0; i < visible.length; i++) {
-    text('• ' + visible[i], x + 10, y + 10 + i * 18);
+    text('• ' + visible[i], x + 10, y + 10 + i * 20);
   }
 }
 
@@ -507,7 +428,7 @@ function updateParticles() {
     const p = particles[i];
     p.x += p.vx;
     p.y += p.vy;
-    p.vy += 0.15; // gravità
+    p.vy += 0.15;
     p.life -= 5;
     if (p.life <= 0) particles.splice(i, 1);
   }
@@ -584,36 +505,41 @@ function readQR() {
 }
 
 function handleQRDetected(id) {
-  audio.init(); // attiva AudioContext al primo gesto
+  audio.init();
 
   const previousState = game.state;
   const event = game.handleQR(id);
 
   if (event.action === 'start' || event.action === 'restart') {
     audio.playStart();
+    tts.speak('Partita iniziata.', true);
     lastPlayedCard = null;
     animProgress = 0;
-    if (event.action === 'start') {
-      logToStatus('Partita iniziata! Mostra una carta dalla mano per giocarla.');
-    } else {
-      logToStatus('Nuova partita!');
+    if (game.enemy) {
+      tts.speak(`Nemico: ${game.enemy.name}, potere ${game.enemy.power}.`);
     }
+    logToStatus(event.action === 'start' ? 'Partita iniziata! Mostra una carta per giocarla.' : 'Nuova partita!');
   } else if (event.action === 'play' && event.card) {
     audio.playCard();
     lastPlayedCard = event.card;
     animProgress = 0;
 
+    tts.speak(`Hai giocato ${event.card.name}.`);
+
     if (game.lastResult === 'win') {
       setTimeout(() => audio.playWin(), 300);
       screenFlash = { color: [46, 204, 113], alpha: 120 };
       spawnFloater('+ NEMICO', width / 2, 120, '#2ecc71');
+      tts.speak('Vittoria! Aggiungi il nemico al tuo mazzo fisico.');
     } else if (game.lastResult === 'lose') {
       setTimeout(() => audio.playLose(), 300);
       screenFlash = { color: [231, 76, 60], alpha: 120 };
       spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
+      tts.speak('Sconfitta! Perdi un punto vita.');
     } else {
       setTimeout(() => audio.playDraw(), 300);
       screenFlash = { color: [241, 196, 15], alpha: 100 };
+      tts.speak('Pareggio.');
     }
   }
 
@@ -621,8 +547,10 @@ function handleQRDetected(id) {
     resultTimer = 0;
   } else if (game.state === GAME_STATE.GAME_OVER) {
     logToStatus('Game over. Mostra una carta per ricominciare.');
+    tts.speak('Game over.', true);
   } else if (game.state === GAME_STATE.VICTORY) {
     logToStatus('Vittoria! Mostra una carta per una nuova run.');
+    tts.speak('Vittoria!', true);
   }
 }
 
