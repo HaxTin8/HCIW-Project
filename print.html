@@ -183,18 +183,26 @@
       }
     }
 
-    // Aggiungi anche una carta speciale RESTART
-    const restartCard = document.createElement('div');
-    restartCard.className = 'card';
-    restartCard.innerHTML = `
-      <div class="card-header" style="background-color: #555">Restart</div>
-      <div class="card-emoji">🔄</div>
-      <div class="card-power">—</div>
-      <div class="card-desc">Mostra questa carta per ricominciare una partita in corso.</div>
-      <div class="card-qr">${generateQR('RESTART')}</div>
-      <div class="card-footer">SPECIAL · RESTART</div>
-    `;
-    sheet.appendChild(restartCard);
+    // Carte speciali
+    const specialCards = [
+      { id: 'RESTART', name: 'Restart', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#555' },
+      { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#3498db' },
+      { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#e94560' }
+    ];
+
+    for (const special of specialCards) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-header" style="background-color: ${special.color}">${special.name}</div>
+        <div class="card-emoji">${special.emoji}</div>
+        <div class="card-power">—</div>
+        <div class="card-desc">${special.desc}</div>
+        <div class="card-qr">${generateQR(special.id)}</div>
+        <div class="card-footer">SPECIAL · ${special.id}</div>
+      `;
+      sheet.appendChild(card);
+    }
   </script>
 </body>
 </html>

@@ -9,6 +9,7 @@
       this.enabled = true;
       this.queue = [];
       this.speaking = false;
+      this.onIdleCallback = null;
     }
 
     setEnabled(value) {
@@ -17,6 +18,26 @@
         window.speechSynthesis.cancel();
         this.queue = [];
         this.speaking = false;
+      }
+    }
+
+    isSpeaking() {
+      return this.speaking || this.queue.length > 0;
+    }
+
+    onIdle(callback) {
+      if (!this.isSpeaking()) {
+        callback();
+        return;
+      }
+      this.onIdleCallback = callback;
+    }
+
+    _checkIdle() {
+      if (!this.isSpeaking() && this.onIdleCallback) {
+        const cb = this.onIdleCallback;
+        this.onIdleCallback = null;
+        cb();
       }
     }
 
@@ -43,26 +64,30 @@
     }
 
     _processQueue() {
-      if (this.speaking || this.queue.length === 0) return;
+      if (this.speaking || this.queue.length === 0) {
+        this._checkIdle();
+        return;
+      }
 
       const text = this.queue.shift();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'it-IT';
-      utter.rate = 1.05;
+      utter.rate = 1.15;
       utter.pitch = 1;
 
       utter.onend = () => {
         this.speaking = false;
         this._processQueue();
+        this._checkIdle();
       };
 
       utter.onerror = (e) => {
-        // Ignora errori dovuti a cancel o interruzioni
         if (e.error !== 'canceled' && e.error !== 'interrupted') {
           console.warn('TTS error:', e.error);
         }
         this.speaking = false;
         this._processQueue();
+        this._checkIdle();
       };
 
       this.speaking = true;
@@ -75,6 +100,7 @@
       }
       this.queue = [];
       this.speaking = false;
+      this.onIdleCallback = null;
     }
   }
 

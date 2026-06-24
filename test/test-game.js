@@ -3,25 +3,31 @@ const { Game, GAME_STATE } = require('../game.js');
 
 console.log('Running test-game.js...');
 
-// Test: stato iniziale
+// Test: stato iniziale (default sequenziale)
 const g1 = new Game();
 assert.strictEqual(g1.state, GAME_STATE.IDLE);
 assert.strictEqual(g1.hp, 3);
 assert.strictEqual(g1.round, 0);
-assert.strictEqual(g1.cardsPerRound, 3);
+assert.strictEqual(g1.playMode, 'sequential');
+assert.strictEqual(g1.cardsPerRound, 1);
 
-// Test: start
+// Test: start sequenziale
 const state = g1.start();
 assert.strictEqual(state, GAME_STATE.PLAYING);
-assert.strictEqual(g1.enemies.length, 3);
-assert.strictEqual(g1.currentEnemyIndex, 0);
-assert(g1.currentEnemy, 'dovrebbe esserci un nemico corrente');
+assert.strictEqual(g1.enemies.length, 1);
+assert(g1.currentEnemy, 'dovrebbe esserci un nemico');
+
+// Test: start simultaneo
+const gSim = new Game({ playMode: 'simultaneous' });
+gSim.start();
+assert.strictEqual(gSim.enemies.length, 3);
+assert.strictEqual(gSim.cardsPerRound, 3);
 
 // Test: handleQR in idle avvia la partita
 const g2 = new Game();
 g2.handleQR('ROSSO');
 assert.strictEqual(g2.state, GAME_STATE.PLAYING);
-assert.strictEqual(g2.enemies.length, 3);
+assert.strictEqual(g2.enemies.length, 1);
 
 // Test: handleQR restart
 const g3 = new Game();
@@ -32,99 +38,87 @@ g3.handleQR('RESTART');
 assert.strictEqual(g3.state, GAME_STATE.PLAYING);
 assert.strictEqual(g3.hp, 3);
 
-// Test: giocare una carta valida
-const g4 = new Game({ cardsPerRound: 2 });
+// Test: giocare una carta in sequenziale
+const g4 = new Game();
 g4.start();
-const event = g4.playCard('ROSSO');
-assert(event, 'playCard dovrebbe restituire un risultato');
+const event = g4.playCardSequential('ROSSO');
+assert(event, 'playCardSequential dovrebbe restituire un risultato');
 assert(event.card, 'dovrebbe esserci una carta giocata');
 assert.strictEqual(event.card.templateId, 'ROSSO');
 assert(['win', 'lose', 'draw'].includes(event.result));
-
-// Con 2 carte a round, dopo la prima il round continua
-if (g4.cardsPerRound > 1) {
-  assert.strictEqual(event.roundContinues, true);
-  assert.strictEqual(g4.state, GAME_STATE.PLAYING);
-  assert.strictEqual(g4.currentEnemyIndex, 1);
-}
+assert.strictEqual(g4.state, GAME_STATE.ROUND_RESULT);
 
 // Test: giocare una carta non valida
 const g5 = new Game();
 g5.start();
-const invalid = g5.playCard('INESISTENTE');
+const invalid = g5.playCardSequential('INESISTENTE');
 assert.strictEqual(invalid, null);
 assert.strictEqual(g5.state, GAME_STATE.PLAYING);
 
-// Test: completare un round con 1 carta per round e vincere
-const g6 = new Game({ cardsPerRound: 1, roundsToWin: 1 });
-g6.start();
+// Test: modalità simultanea con 3 carte
 const { CARD_TEMPLATES, resolveCombat, createCard } = require('../cards.js');
+const g6 = new Game({ playMode: 'simultaneous' });
+g6.start();
+const ids = g6.enemies.map(enemy => {
+  for (const template of CARD_TEMPLATES) {
+    const card = createCard(template.id);
+    if (resolveCombat(card, enemy) === 'win') {
+      return template.id;
+    }
+  }
+  return CARD_TEMPLATES[0].id;
+});
+const allEvent = g6.playAllCards(ids);
+assert(allEvent, 'playAllCards dovrebbe restituire un risultato');
+assert.strictEqual(allEvent.results.length, 3);
+assert.strictEqual(g6.state, GAME_STATE.ROUND_RESULT);
+
+// Test: simulazione vittoria in sequenziale
+const g7 = new Game({ roundsToWin: 1 });
+g7.start();
 let winningId = null;
 for (const template of CARD_TEMPLATES) {
   const card = createCard(template.id);
-  if (resolveCombat(card, g6.currentEnemy) === 'win') {
+  if (resolveCombat(card, g7.currentEnemy) === 'win') {
     winningId = template.id;
     break;
   }
 }
-assert(winningId, 'dovrebbe esistere una carta vincente');
-const winEvent = g6.playCard(winningId);
-assert.strictEqual(winEvent.roundContinues, false);
-assert.strictEqual(g6.state, GAME_STATE.ROUND_RESULT);
-assert.strictEqual(g6.lastResult, 'win');
-g6.endRound();
-assert.strictEqual(g6.state, GAME_STATE.VICTORY);
+assert(winningId);
+g7.playCardSequential(winningId);
+g7.endRound();
+assert.strictEqual(g7.state, GAME_STATE.VICTORY);
 
-// Test: completare un round con 1 carta per round e perdere
-const g7 = new Game({ cardsPerRound: 1, startingHp: 1 });
-g7.start();
+// Test: simulazione sconfitta in sequenziale
+const g8 = new Game({ startingHp: 1 });
+g8.start();
 let losingId = null;
 for (const template of CARD_TEMPLATES) {
   const card = createCard(template.id);
-  if (resolveCombat(card, g7.currentEnemy) === 'lose') {
+  if (resolveCombat(card, g8.currentEnemy) === 'lose') {
     losingId = template.id;
     break;
   }
 }
-assert(losingId, 'dovrebbe esistere una carta perdente');
-g7.playCard(losingId);
-g7.endRound();
-assert.strictEqual(g7.state, GAME_STATE.GAME_OVER);
-assert.strictEqual(g7.hp, 0);
+assert(losingId);
+g8.playCardSequential(losingId);
+g8.endRound();
+assert.strictEqual(g8.state, GAME_STATE.GAME_OVER);
+assert.strictEqual(g8.hp, 0);
 
-// Test: completare un round con 3 carte
-const g8 = new Game({ cardsPerRound: 3 });
-g8.start();
-for (let i = 0; i < 3; i++) {
-  assert.strictEqual(g8.state, GAME_STATE.PLAYING);
-  g8.playCard('ROSSO');
-}
-assert.strictEqual(g8.state, GAME_STATE.ROUND_RESULT);
-
-// Test: pareggio, i nemici restano
-const g9 = new Game({ cardsPerRound: 1 });
+// Test: cambio modalità
+const g9 = new Game();
 g9.start();
-let drawingId = null;
-for (const template of CARD_TEMPLATES) {
-  const card = createCard(template.id);
-  if (resolveCombat(card, g9.currentEnemy) === 'draw') {
-    drawingId = template.id;
-    break;
-  }
-}
-if (drawingId) {
-  const oldEnemyUid = g9.currentEnemy.uid;
-  g9.playCard(drawingId);
-  g9.endRound();
-  assert.strictEqual(g9.state, GAME_STATE.PLAYING);
-  assert.strictEqual(g9.currentEnemy.uid, oldEnemyUid, 'i nemici dovrebbero restare dopo pareggio');
-}
+assert.strictEqual(g9.cardsPerRound, 1);
+g9.handleQR('SIMULTANEO');
+assert.strictEqual(g9.playMode, 'simultaneous');
+assert.strictEqual(g9.cardsPerRound, 3);
 
 // Test: snapshot
 const snap = g1.snapshot();
 assert.strictEqual(snap.state, GAME_STATE.PLAYING);
 assert.strictEqual(snap.hp, 3);
-assert.strictEqual(snap.enemiesCount, 3);
+assert.strictEqual(snap.enemiesCount, 1);
 assert(snap.enemy);
 
 console.log('✅ test-game.js passati');

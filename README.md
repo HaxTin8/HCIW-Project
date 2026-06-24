@@ -43,25 +43,21 @@ npm test
 
 1. **Le tue carte sono solo fisiche**: stampale da `print.html` e tienile davanti a te. Il computer non mostra mai le carte che hai.
 2. **Inizia**: mostra una carta fisica con QR code alla webcam.
-3. Ogni round il computer presenta **3 nemici** (configurabile), uno alla volta.
-4. Il computer annuncia il nemico corrente con elemento e potere.
-5. **Slot carta**: mostra alla webcam la carta che vuoi giocare contro il nemico corrente. La carta viene caricata nello **slot** centrale.
-6. **Gioca la carta**: togli la carta dalla webcam (slot vuoto). Il computer risolve lo scontro.
-7. Affronta tutti e 3 i nemici del round.
-8. **Vittoria del round**: se vinci più scontri di quanti ne perdi, aggiungi i nemici al tuo mazzo fisico.
-9. **Sconfitta del round**: se perdi più scontri di quanti ne vinci, perdi 1 HP.
-10. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
-
-Il meccanismo dello slot evita letture doppie: una carta viene giocata una sola volta, solo dopo essere stata rimossa dalla webcam.
+3. Il computer annuncia i nemici del round.
+4. **Slot carte**: mostra alla webcam le carte che vuoi giocare. Ogni carta va nel primo slot libero.
+5. **Gioca**: quando tutti gli slot sono pieni, il computer risolve tutti gli scontri insieme.
+6. **Vittoria del round**: se vinci più scontri di quanti ne perdi, prendi i nemici.
+7. **Sconfitta del round**: se perdi più scontri di quanti ne vinci, perdi 1 HP.
+8. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
 
 ### Modalità di gioco
 
-Puoi cambiare modalità in qualsiasi momento mostrando alla webcam i QR speciali:
+Puoi cambiare modalità in qualsiasi momento mostrando alla webcam i QR speciali (stampati in `print.html`):
 
-- **`SEQUENZIALE`** (default): gioca una carta alla volta con il meccanismo dello slot.
-- **`SIMULTANEO`**: hai **8 secondi** per mostrare tutte le carte che vuoi giocare. Quando il tempo scade, il computer gioca automaticamente tutte le carte lette in sequenza contro i nemici del round.
+- **`SEQUENZIALE`** (default): 1 nemico e 1 slot per round.
+- **`SIMULTANEO`**: 3 nemici e 3 slot per round. Carichi 3 carte una alla volta, poi lo scontro avviene tutto insieme.
 
-Puoi anche usare il QR speciale `RESTART` per riavviare in qualsiasi momento.
+Puoi anche usare il QR speciale `RESTART` per riavviare.
 
 ## Preparare le carte fisiche
 
