@@ -41,7 +41,92 @@ function setup() {
     });
   }
 
+  setupWebcam();
   logToStatus('Mostra una carta alla webcam per iniziare.');
+}
+
+function setupWebcam() {
+  console.log('[Webcam] setupWebcam avviato');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    webcamState = 'unsupported';
+    webcamMessage = 'Questo browser non supporta la webcam. Prova Chrome, Edge o Firefox.';
+    console.error('[Webcam]', webcamMessage);
+    logToStatus(webcamMessage);
+    return;
+  }
+
+  webcamState = 'loading';
+  webcamMessage = 'Richiesta accesso webcam...';
+
+  const constraints = {
+    video: {
+      width: { ideal: 320 },
+      height: { ideal: 240 },
+      facingMode: 'user'
+    },
+    audio: false
+  };
+
+  // Timeout di sicurezza: se getUserMedia non risponde entro 10 secondi
+  const timeoutId = setTimeout(() => {
+    if (webcamState === 'loading') {
+      webcamState = 'error';
+      webcamMessage = 'La webcam non risponde. Ricarica la pagina.';
+      console.error('[Webcam] Timeout dopo 10s');
+      logToStatus(webcamMessage);
+    }
+  }, 10000);
+
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then((stream) => {
+      clearTimeout(timeoutId);
+      console.log('[Webcam] Permesso concesso, stream ottenuto');
+
+      const videoEl = document.createElement('video');
+      videoEl.srcObject = stream;
+      videoEl.setAttribute('playsinline', '');
+      videoEl.setAttribute('muted', '');
+      videoEl.width = 320;
+      videoEl.height = 240;
+
+      videoEl.onloadedmetadata = () => {
+        console.log('[Webcam] Metadata caricati');
+        videoEl.play().then(() => {
+          console.log('[Webcam] Video in riproduzione');
+          webcamState = 'active';
+          webcamMessage = 'Webcam attiva.';
+          logToStatus('Webcam attiva. Mostra una carta per iniziare.');
+        }).catch(e => {
+          console.warn('[Webcam] Autoplay bloccato:', e);
+        });
+      };
+
+      videoEl.onerror = (e) => {
+        console.error('[Webcam] Errore video element:', e);
+      };
+
+      video = new p5.MediaElement(videoEl);
+      video.hide();
+    })
+    .catch((err) => {
+      clearTimeout(timeoutId);
+      console.error('[Webcam] Errore:', err.name, err.message);
+      if (err.name === 'NotAllowedError') {
+        webcamState = 'denied';
+        webcamMessage = 'Permesso webcam negato. Concedi il permesso e ricarica la pagina.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        webcamState = 'error';
+        webcamMessage = 'Nessuna webcam trovata. Collegane una e ricarica.';
+      } else if (err.name === 'NotReadableError') {
+        webcamState = 'error';
+        webcamMessage = 'Webcam già in uso da un\'altra applicazione.';
+      } else {
+        webcamState = 'error';
+        webcamMessage = 'Impossibile avviare la webcam. Controlla la console.';
+      }
+      logToStatus(webcamMessage);
+    });
 }
 
 function draw() {

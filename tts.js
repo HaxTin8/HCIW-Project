@@ -28,14 +28,18 @@
         return;
       }
 
-      if (priority) {
-        window.speechSynthesis.cancel();
-        this.queue = [];
-        this.speaking = false;
-      }
+      try {
+        if (priority) {
+          window.speechSynthesis.cancel();
+          this.queue = [];
+          this.speaking = false;
+        }
 
-      this.queue.push(text);
-      this._processQueue();
+        this.queue.push(text);
+        this._processQueue();
+      } catch (e) {
+        console.warn('TTS speak error:', e);
+      }
     }
 
     _processQueue() {
