@@ -114,6 +114,19 @@ g9.handleQR('SIMULTANEO');
 assert.strictEqual(g9.playMode, 'simultaneous');
 assert.strictEqual(g9.cardsPerRound, 3);
 
+// Test: cambio modalità durante PLAYING rigenera i nemici correttamente
+const g10 = new Game({ playMode: 'sequential' });
+g10.start();
+assert.strictEqual(g10.enemies.length, 1);
+g10.handleQR('SIMULTANEO');
+assert.strictEqual(g10.playMode, 'simultaneous');
+assert.strictEqual(g10.enemies.length, 3);
+assert.strictEqual(g10.currentEnemyIndex, 0);
+g10.handleQR('SEQUENZIALE');
+assert.strictEqual(g10.playMode, 'sequential');
+assert.strictEqual(g10.enemies.length, 1);
+assert.strictEqual(g10.currentEnemyIndex, 0);
+
 // Test: snapshot
 const snap = g1.snapshot();
 assert.strictEqual(snap.state, GAME_STATE.PLAYING);

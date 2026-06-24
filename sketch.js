@@ -953,6 +953,14 @@ function handleQRDetected(id) {
       logToStatus(`Modalità ${event.mode}.`);
       if (game.state === GAME_STATE.PLAYING) {
         resetSlots();
+        multiSlotAnim = [];
+        lastPlayedCard = null;
+        animProgress = 0;
+        if (game.currentEnemy) {
+          const enemyNames = game.enemies.map(e => `${e.name} ${e.power}`).join(', ');
+          tts.speak(enemyNames);
+          logToStatus(`Nemici: ${enemyNames}`);
+        }
       }
     } else if (event.action === 'unknown') {
       logToStatus(`QR ${id}?`);

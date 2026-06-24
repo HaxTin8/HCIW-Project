@@ -63,6 +63,10 @@
 
     spawnEnemies() {
       this.round++;
+      return this.regenerateEnemiesForCurrentRound();
+    }
+
+    regenerateEnemiesForCurrentRound() {
       this.enemies = [];
       this.currentEnemyIndex = 0;
       this.lastRoundResults = [];
@@ -189,12 +193,18 @@
 
       if (id === 'SEQUENZIALE') {
         this.playMode = 'sequential';
+        if (this.state === GAME_STATE.PLAYING) {
+          this.regenerateEnemiesForCurrentRound();
+        }
         this.log('Sequenziale.');
         return { action: 'mode', mode: 'sequential', state: this.state };
       }
 
       if (id === 'SIMULTANEO') {
         this.playMode = 'simultaneous';
+        if (this.state === GAME_STATE.PLAYING) {
+          this.regenerateEnemiesForCurrentRound();
+        }
         this.log('Simultaneo.');
         return { action: 'mode', mode: 'simultaneous', state: this.state };
       }
