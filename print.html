@@ -6,7 +6,16 @@
   <title>Specula Elementae — Carte da stampare</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Beachday';
+      src: url('fonts/beachday.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <style>
     * {
@@ -16,8 +25,8 @@
     body {
       margin: 0;
       padding: 20px;
-      font-family: 'Hanken Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4eddb;
+      font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4fbff;
       color: #2b2318;
     }
 
@@ -25,30 +34,30 @@
       text-align: center;
       margin-bottom: 24px;
       padding: 20px;
-      background: #211a11;
-      color: #f2e7ce;
+      background: #97B481;
+      color: #21361a;
       border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
 
     .no-print h1 {
       margin-top: 0;
-      font-family: 'Space Grotesk', sans-serif;
-      color: #f2e7ce;
+      font-family: 'Beachday', sans-serif;
+      color: #21361a;
     }
 
     .no-print p {
       margin: 6px 0;
-      color: #c9b892;
+      color: #35502a;
     }
 
     .no-print button {
       padding: 10px 22px;
-      background: #b0842f;
-      color: #211a11;
+      background: #E67E3C;
+      color: #ffffff;
       border: none;
       border-radius: 999px;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Beachday', sans-serif;
       font-weight: 600;
       font-size: 15px;
       cursor: pointer;
@@ -83,7 +92,7 @@
     }
 
     .card-name {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Beachday', sans-serif;
       font-weight: 700;
       font-size: 20px;
       text-align: center;
@@ -97,8 +106,8 @@
     }
 
     .card-medallion {
-      width: 120px;
-      height: 120px;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -116,12 +125,24 @@
     }
 
     .card-desc {
-      font-size: 12px;
+      font-size: 13px;
       text-align: center;
       color: #5a4a34;
       padding: 0 6px;
       line-height: 1.4;
       flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .card-desc .vs-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      vertical-align: middle;
     }
 
     .card-qr {
@@ -187,6 +208,17 @@
       return `<img src="assets/elements/${name}.png" alt="${elementId}" style="width: 100%; height: 100%; object-fit: contain;">`;
     }
 
+    // Testo "X batte [icona] e [icona]" generato dai dati reali (strongVs),
+    // al posto dei nomi scritti degli elementi battuti.
+    function beatsDescription(elementId) {
+      const elem = ELEMENTS[elementId];
+      const icons = elem.strongVs.map(id => {
+        const name = id.toLowerCase();
+        return `<img class="vs-icon" src="assets/elements/${name}.png" alt="${ELEMENTS[id].name}" title="${ELEMENTS[id].name}">`;
+      });
+      return `<span>${elem.name} batte</span> ${icons[0]} <span>e</span> ${icons[1]}`;
+    }
+
     function generateQR(text) {
       const typeNumber = 0;
       const errorCorrectionLevel = 'M';
@@ -208,7 +240,7 @@
         <div class="card-medallion-wrap">
           <div class="card-medallion" style="background-color: ${elem.color}1a">${elementIcon(template.element)}</div>
         </div>
-        <div class="card-desc">${template.description}</div>
+        <div class="card-desc">${beatsDescription(template.element)}</div>
         <div class="card-qr">${qrImg}</div>
       `;
       return card;
@@ -222,7 +254,7 @@
     }
 
     const specialCards = [
-      { id: 'RESTART', name: 'Restart', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#211a11' },
+      { id: 'RESTART', name: 'Ricomincia', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#1C0A0A' },
       { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#498AE2' },
       { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#ECBA4E' }
     ];
@@ -230,10 +262,17 @@
     for (const special of specialCards) {
       const card = document.createElement('div');
       card.className = 'card';
+      const textColor = textColorForBg(special.color);
+
+      let medallionContent = special.emoji;
+
+      if (special.id === 'RESTART') {
+        medallionContent = `<img src="assets/elements/restart.png" alt="Ricomincia" style="width: 80%; height: 80%; object-fit: contain;">`;
+      }
+
       card.innerHTML = `
         <div class="card-name" style="color: ${special.color}">${special.name}</div>
-        <div class="card-medallion-wrap">
-          <div class="card-medallion circle" style="background-color: ${special.color}1a">${special.emoji}</div>
+          <div class="card-medallion" style="background-color: ${special.color}1a; font-size: 46px;">${medallionContent}</div>
         </div>
         <div class="card-desc">${special.desc}</div>
         <div class="card-qr">${generateQR(special.id)}</div>
