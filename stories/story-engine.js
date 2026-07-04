@@ -1,10 +1,10 @@
 /**
  * Story Engine per Deck of Shadows
  *
- * Legge storie in formato Twine-compatibile (JSON) e le integra nel gioco.
+ * Legge storie Twine compilate in JSON runtime e le integra nel gioco.
  * 
  * Flusso:
- * 1. Carica l'indice stories/index.json
+ * 1. Carica l'indice generato stories/generated/index.json
  * 2. All'avvio partita, seleziona la storia in base alla prima carta
  * 3. Carica il file JSON della storia
  * 4. Naviga i passaggi: prologo -> eventi mid-game -> epilogo
@@ -26,7 +26,7 @@
     /**
      * Carica l'indice delle storie
      */
-    async loadIndex(url = 'stories/index.json') {
+    async loadIndex(url = 'stories/generated/index.json') {
       try {
         const res = await fetch(url);
         this.index = await res.json();

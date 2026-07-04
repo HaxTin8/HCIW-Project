@@ -1,0 +1,34 @@
+:: StoryTitle
+Il Tuono delle Origini
+
+:: StoryData
+{
+  "id": "tuono-delle-origini",
+  "author": "Deck of Shadows",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+La Saetta attraversa il cielo e il tuono ti fa drizzare le orecchie. Questo elemento ti insegna che l'energia e' bellissima, ma va guidata con attenzione.
+
+[[Colpisci->inizio-avventura]]
+
+:: inizio-avventura
+Il fulmine non arriva mai nello stesso modo. Ogni round e' diverso, e tu impari che essere pronti e flessibili e' meglio che essere impulsivi.
+
+:: evento-round-2 [mid-story]
+Una tempesta si avvicina. Il tuono ti da' una grande spinta, ma ti ricorda anche una regola importante: tanta energia e tanta forza chiedono anche prudenza.
+
+```gameEffects
+{
+  "allCardsPowerBonus": 2,
+  "hpPenaltyOnLoss": 1,
+  "roundSpecific": 2
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Hai imparato a usare il tuono con intelligenza. Il cielo sembra applaudire chi sa essere forte senza perdere il controllo.
+
+:: epilogo-sconfitta [ending defeat]
+Il fulmine e' tornato tra le nuvole, ma non e' una fine. Le tempeste insegnano sempre qualcosa a chi e' pronto ad ascoltarle.

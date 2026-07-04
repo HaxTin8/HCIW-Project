@@ -22,7 +22,7 @@ var enemyShake = 0;
 var screenFlash = 0;
 
 var webcamState = 'loading';
-var webcamMessage = 'Avvio webcam in corso...';
+var webcamMessage = 'Sto preparando la fotocamera...';
 
 // Slot fisici virtuali: il giocatore carica una carta per slot.
 // In sequenziale c'e 1 slot; in simultaneo ci sono N slot.
@@ -41,6 +41,9 @@ var waitingForTTS = false;
 var cameraSection;
 var cameraBtn;
 var switchCameraBtn;
+var ttsToggle;
+var ttsRepeatBtn;
+var helpPanel;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
 
@@ -63,15 +66,19 @@ function setup() {
   if (qrToggle) {
     qrToggle.changed(() => {
       qrEnabled = qrToggle.checked();
-      logToStatus(qrEnabled ? 'Riconoscimento QR attivato.' : 'Riconoscimento QR disattivato.');
+      logToStatus(qrEnabled ? 'Lettura delle carte attivata.' : 'Lettura delle carte disattivata.');
     });
   }
 
   cameraBtn = select('#camera-btn');
   switchCameraBtn = select('#switch-camera-btn');
+  ttsToggle = select('#tts-toggle');
+  ttsRepeatBtn = select('#tts-repeat-btn');
+  helpPanel = select('#help-panel');
 
   if (cameraBtn) {
     cameraBtn.mousePressed(() => {
+      tts.prime();
       if (cameraBtn) cameraBtn.style('display', 'none');
       setupWebcam();
     });
@@ -81,14 +88,32 @@ function setup() {
     switchCameraBtn.mousePressed(switchCamera);
   }
 
+  if (ttsToggle) {
+    ttsToggle.changed(() => {
+      const enabled = ttsToggle.checked();
+      tts.setEnabled(enabled);
+      logToStatus(enabled ? 'Voce guida attivata.' : 'Voce guida disattivata.');
+    });
+  }
+
+  if (ttsRepeatBtn) {
+    ttsRepeatBtn.mousePressed(() => {
+      tts.prime();
+      tts.repeatLast();
+    });
+  }
+
   if (!isMobile()) {
     setupWebcam();
   } else {
     webcamState = 'waiting';
     webcamMessage = 'Tocca il pulsante per attivare la fotocamera.';
+    if (helpPanel && helpPanel.elt) {
+      helpPanel.elt.open = false;
+    }
     updateCameraButton();
   }
-  logToStatus('Mostra una carta alla webcam per iniziare.');
+  logToStatus('Mostra una carta alla webcam per iniziare la tua avventura.');
 }
 
 function windowResized() {
@@ -125,11 +150,12 @@ function updateCameraButton() {
 
 function switchCamera() {
   if (!isMobile() || isSwitchingCamera) return;
+  tts.prime();
   isSwitchingCamera = true;
   currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
   console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
   webcamState = 'loading';
-  webcamMessage = 'Cambio fotocamera...';
+  webcamMessage = 'Sto cambiando fotocamera...';
   updateCameraButton();
   setTimeout(() => {
     setupWebcam();
@@ -142,7 +168,7 @@ function setupWebcam() {
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     webcamState = 'unsupported';
-    webcamMessage = 'Questo browser non supporta la fotocamera. Prova Chrome, Edge o Safari.';
+    webcamMessage = 'Questo browser non supporta bene la fotocamera. Prova Chrome, Edge o Safari.';
     console.error('[Webcam]', webcamMessage);
     logToStatus(webcamMessage);
     updateCameraButton();
@@ -150,7 +176,7 @@ function setupWebcam() {
   }
 
   webcamState = 'loading';
-  webcamMessage = 'Richiesta accesso fotocamera...';
+  webcamMessage = 'Sto chiedendo il permesso per usare la fotocamera...';
 
   const constraints = {
     video: {
@@ -202,7 +228,7 @@ function tryCreateCapture(constraints, attempt) {
           if (webcamState !== 'active') {
             webcamState = 'active';
             webcamMessage = 'Fotocamera attiva.';
-            logToStatus('Fotocamera attiva. Mostra una carta per iniziare.');
+            logToStatus('Fotocamera attiva. Mostra una carta per iniziare la tua avventura.');
             updateCameraButton();
           }
         }
@@ -238,7 +264,7 @@ function tryCreateCapture(constraints, attempt) {
       console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
       webcamState = 'active';
       webcamMessage = 'Fotocamera attiva.';
-      logToStatus('Fotocamera attiva. Mostra una carta per iniziare.');
+      logToStatus('Fotocamera attiva. Mostra una carta per iniziare la tua avventura.');
       updateCameraButton();
       return;
     }
@@ -249,7 +275,7 @@ function tryCreateCapture(constraints, attempt) {
       tryFallbackDevice(attempt + 1);
     } else {
       webcamState = 'error';
-      webcamMessage = 'Impossibile attivare la fotocamera. Tocca il pulsante per riprovare.';
+      webcamMessage = 'Non riesco ad attivare la fotocamera. Tocca il pulsante per riprovare.';
       logToStatus(webcamMessage);
       updateCameraButton();
     }
@@ -276,7 +302,7 @@ function tryFallbackDevice(attempt) {
           tryCreateCapture(mobileConstraints, attempt + 1);
         } else {
           webcamState = 'error';
-          webcamMessage = 'Nessuna fotocamera trovata. Collegane una e ricarica.';
+          webcamMessage = 'Non trovo una fotocamera. Collegane una e ricarica.';
           logToStatus(webcamMessage);
           updateCameraButton();
         }
@@ -300,7 +326,7 @@ function tryFallbackDevice(attempt) {
         tryCreateCapture(constraints, attempt);
       } else {
         webcamState = 'error';
-        webcamMessage = 'Nessuna fotocamera funzionante trovata.';
+        webcamMessage = 'Non ho trovato una fotocamera funzionante.';
         logToStatus(webcamMessage);
         updateCameraButton();
       }
@@ -308,7 +334,7 @@ function tryFallbackDevice(attempt) {
     .catch(err => {
       console.error('[Webcam] enumerateDevices error:', err);
       webcamState = 'error';
-      webcamMessage = 'Errore nell\'elenco delle fotocamere.';
+      webcamMessage = 'C\'e stato un problema mentre cercavo le fotocamere.';
       logToStatus(webcamMessage);
       updateCameraButton();
     });
@@ -352,10 +378,10 @@ function draw() {
       drawRoundResult();
       break;
     case GAME_STATE.GAME_OVER:
-      drawEndScreen('GAME OVER', '#e74c3c', 'Mostra una carta per ricominciare.');
+      drawEndScreen('AVVENTURA FINITA', '#e74c3c', 'Mostra una carta per ricominciare.');
       break;
     case GAME_STATE.VICTORY:
-      drawEndScreen('VITTORIA!', '#2ecc71', 'Mostra una carta per una nuova run.');
+      drawEndScreen('BRAVISSIMO!', '#2ecc71', 'Mostra una carta per una nuova avventura.');
       break;
   }
 }
@@ -373,12 +399,12 @@ function drawIdle() {
   textAlign(CENTER, CENTER);
   textSize(42);
   textStyle(BOLD);
-  text('⚔️ Deck of Shadows ⚔️', width / 2, height / 2 - 80);
+  text('🌿 Avventure degli Elementi 🌿', width / 2, height / 2 - 80);
 
   textStyle(NORMAL);
   textSize(18);
   fill(200);
-  text('Solitario a carte con riconoscimento QR.', width / 2, height / 2 - 20);
+  text('Gioca, ascolta e scopri i segreti degli elementi.', width / 2, height / 2 - 20);
 
   if (webcamState === 'active') {
     const t = millis() / 1000;
@@ -463,7 +489,7 @@ function drawRoundResult() {
   textStyle(NORMAL);
   textSize(18);
   fill(255);
-  text(game.lastResult === 'win' ? 'Prendi i nemici.' : game.lastResult === 'lose' ? '-1 HP.' : 'Nessun vantaggio.', width / 2, height / 2 + 30);
+  text(game.lastResult === 'win' ? 'Hai superato la prova.' : game.lastResult === 'lose' ? 'Perdi un cuore, ma puoi imparare dal round.' : 'Osserva meglio gli elementi per il prossimo turno.', width / 2, height / 2 + 30);
 
   resultTimer++;
   if (resultTimer > 90 && !tts.isSpeaking()) {
@@ -481,7 +507,7 @@ function drawRoundResult() {
       resetSlots();
       checkStoryEvents();
       if (game.round !== oldRound) {
-        tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
+        tts.speak(getEnemyAnnouncement(game.currentEnemy));
       }
     }
   }
@@ -526,15 +552,22 @@ function drawHUD() {
   textAlign(LEFT, TOP);
   textSize(18);
   textStyle(BOLD);
-  text(`HP: ${'❤️'.repeat(max(game.hp, 0))}`, 20, 20);
+  text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, 20, 20);
   text(`Round: ${game.round}/${game.roundsToWin}`, 20, 48);
   if (game.enemies.length > 0) {
-    text(`Nemico: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, 20, 76);
+    text(`Carta avversaria: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, 20, 76);
   }
   textStyle(NORMAL);
 
+  const enemy = game.currentEnemy;
+  if (enemy) {
+    fill(220);
+    textSize(13);
+    text(getEnemyHint(enemy), 20, 104, 360, 48);
+  }
+
   // Indicatore modalità
-  const modeLabel = game.playMode === 'simultaneous' ? 'SIMULTANEO' : 'SEQUENZIALE';
+  const modeLabel = game.playMode === 'simultaneous' ? 'SFIDA MULTIPLA' : 'UNA CARTA ALLA VOLTA';
   fill(game.playMode === 'simultaneous' ? '#e94560' : '#3498db');
   textAlign(RIGHT, TOP);
   textSize(14);
@@ -664,7 +697,7 @@ function drawWebcamPreview() {
   textAlign(CENTER, TOP);
   textSize(11);
   if (isReady) {
-    text(qrEnabled ? 'QR attivo' : 'QR spento', px + pw / 2, py + ph + 6);
+    text(qrEnabled ? 'Carte: lettura attiva' : 'Carte: lettura in pausa', px + pw / 2, py + ph + 6);
   } else {
     text(webcamMessage, px + pw / 2, py + ph + 6);
   }
@@ -716,6 +749,33 @@ function drawLog() {
   for (let i = 0; i < visible.length; i++) {
     text('• ' + visible[i], x + 10, y + 10 + i * 20);
   }
+}
+
+function getStrongAgainstText(elementId) {
+  const element = ELEMENTS[elementId];
+  if (!element || !element.strongVs || element.strongVs.length === 0) return '';
+  return element.strongVs.map((id) => ELEMENTS[id].name).join(' e ');
+}
+
+function getWeakAgainstText(elementId) {
+  const element = ELEMENTS[elementId];
+  if (!element || !element.weakTo || element.weakTo.length === 0) return '';
+  return element.weakTo.map((id) => ELEMENTS[id].name).join(' e ');
+}
+
+function getEnemyHint(enemy) {
+  const strongChoices = getWeakAgainstText(enemy.element);
+  const elementName = ELEMENTS[enemy.element].name;
+  return `Suggerimento: contro ${enemy.name} di ${elementName}, prova ${strongChoices}.`;
+}
+
+function getCardLearningLine(card) {
+  const strongChoices = getStrongAgainstText(card.element);
+  return `${card.name}: ${ELEMENTS[card.element].name}. Utile contro ${strongChoices}.`;
+}
+
+function getEnemyAnnouncement(enemy) {
+  return `${enemy.name}, forza ${enemy.power}. ${getEnemyHint(enemy)}`;
 }
 
 /* =========================================================
@@ -886,8 +946,8 @@ function loadCardIntoSlot(templateId) {
     slotEmptyFrames = 0;
     audio.playCard();
     const card = playerSlots[0];
-    tts.speak(`${card.name}. Togli.`);
-    logToStatus(`${card.name} nello slot. Togli la carta.`);
+    tts.speak(`${getCardLearningLine(card)} Togli la carta.`);
+    logToStatus(`${card.name} nello slot. ${getCardLearningLine(card)}`);
     return;
   }
 
@@ -900,8 +960,8 @@ function loadCardIntoSlot(templateId) {
       slotsFilled++;
       audio.playCard();
       const card = playerSlots[i];
-      tts.speak(`${card.name}.`);
-      logToStatus(`${card.name} nello slot ${i + 1}.`);
+      tts.speak(getCardLearningLine(card));
+      logToStatus(`${card.name} nello slot ${i + 1}. ${getCardLearningLine(card)}`);
       return;
     }
   }
@@ -942,7 +1002,7 @@ function playSequentialSlot() {
     animProgress = 0;
 
     if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
-      tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
+      tts.speak(getEnemyAnnouncement(game.currentEnemy));
     }
   });
 }
@@ -986,7 +1046,7 @@ function playAllSlots() {
   // TTS breve con risultato
   const wins = event.results.filter(r => r === 'win').length;
   const losses = event.results.filter(r => r === 'lose').length;
-  tts.speak(`${wins} a ${losses}.`);
+  tts.speak(`Hai fatto ${wins} vittorie e ${losses} sconfitte in questo round.`);
 
   tts.onIdle(() => {
     multiSlotAnim = [];
@@ -1074,6 +1134,7 @@ function readQR() {
 
 function handleQRDetected(id) {
   audio.init();
+  tts.prime();
 
   // Gestione start/restart/mode: questi non passano dallo slot
   if (id === 'RESTART' || id === 'SEQUENZIALE' || id === 'SIMULTANEO' ||
@@ -1084,15 +1145,15 @@ function handleQRDetected(id) {
 
     if (event.action === 'start' || event.action === 'restart') {
       audio.playStart();
-      tts.speak('Via.', true);
+      tts.speak('Inizia l\'avventura.', true);
       lastPlayedCard = null;
       animProgress = 0;
       multiSlotAnim = [];
       resetSlots();
       if (game.currentEnemy) {
-        tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
+        tts.speak(getEnemyAnnouncement(game.currentEnemy));
       }
-      logToStatus(event.action === 'start' ? 'Partita iniziata.' : 'Nuova partita.');
+      logToStatus(event.action === 'start' ? 'Avventura iniziata.' : 'Nuova avventura.');
 
       if (event.action === 'start' && id && TEMPLATE_MAP[id]) {
         storyEngine.selectStory(id).then(() => {
@@ -1118,21 +1179,21 @@ function handleQRDetected(id) {
       }
       return;
     } else if (event.action === 'mode') {
-      tts.speak(event.mode === 'simultaneous' ? 'Simultaneo.' : 'Sequenziale.', true);
-      logToStatus(`Modalità ${event.mode}.`);
+      tts.speak(event.mode === 'simultaneous' ? 'Modalita sfida multipla.' : 'Modalita una carta alla volta.', true);
+      logToStatus(event.mode === 'simultaneous' ? 'Modalita\' sfida multipla.' : 'Modalita\' una carta alla volta.');
       if (game.state === GAME_STATE.PLAYING) {
         resetSlots();
         multiSlotAnim = [];
         lastPlayedCard = null;
         animProgress = 0;
         if (game.currentEnemy) {
-          const enemyNames = game.enemies.map(e => `${e.name} ${e.power}`).join(', ');
+          const enemyNames = game.enemies.map(e => `${e.name} forza ${e.power}`).join(', ');
           tts.speak(enemyNames);
-          logToStatus(`Nemici: ${enemyNames}`);
+          logToStatus(`Carte avversarie: ${enemyNames}`);
         }
       }
     } else if (event.action === 'unknown') {
-      logToStatus(`QR ${id}?`);
+      logToStatus(`Non riconosco questa carta: ${id}.`);
     }
     return;
   }

@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "description": "Mappa tra ID carta iniziale e sorgenti Twine",
+    "version": "1.0"
+  },
+  "ROSSO": {
+    "source": "stories/twine/story-rosso.twee"
+  },
+  "BLU": {
+    "source": "stories/twine/story-blu.twee"
+  },
+  "VERDE": {
+    "source": "stories/twine/story-verde.twee"
+  },
+  "GIALLO": {
+    "source": "stories/twine/story-giallo.twee"
+  },
+  "VIOLA": {
+    "source": "stories/twine/story-viola.twee"
+  },
+  "NERO": {
+    "source": "stories/twine/story-nero.twee"
+  }
+}

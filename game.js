@@ -60,9 +60,9 @@
     start(seedTemplateId = null) {
       this.reset();
       this.state = GAME_STATE.PLAYING;
-      this.log('Via.');
+      this.log('Inizia l\'avventura.');
       if (seedTemplateId && TEMPLATE_MAP[seedTemplateId]) {
-        this.log(`Seme ${seedTemplateId}.`);
+        this.log(`Carta iniziale: ${seedTemplateId}.`);
       }
       this.spawnEnemies();
       return this.state;
@@ -213,14 +213,14 @@
       if (this.lastResult === 'win') {
         if (this.round >= this.roundsToWin) {
           this.state = GAME_STATE.VICTORY;
-          this.log('Vittoria!');
+          this.log('Hai completato l\'avventura!');
           return this.state;
         }
         this.spawnEnemies();
       } else if (this.lastResult === 'lose') {
         if (this.hp <= 0) {
           this.state = GAME_STATE.GAME_OVER;
-          this.log('Game over.');
+          this.log('L\'avventura si ferma qui, ma puoi riprovare.');
           return this.state;
         }
         // Nemici restano
@@ -230,7 +230,7 @@
 
       this.resetStoryEffects();
       this.state = GAME_STATE.PLAYING;
-      this.log('Via.');
+      this.log('Si riparte.');
       return this.state;
     }
 
@@ -248,7 +248,7 @@
         if (this.state === GAME_STATE.PLAYING) {
           this.regenerateEnemiesForCurrentRound();
         }
-        this.log('Sequenziale.');
+        this.log('Modalita\' tranquilla: una carta alla volta.');
         return { action: 'mode', mode: 'sequential', state: this.state };
       }
 
@@ -258,7 +258,7 @@
         if (this.state === GAME_STATE.PLAYING) {
           this.regenerateEnemiesForCurrentRound();
         }
-        this.log('Simultaneo.');
+        this.log('Modalita\' sfida: piu\' carte nello stesso round.');
         return { action: 'mode', mode: 'simultaneous', state: this.state };
       }
 
@@ -269,7 +269,7 @@
           this.start(id);
           return { action: 'start', state: this.state };
         }
-        this.log(`QR ${id}?`);
+        this.log(`Carta non riconosciuta: ${id}.`);
         return { action: 'unknown', state: this.state };
       }
 

@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Solitario a carte con riconoscimento QR via webcam, in p5.js",
   "scripts": {
-    "test": "node test/test-cards.js && node test/test-game.js",
-    "serve": "npx serve ."
+    "build:stories": "node scripts/build-stories.js",
+    "test": "node scripts/build-stories.js && node test/test-stories-build.js && node test/test-cards.js && node test/test-game.js",
+    "serve": "node scripts/build-stories.js && npx serve ."
   },
   "keywords": ["p5js", "qrcode", "card-game", "solitaire", "deck-builder"],
   "author": "",

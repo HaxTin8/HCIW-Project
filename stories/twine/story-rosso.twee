@@ -1,0 +1,46 @@
+:: StoryTitle
+Il Fuoco del Destino
+
+:: StoryData
+{
+  "id": "fuoco-del-destino",
+  "author": "Deck of Shadows",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+Le Braci scaldano le tue mani come un piccolo falò buono. Il fuoco puo' dare luce, calore e aiuto, ma solo se impari a usarlo con attenzione e rispetto.
+
+[[Continua->nemici-modificati]]
+
+:: nemici-modificati [game-effect]
+Nel primo round il calore delle Braci tiene lontana la paura. Il tuo avversario si indebolisce, e tu impari che il fuoco e' forte quando protegge senza esagerare.
+
+[[Inizia l'avventura->inizio-avventura]]
+
+```gameEffects
+{
+  "enemyPowerModifier": -1,
+  "firstRoundOnly": true
+}
+```
+
+:: inizio-avventura
+Il cammino e' lungo. Ogni vittoria rende il tuo fuoco piu' saggio, e ogni sconfitta ti ricorda che la forza migliore e' quella guidata dalla calma.
+
+:: evento-round-3 [mid-story]
+A meta' strada arriva un vento freddo dalle montagne. I nemici diventano piu' resistenti, ma il tuo calore interiore ti regala un cuore in piu': il coraggio serve ancora di piu' quando l'aria cambia.
+
+```gameEffects
+{
+  "hpBonus": 1,
+  "enemyPowerModifier": 1,
+  "roundSpecific": 3
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Le Braci sono diventate una luce accogliente per tutti. Hai imparato che il fuoco non serve a distruggere, ma a proteggere, illuminare e radunare gli amici.
+
+:: epilogo-sconfitta [ending defeat]
+Le Braci si sono affievolite, ma una scintilla resta sempre viva. Anche il fuoco piu' attento a volte sbaglia: la prossima volta saprai scaldare il mondo con ancora piu' cura.

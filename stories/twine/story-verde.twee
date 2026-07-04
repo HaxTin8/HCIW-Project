@@ -1,0 +1,33 @@
+:: StoryTitle
+Le Radici Dimenticate
+
+:: StoryData
+{
+  "id": "radici-dimenticate",
+  "author": "Deck of Shadows",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+Il Germoglio spunta dalla terra e ti saluta piano. La natura ti affida una missione semplice e grande: osservare, prenderti cura e crescere con lei.
+
+[[Cresci->inizio-avventura]]
+
+:: inizio-avventura
+La natura non ha fretta, ma non si ferma mai. Ogni round e' una stagione nuova, e ogni stagione insegna qualcosa a chi guarda bene.
+
+:: evento-round-2 [mid-story]
+Una radice antica emerge dal terreno e ti sostiene. Capisci che chi si prende cura della natura riceve forza in cambio: la tua prossima carta sara' piu' potente.
+
+```gameEffects
+{
+  "nextCardPowerBonus": 1,
+  "roundSpecific": 2
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Hai raggiunto il cuore della foresta. Le radici che hai protetto oggi diventeranno alberi, ombra fresca e casa per molti esseri viventi.
+
+:: epilogo-sconfitta [ending defeat]
+La natura non conosce la sconfitta definitiva. Anche quando un seme dorme sotto terra, sta gia' preparando la sua prossima crescita.

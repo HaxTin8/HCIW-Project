@@ -19,12 +19,12 @@
   };
 
   const CARD_TEMPLATES = [
-    { id: 'ROSSO', name: 'Braci', element: 'FIRE', power: 3, animation: 'pulse', description: 'Fuoco base, utile contro Natura e Ombra.' },
-    { id: 'BLU', name: 'Goccia', element: 'WATER', power: 3, animation: 'waves', description: 'Acqua base, utile contro Fuoco e Tuono.' },
-    { id: 'VERDE', name: 'Germoglio', element: 'NATURE', power: 3, animation: 'leaves', description: 'Natura base, utile contro Acqua e Luce.' },
-    { id: 'GIALLO', name: 'Raggio', element: 'LIGHT', power: 3, animation: 'sunburst', description: 'Luce base, utile contro Ombra e Tuono.' },
-    { id: 'VIOLA', name: 'Eclissi', element: 'SHADOW', power: 3, animation: 'bats', description: 'Ombra base, utile contro Acqua e Natura.' },
-    { id: 'NERO', name: 'Saetta', element: 'THUNDER', power: 3, animation: 'notes', description: 'Tuono base, utile contro Natura e Ombra.' }
+    { id: 'ROSSO', name: 'Braci', element: 'FIRE', power: 3, animation: 'pulse', description: 'Il fuoco scalda e illumina. E\' forte contro Natura e Ombra, ma va usato con cura.' },
+    { id: 'BLU', name: 'Goccia', element: 'WATER', power: 3, animation: 'waves', description: 'L\'acqua aiuta la vita a crescere. E\' forte contro Fuoco e Tuono.' },
+    { id: 'VERDE', name: 'Germoglio', element: 'NATURE', power: 3, animation: 'leaves', description: 'La natura cresce con pazienza. E\' forte contro Acqua e Luce.' },
+    { id: 'GIALLO', name: 'Raggio', element: 'LIGHT', power: 3, animation: 'sunburst', description: 'La luce mostra la strada. E\' forte contro Ombra e Tuono.' },
+    { id: 'VIOLA', name: 'Eclissi', element: 'SHADOW', power: 3, animation: 'bats', description: 'L\'ombra invita a osservare con calma. E\' forte contro Acqua e Natura.' },
+    { id: 'NERO', name: 'Saetta', element: 'THUNDER', power: 3, animation: 'notes', description: 'Il tuono arriva veloce e potente. E\' forte contro Natura e Ombra.' }
   ];
 
   const TEMPLATE_MAP = Object.fromEntries(CARD_TEMPLATES.map(c => [c.id, c]));

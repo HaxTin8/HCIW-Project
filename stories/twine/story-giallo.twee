@@ -1,0 +1,33 @@
+:: StoryTitle
+La Luce Prima dell'Alba
+
+:: StoryData
+{
+  "id": "luce-prima-dellalba",
+  "author": "Deck of Shadows",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+Il Raggio illumina il sentiero davanti a te. La luce non serve solo a vincere: serve a vedere meglio, capire e aiutare chi si sente perso.
+
+[[Illumina->inizio-avventura]]
+
+:: inizio-avventura
+Anche la luce piu' brillante parte da una scintilla. Gioca con fiducia e ricorda che capire bene una situazione e' gia' un superpotere.
+
+:: evento-round-4 [mid-story]
+L'alba e' vicina. La luce ti fa notare meglio i dettagli del nemico: quando osservi con attenzione, anche la forza piu' grande sembra meno spaventosa.
+
+```gameEffects
+{
+  "halfElementBonus": true,
+  "roundSpecific": 4
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Hai portato un'alba gentile nel mondo intorno a te. Ora sai che la luce migliore e' quella che guida senza accecare.
+
+:: epilogo-sconfitta [ending defeat]
+La notte puo' sembrare lunga, ma non resta per sempre. Il tuo raggio tornera' presto a indicare la strada.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Deck of Shadows — Card Recognition Game</title>
+  <title>Deck of Shadows: Avventure degli Elementi</title>
   <link rel="stylesheet" href="style.css">
   <!-- p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -15,41 +15,49 @@
 <body>
   <div id="app">
     <header>
-      <h1>⚔️ Deck of Shadows</h1>
-      <p>Solitario a carte. Nessun click, nessuna tastiera: gioca mostrando le tue carte fisiche alla webcam. Il computer legge e risponde a voce.</p>
+      <h1>🌿 Deck of Shadows: Avventure degli Elementi</h1>
+      <p>Un gioco di carte pensato per bambini: impara gli elementi della natura giocando con carte fisiche, voce e piccole storie educative.</p>
     </header>
 
     <main>
       <div id="canvas-container"></div>
 
       <aside id="controls">
-        <h2>Stato</h2>
+        <h2>Guida di Gioco</h2>
 
         <div class="mode-toggle">
           <label>
             <input type="checkbox" id="qr-toggle" checked>
-            Riconoscimento QR attivo
+            Lettura carte attiva
           </label>
         </div>
 
         <div class="camera-section" id="camera-section">
-          <button id="camera-btn" class="camera-btn">📷 Attiva fotocamera</button>
+          <button id="camera-btn" class="camera-btn">📷 Attiva la fotocamera</button>
           <button id="switch-camera-btn" class="camera-btn">🔄 Cambia fotocamera</button>
         </div>
 
-        <div class="help">
-          <h3>Come si gioca</h3>
-          <ul>
-            <li>Le tue carte sono solo <strong>fisiche</strong>: il computer non le mostra.</li>
-            <li>Mostra una carta alla webcam per <strong>iniziare</strong> o per <strong>giocarla</strong>.</li>
-            <li>Il computer legge la carta e annuncia il risultato a voce.</li>
-            <li>Se vinci, aggiungi il nemico al tuo mazzo fisico.</li>
-            <li>Se perdi, perdi 1 HP.</li>
-            <li>Vinci dopo 8 round. A Game Over, mostra una carta per ricominciare.</li>
-          </ul>
+        <div class="audio-controls">
+          <label class="tts-toggle">
+            <input type="checkbox" id="tts-toggle" checked>
+            Voce guida attiva
+          </label>
+          <button id="tts-repeat-btn" class="secondary-btn" type="button">🔊 Ripeti ultimo messaggio</button>
         </div>
 
-        <div id="status" class="status">Mostra una carta alla webcam per iniziare.</div>
+        <details class="help" id="help-panel" open>
+          <summary>Come si gioca</summary>
+          <ul>
+            <li>Usa le tue carte <strong>fisiche</strong> davanti alla webcam.</li>
+            <li>Mostra una carta per <strong>iniziare</strong> o per <strong>giocare</strong>.</li>
+            <li>Ascolta la voce: ti aiuta a capire quale elemento e' piu' adatto.</li>
+            <li>Ogni partita insegna qualcosa su <strong>natura, equilibrio e rispetto</strong>.</li>
+            <li>Se vinci il round, conquisti il nemico. Se perdi, perdi 1 cuore.</li>
+            <li>Completa 8 round per finire la tua avventura elementale.</li>
+          </ul>
+        </details>
+
+        <div id="status" class="status">Mostra una carta alla webcam per iniziare la tua avventura.</div>
       </aside>
     </main>
   </div>

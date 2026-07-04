@@ -21,6 +21,7 @@ npm-debug.log*
 .cache/
 dist/
 build/
+stories/generated/
 
 # Environment
 .env

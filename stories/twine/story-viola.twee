@@ -1,0 +1,33 @@
+:: StoryTitle
+Le Ombre del Passato
+
+:: StoryData
+{
+  "id": "ombre-del-passato",
+  "author": "Deck of Shadows",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+L'Eclissi copre il cielo senza far paura. Nel buio impari a rallentare, ascoltare e notare cose che la fretta spesso nasconde.
+
+[[Entra nell'ombra->inizio-avventura]]
+
+:: inizio-avventura
+L'ombra non e' qualcosa di cattivo: e' il momento in cui gli occhi imparano a cercare meglio. Usa la calma del buio per scegliere con intelligenza.
+
+:: evento-round-5 [mid-story]
+Le ombre ti avvolgono come un mantello tranquillo. Per un round resti protetto, e impari che a volte fermarsi e nascondersi un poco e' una scelta saggia.
+
+```gameEffects
+{
+  "ignoreWeakness": true,
+  "roundSpecific": 5
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Hai attraversato il buio senza smarrirti. Adesso sai che l'ombra puo' insegnare attenzione, pazienza e ascolto.
+
+:: epilogo-sconfitta [ending defeat]
+L'ombra ti ha rallentato solo per un momento. La prossima volta entrerai nel buio con piu' calma e ne uscirai ancora piu' attento.

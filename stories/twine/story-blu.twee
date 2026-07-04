@@ -1,0 +1,33 @@
+:: StoryTitle
+Le Acque del Tempo
+
+:: StoryData
+{
+  "id": "acque-del-tempo",
+  "author": "Deck of Shadows",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+La Goccia cade nelle tue mani e ti ricorda che l'acqua e' paziente. Scorre piano, aggira gli ostacoli e aiuta ogni pianta a vivere.
+
+[[Inizia->inizio-avventura]]
+
+:: inizio-avventura
+L'acqua non urla, ma trova sempre una strada. Gioca con pazienza e scoprirai che la dolcezza puo' essere fortissima.
+
+:: evento-round-3 [mid-story]
+Una piccola marea attraversa il campo. I nemici si confondono e tu impari una lezione preziosa: a volte restare in equilibrio vale quanto vincere.
+
+```gameEffects
+{
+  "drawCountsAsWin": true,
+  "roundSpecific": 3
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Hai seguito tutte le correnti con calma e attenzione. Ora sai che l'acqua insegna ad ascoltare, ad aspettare e a dare vita.
+
+:: epilogo-sconfitta [ending defeat]
+Anche i fiumi incontrano rocce e cascate. Ma l'acqua non si ferma mai: tornerai a scorrere con piu' pazienza e piu' fiducia.

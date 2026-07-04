@@ -7,10 +7,65 @@ Solitario a carte in **p5.js** con riconoscimento **QR code** tramite webcam.
 
 La webcam richiede un server HTTP locale.
 
+## Storie Twine
+
+Le storie ora hanno una distinzione chiara tra:
+
+- `stories/twine/`: sorgenti versionati in formato **Twee**. Questa e' la fonte di verita' per chi scrive la narrativa.
+- `stories/generated/`: JSON runtime generati automaticamente e non versionati.
+
+Il gioco legge solo i file generati, ma chi sviluppa modifica i file `.twee`.
+
+### Flusso di lavoro
+
+1. Modifica una storia in `stories/twine/*.twee`.
+2. Rigenera i JSON con:
+
+```bash
+npm run build:stories
+```
+
+3. Avvia il progetto con:
+
+```bash
+npm run serve
+```
+
+`npm run serve` esegue gia' la build delle storie prima di servire i file.
+
+### Struttura di una storia `.twee`
+
+Ogni file contiene almeno:
+
+- `:: StoryTitle` con il titolo leggibile.
+- `:: StoryData` con metadata JSON (`id`, `author`, `startPassage`).
+- i passaggi narrativi normali, con link Twine come `[[Continua->prossimo-passaggio]]`.
+
+Per gli effetti di gioco puoi aggiungere un blocco:
+
+```text
+<blocco gameEffects>
+{
+  "roundSpecific": 3,
+  "drawCountsAsWin": true
+}
+</blocco gameEffects>
+```
+
+Nel file reale il blocco usa fence Markdown, ad esempio:
+
+    ```gameEffects
+    {
+      "roundSpecific": 3,
+      "drawCountsAsWin": true
+    }
+    ```
+
+Durante il deploy Docker, la build delle storie viene eseguita automaticamente dentro l'immagine. In repository restano quindi come sorgente autorevole i file Twine/Twee.
+
 ### Con Node.js
 
 ```bash
-cd card-recognition-app
 npm run serve
 # Apri l'indirizzo mostrato (di solito http://localhost:3000)
 ```
@@ -20,7 +75,6 @@ npm run serve
 Se hai Docker e Docker Compose installati:
 
 ```bash
-cd card-recognition-app
 docker compose up --build
 # Apri http://localhost:3000
 ```
@@ -94,7 +148,7 @@ Durante il combattimento:
 ## Struttura
 
 ```
-card-recognition-app/
+/
 ├── index.html          # UI di gioco
 ├── print.html          # Generatore carte/QR stampabili
 ├── style.css           # Stili
@@ -103,9 +157,15 @@ card-recognition-app/
 ├── audio.js            # Suoni procedurali Web Audio API
 ├── tts.js              # Sintesi vocale (Text-to-Speech)
 ├── sketch.js           # Rendering p5.js + webcam + animazioni
+├── scripts/
+│   └── build-stories.js
+├── stories/
+│   ├── twine/          # Sorgenti Twee versionati
+│   └── generated/      # JSON runtime generati
 ├── test/
 │   ├── test-cards.js
-│   └── test-game.js
+│   ├── test-game.js
+│   └── test-stories-build.js
 ├── package.json
 ├── Dockerfile
 ├── docker-compose.yml
