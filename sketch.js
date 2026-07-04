@@ -31,6 +31,7 @@ var isCompact = false;
 // Element and heart assets
 var elementImages = {};
 var heartImage;
+var webcamFrameImg;
 
 // Illustrazione hero (schermata idle): livelli composti a sinistra
 // del canvas, che appaiono dal basso con dissolvenza in sequenza.
@@ -78,6 +79,7 @@ function preload() {
   elementImages.SHADOW = loadImage('assets/elements/shadow.png');
   elementImages.THUNDER = loadImage('assets/elements/thunder.png');
   heartImage = loadImage('assets/elements/heart-life.png');
+  webcamFrameImg = loadImage('assets/webcam-frame.png');
 }
 
 // Rende trasparente lo sfondo uniforme dell'immagine (chroma-key sul
@@ -143,7 +145,7 @@ function setup() {
   statusEl = select('#status');
   game = new Game();
 
-  textFont('Space Grotesk');
+  textFont('Beachday');
 
   setupWebcam();
   logToStatus('Mostra una carta alla webcam per iniziare.');
@@ -173,7 +175,7 @@ function setupWebcam() {
   }
 
   webcamState = 'loading';
-  webcamMessage = 'Richiesta accesso webcam...';
+  webcamMessage = 'Richiesto accesso webcam...';
 
   // Constraints di base: nessun facingMode (su Windows spesso problematico),
   // risoluzione standard e framerate stabile.
@@ -290,7 +292,7 @@ function tryFallbackDevice(attempt) {
 
 function draw() {
   drawCanvasBackground();
-  textFont('Space Grotesk');
+  textFont('Beachday');
   waitingForTTS = tts.isSpeaking();
 
   if (screenFlash > 0) {
@@ -345,21 +347,21 @@ function drawIdle() {
     textFont(magicFont);
     textSize(36 * scaleFactor);
     text('Specula Elementae', width / 2, sy(30));
-    textFont('Space Grotesk');
+    textFont('Beachday');
 
     textSize(14 * scaleFactor);
     fill('#5a4a34');
-    textFont('Hanken Grotesk');
+    textFont('Nunito');
     text('Solitario a carte con riconoscimento QR.', tx, sy(80), tw);
 
     if (webcamState === 'active') {
       const t = millis() / 1000;
       const pulse = sin(t * 3) * sx(4);
-      fill('#b0842f');
+      fill('#498AE2');
       textSize(14 * scaleFactor);
       text('📷 Mostra una carta alla webcam per iniziare', tx, sy(130) + pulse, tw);
     }
-    textFont('Space Grotesk');
+    textFont('Beachday');
 
     drawQrToggleButton();
 
@@ -367,9 +369,9 @@ function drawIdle() {
     fill('#2b2318');
     textAlign(CENTER, TOP);
     textSize(11 * scaleFactor);
-    textFont('Hanken Grotesk');
+    textFont('Nunito');
     text(statusMessage, tx, height - sy(55), tw);
-    textFont('Space Grotesk');
+    textFont('Beachday');
   } else {
     // Layout standard a 3 colonne per desktop
     const tx = sx(460);
@@ -380,21 +382,21 @@ function drawIdle() {
     textFont(magicFont);
     textSize(40 * scaleFactor);
     text('Specula Elementae', tx, sy(120), tw);
-    textFont('Space Grotesk');
+    textFont('Beachday');
 
     textSize(15 * scaleFactor);
     fill('#5a4a34');
-    textFont('Hanken Grotesk');
+    textFont('Nunito');
     text('Solitario a carte con riconoscimento QR.', tx, sy(235), tw);
 
     if (webcamState === 'active') {
       const t = millis() / 1000;
       const pulse = sin(t * 3) * sx(4);
-      fill('#b0842f');
+      fill('#498AE2');
       textSize(16 * scaleFactor);
       text('📷 Mostra una carta alla webcam per iniziare', tx, sy(300) + pulse, tw);
     }
-    textFont('Space Grotesk');
+    textFont('Beachday');
 
     drawQrToggleButton();
   }
@@ -453,9 +455,9 @@ function drawPlaying() {
     fill('#2b2318');
     textAlign(CENTER, CENTER);
     textSize(13 * scaleFactor);
-    textFont('Hanken Grotesk');
+    textFont('Nunito');
     text(statusMessage, sx(20), sy(300), width - sx(40));
-    textFont('Space Grotesk');
+    textFont('Beachday');
   }
 
   if (!waitingForTTS && qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
@@ -516,11 +518,11 @@ function drawRoundResult() {
   }
 
   textStyle(NORMAL);
-  textFont('Hanken Grotesk');
+  textFont('Nunito');
   textSize(18 * scaleFactor);
   fill('#e9dcc0');
   text(game.lastResult === 'win' ? 'Prendi i nemici.' : game.lastResult === 'lose' ? '-1 HP.' : 'Nessun vantaggio.', width / 2, height / 2 + sy(30));
-  textFont('Space Grotesk');
+  textFont('Beachday');
 
   resultTimer++;
   if (resultTimer > 90 && !tts.isSpeaking()) {
@@ -555,12 +557,12 @@ function drawEndScreen(title, color, subtitle) {
   text(title, width / 2, height / 2 - sy(40));
 
   textStyle(NORMAL);
-  textFont('Hanken Grotesk');
+  textFont('Nunito');
   textSize(18 * scaleFactor);
   fill('#5a4a34');
   const finalSubtitle = webcamState === 'active' ? subtitle : webcamMessage;
   text(finalSubtitle, width / 2, height / 2 + sy(30));
-  textFont('Space Grotesk');
+  textFont('Beachday');
 
   if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
     readQR();
@@ -778,9 +780,9 @@ function getQrToggleButtonBounds() {
   if (game.state !== GAME_STATE.IDLE) return null;
   const w = sx(150), h = sy(44);
   if (isCompact) {
-    return { x: width / 2 - w / 2, y: sy(175), w: w, h: h };
+    return { x: width / 2 - w / 2, y: sy(200), w: w, h: h };
   } else {
-    return { x: sx(585) - w / 2, y: sy(388), w: w, h: h };
+    return { x: sx(585) - w / 2, y: sy(420), w: w, h: h };
   }
 }
 
@@ -798,11 +800,11 @@ function drawQrToggleButton() {
   const ctx = drawingContext;
   const grad = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
   if (qrEnabled) {
-    grad.addColorStop(0, hovering ? '#F3C562' : '#ECBA4E');
-    grad.addColorStop(1, hovering ? '#DCA42C' : '#CA9424');
+    grad.addColorStop(0, hovering ? '#5B99EE' : '#498AE2');
+    grad.addColorStop(1, hovering ? '#3F7BCB' : '#3570B8');
   } else {
-    grad.addColorStop(0, hovering ? '#a4a29b' : '#8a7a58');
-    grad.addColorStop(1, hovering ? '#6d6a60' : '#5a4a34');
+    grad.addColorStop(0, hovering ? '#b7c4d6' : '#a7b6cb');
+    grad.addColorStop(1, hovering ? '#93a3ba' : '#8496ae');
   }
 
   ctx.save();
@@ -862,17 +864,59 @@ function drawWebcamPreview() {
 
   const isReady = webcamState === 'active' && video && video.width > 0;
 
-  fill('#5a4a34');
-  noStroke();
-  textFont('Hanken Grotesk');
-  textAlign(CENTER, TOP);
-  textSize(11 * scaleFactor);
-  if (isReady) {
-    text(qrEnabled ? 'QR attivo' : 'QR spento', px + pw / 2, py + ph + sy(6));
+  // Disegna la cornice di rami sopra la webcam (con un bagliore magico basato sullo stato)
+  if (webcamFrameImg && webcamFrameImg.width > 0) {
+    push();
+    if (isReady) {
+      drawingContext.shadowColor = qrEnabled ? '#97B481' : '#DD4B50';
+    } else {
+      drawingContext.shadowColor = '#ECBA4E';
+    }
+    drawingContext.shadowBlur = sx(10);
+    // Disegna la cornice leggermente più grande (offset di 4px) per coprire i bordi della webcam
+    image(webcamFrameImg, px - sx(4), py - sx(4), pw + sx(8), ph + sx(8));
+    pop();
   } else {
+    // Fallback: bordo classico se l'immagine non è caricata
+    stroke(isReady ? (qrEnabled ? '#97B481' : '#DD4B50') : '#ECBA4E');
+    strokeWeight(sx(2));
+    noFill();
+    rect(px, py, pw, ph, sx(8));
+  }
+
+  if (isReady) {
+    const labelText = qrEnabled ? 'QR ATTIVO' : 'QR SPENTO';
+    const labelColor = qrEnabled ? '#97B481' : '#DD4B50';
+
+    textFont('Nunito');
+    textSize(11 * scaleFactor);
+    textStyle(BOLD);
+
+    const txtW = textWidth(labelText);
+    const labelW = txtW + sx(20);
+    const labelH = sy(22);
+    const labelX = px + pw / 2 - labelW / 2;
+    const labelY = py + ph + sy(6);
+
+    // Disegna la label arrotondata colorata
+    noStroke();
+    fill(labelColor);
+    rect(labelX, labelY, labelW, labelH, sx(11));
+
+    // Scrive il testo in bianco centrato
+    fill('#ffffff');
+    textAlign(CENTER, CENTER);
+    text(labelText, px + pw / 2, labelY + labelH / 2 + sy(1));
+    textStyle(NORMAL);
+  } else {
+    fill('#5a4a34');
+    noStroke();
+    textFont('Nunito');
+    textAlign(CENTER, TOP);
+    textSize(11 * scaleFactor);
     text(webcamMessage, px + pw / 2, py + ph + sy(6));
   }
-  textFont('Space Grotesk');
+  textFont('Beachday');
 }
 
 function drawWebcamOverlay() {
@@ -911,7 +955,7 @@ function drawWebcamOverlay() {
   const tw = alertW - sx(70);
   textAlign(LEFT, CENTER);
 
-  textFont('Space Grotesk');
+  textFont('Beachday');
   textStyle(BOLD);
   fill('#2b2318');
   textSize(13 * scaleFactor);
@@ -919,7 +963,7 @@ function drawWebcamOverlay() {
   text('Webcam', tx, titleY);
   textStyle(NORMAL);
 
-  textFont('Hanken Grotesk');
+  textFont('Nunito');
   fill('#5a4a34');
   textSize(12 * scaleFactor);
   const msgY = hint ? y + sy(40) : icoY + sy(9);
@@ -930,7 +974,7 @@ function drawWebcamOverlay() {
     textSize(11 * scaleFactor);
     text(hint, tx, y + sy(62), tw);
   }
-  textFont('Space Grotesk');
+  textFont('Beachday');
 }
 
 // Card "come si gioca" + stato corrente, disegnata sul canvas sempre
@@ -938,80 +982,82 @@ function drawWebcamOverlay() {
 function drawHelpPanel() {
   if (isCompact) return; // Salta il pannello d'aiuto esteso su mobile per ottimizzare lo spazio
 
-  const pw = sx(160);
+  const pw = sx(180);
   const px = width - pw - sx(20);
-  const py = sy(20) + sy(120) + sy(16);
-  const ph = sy(340);
-  const innerW = pw - sx(20);
-
-  noFill();
-  strokeWeight(sx(1));
-  fill(244, 237, 219, 235);
-  stroke('#cdbb90');
-  rect(px, py, pw, ph, sx(10));
+  const ph = sy(360);
+  const py = height - ph - sy(20);
+  const padX = sx(14);
+  const innerW = pw - padX * 2;
 
   noStroke();
-  textFont('Space Grotesk');
+  fill('#ffffff');
+  stroke('#dce6f2');
+  strokeWeight(sx(1));
+  rect(px, py, pw, ph, sx(12));
+
+  noStroke();
+  textFont('Beachday');
   textStyle(BOLD);
-  fill('#b0842f');
+  fill('#498AE2');
   textAlign(LEFT, TOP);
-  textSize(10 * scaleFactor);
-  text('COME SI GIOCA', px + sx(10), py + sy(10));
+  textSize(11 * scaleFactor);
+  text('COME SI GIOCA', px + padX, py + sy(12));
   textStyle(NORMAL);
 
   const lines = [
-    'Le tue carte sono solo fisiche: il computer non le mostra.',
-    'Mostra una carta alla webcam per iniziare o per giocarla.',
-    'Il computer legge la carta e annuncia il risultato a voce.',
-    'Se vinci, aggiungi il nemico al tuo mazzo fisico.',
-    'Se perdi, perdi 1 HP.',
-    'Vinci dopo 8 round. A Game Over, mostra una carta per ricominciare.'
+    'Le tue carte sono fisiche.',
+    'Mostrale alla webcam per giocarle.',
+    'Il computer legge e parla.',
+    'Se vinci, prendi il nemico.',
+    'Se perdi, -1 HP.',
+    'Vinci dopo 8 round.'
   ];
 
-  textFont('Hanken Grotesk');
-  fill('#5a4a34');
-  textSize(10 * scaleFactor);
-  textLeading(13 * scaleFactor);
-  let cursorY = py + sy(26);
+  textFont('Nunito');
+  fill('#2b2318');
+  textSize(11 * scaleFactor);
+  textLeading(15 * scaleFactor);
+  let cursorY = py + sy(32);
   const lineBoxH = sy(30);
   for (const line of lines) {
-    text('• ' + line, px + sx(10), cursorY, innerW, lineBoxH);
+    text('•  ' + line, px + padX, cursorY, innerW, lineBoxH);
     cursorY += lineBoxH;
   }
 
-  cursorY += sy(4);
-  stroke(205, 187, 144, 180);
+  cursorY += sy(6);
+  stroke('#dce6f2');
   strokeWeight(sx(1));
-  line(px + sx(10), cursorY, px + pw - sx(10), cursorY);
-  cursorY += sy(10);
+  line(px + padX, cursorY, px + pw - padX, cursorY);
+  cursorY += sy(12);
 
   noStroke();
-  textFont('Space Grotesk');
+  textFont('Beachday');
   textStyle(BOLD);
-  fill('#b0842f');
-  textSize(10 * scaleFactor);
-  text('STATO', px + sx(10), cursorY);
+  fill('#498AE2');
+  textSize(11 * scaleFactor);
+  text('STATO', px + padX, cursorY);
   textStyle(NORMAL);
-  cursorY += sy(16);
+  cursorY += sy(18);
 
-  textFont('Hanken Grotesk');
-  fill('#2b2318');
-  textSize(10 * scaleFactor);
-  text(statusMessage, px + sx(10), cursorY, innerW, py + ph - cursorY - sy(10));
+  textFont('Nunito');
+  fill('#5a4a34');
+  textSize(11 * scaleFactor);
+  textLeading(15 * scaleFactor);
+  text(statusMessage, px + padX, cursorY, innerW, py + ph - cursorY - sy(12));
 
-  textFont('Space Grotesk');
+  textFont('Beachday');
 }
 
 function drawLog() {
   if (isCompact) {
     // Draw a single clean line at the bottom center of the canvas on mobile
     fill('#5a4a34');
-    textFont('Hanken Grotesk');
+    textFont('Nunito');
     textAlign(CENTER, BOTTOM);
     textSize(11 * scaleFactor);
     const lastLog = game.logs[game.logs.length - 1] || "";
     text(lastLog ? '• ' + lastLog : "", width / 2, height - sy(10));
-    textFont('Space Grotesk');
+    textFont('Beachday');
     return;
   }
 
@@ -1025,14 +1071,14 @@ function drawLog() {
   rect(x, y, w, h, sx(8));
 
   fill('#5a4a34');
-  textFont('Hanken Grotesk');
+  textFont('Nunito');
   textAlign(LEFT, TOP);
   textSize(12 * scaleFactor);
   const visible = game.logs.slice(-5);
   for (let i = 0; i < visible.length; i++) {
     text('• ' + visible[i], x + sx(10), y + sy(10) + i * sy(20));
   }
-  textFont('Space Grotesk');
+  textFont('Beachday');
 }
 
 /* =========================================================
