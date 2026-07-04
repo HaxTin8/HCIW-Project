@@ -1,9 +1,26 @@
-version: '3.8'
-
 services:
   deck-of-shadows:
     build: .
     container_name: deck-of-shadows
     ports:
-      - "80"
+      - "80:80"
     restart: unless-stopped
+    depends_on:
+      - piper-tts
+
+  piper-tts:
+    build:
+      context: .
+      dockerfile: docker/piper/Dockerfile
+    container_name: deck-of-shadows-piper
+    restart: unless-stopped
+    environment:
+      PIPER_DATA_DIR: /data/voices
+      PIPER_PORT: 5000
+      PIPER_VOICES: ${PIPER_VOICES:-en_US-lessac-medium}
+      PIPER_DEFAULT_VOICE: ${PIPER_DEFAULT_VOICE:-en_US-lessac-medium}
+    volumes:
+      - piper_voices:/data/voices
+
+volumes:
+  piper_voices:

@@ -102,6 +102,60 @@ main {
   gap: 10px;
 }
 
+.voice-selects {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.voice-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #ddd;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.voice-field span {
+  color: #cfd8ff;
+}
+
+.voice-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(10, 14, 30, 0.9);
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.provider-status {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(10, 14, 30, 0.7);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #cfd8ff;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.provider-status[data-provider="piper"] {
+  border-color: rgba(46, 204, 113, 0.45);
+  color: #d8ffe7;
+}
+
+.provider-status[data-provider="browser"] {
+  border-color: rgba(52, 152, 219, 0.45);
+  color: #d8ecff;
+}
+
+.provider-status[data-provider="none"] {
+  border-color: rgba(233, 69, 96, 0.45);
+  color: #ffd7df;
+}
+
 .tts-toggle {
   cursor: pointer;
   display: flex;
@@ -271,6 +325,15 @@ main {
   .audio-controls {
     padding: 12px;
     gap: 8px;
+  }
+
+  .voice-field {
+    font-size: 0.88rem;
+  }
+
+  .voice-field select {
+    min-height: 44px;
+    font-size: 0.9rem;
   }
 
   .secondary-btn {

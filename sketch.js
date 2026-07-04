@@ -43,6 +43,10 @@ var cameraBtn;
 var switchCameraBtn;
 var ttsToggle;
 var ttsRepeatBtn;
+var ttsProviderSelect;
+var ttsProviderStatus;
+var ttsGameplayVoiceSelect;
+var ttsStoryVoiceSelect;
 var helpPanel;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
@@ -59,6 +63,46 @@ function getCanvasSize() {
   }
 
   return { width: cw, height: cw * (600 / 900) };
+}
+
+function populateProviderSelect(selectEl, providerState) {
+  if (!selectEl || !selectEl.elt || !providerState) return;
+
+  const current = providerState.preferredProvider || 'auto';
+  const options = [
+    `<option value="auto"${current === 'auto' ? ' selected' : ''}>Automatico</option>`,
+    `<option value="piper"${current === 'piper' ? ' selected' : ''}>Piper server</option>`,
+    `<option value="browser"${current === 'browser' ? ' selected' : ''}>Browser</option>`
+  ];
+
+  selectEl.html(options.join(''));
+}
+
+function updateProviderStatus(providerState) {
+  if (!ttsProviderStatus || !ttsProviderStatus.elt || !providerState) return;
+  ttsProviderStatus.html(providerState.message || 'Sintesi vocale non disponibile.');
+  ttsProviderStatus.elt.dataset.provider = providerState.activeProvider || 'none';
+}
+
+function populateVoiceSelect(selectEl, catalog, channel) {
+  if (!selectEl || !selectEl.elt) return;
+
+  const provider = catalog && catalog.activeProvider ? catalog.activeProvider : 'browser';
+  const voices = catalog && Array.isArray(catalog.voices) ? catalog.voices : [];
+  const config = tts.getChannelConfig(channel);
+  const currentVoiceURI = config
+    ? (provider === 'piper' ? config.piperVoice : config.browserVoiceURI)
+    : '';
+  const autoLabel = provider === 'piper' ? 'Automatica (server)' : 'Automatica (browser)';
+  const options = [`<option value="">${autoLabel}</option>`];
+
+  for (const voice of voices) {
+    const label = `${voice.name} (${voice.lang || 'n/a'})`;
+    const selected = voice.voiceURI === currentVoiceURI ? ' selected' : '';
+    options.push(`<option value="${voice.voiceURI}"${selected}>${label}</option>`);
+  }
+
+  selectEl.html(options.join(''));
 }
 
 function setup() {
@@ -87,6 +131,10 @@ function setup() {
   switchCameraBtn = select('#switch-camera-btn');
   ttsToggle = select('#tts-toggle');
   ttsRepeatBtn = select('#tts-repeat-btn');
+  ttsProviderSelect = select('#tts-provider');
+  ttsProviderStatus = select('#tts-provider-status');
+  ttsGameplayVoiceSelect = select('#tts-gameplay-voice');
+  ttsStoryVoiceSelect = select('#tts-story-voice');
   helpPanel = select('#help-panel');
 
   if (cameraBtn) {
@@ -115,6 +163,41 @@ function setup() {
       tts.repeatLast();
     });
   }
+
+  if (ttsProviderSelect) {
+    ttsProviderSelect.changed(async () => {
+      tts.prime();
+      await tts.setPreferredProvider(ttsProviderSelect.value());
+      const providerState = tts.getProviderState();
+      logToStatus(providerState.message);
+    });
+  }
+
+  if (ttsGameplayVoiceSelect) {
+    ttsGameplayVoiceSelect.changed(() => {
+      tts.setChannelVoice('gameplay', ttsGameplayVoiceSelect.value(), tts.getVoiceCatalog().activeProvider);
+      logToStatus('Voce guida aggiornata.');
+    });
+  }
+
+  if (ttsStoryVoiceSelect) {
+    ttsStoryVoiceSelect.changed(() => {
+      tts.setChannelVoice('story', ttsStoryVoiceSelect.value(), tts.getVoiceCatalog().activeProvider);
+      logToStatus('Voce narratore aggiornata.');
+    });
+  }
+
+  tts.onVoicesChanged((catalog) => {
+    populateProviderSelect(ttsProviderSelect, catalog.providerState);
+    updateProviderStatus(catalog.providerState);
+    populateVoiceSelect(ttsGameplayVoiceSelect, catalog, 'gameplay');
+    populateVoiceSelect(ttsStoryVoiceSelect, catalog, 'story');
+  });
+
+  tts.onProviderChanged((providerState) => {
+    populateProviderSelect(ttsProviderSelect, providerState);
+    updateProviderStatus(providerState);
+  });
 
   if (!isMobile()) {
     setupWebcam();
@@ -519,7 +602,7 @@ function drawRoundResult() {
       resetSlots();
       checkStoryEvents();
       if (game.round !== oldRound) {
-        tts.speak(getEnemyAnnouncement(game.currentEnemy));
+        tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
       }
     }
   }
@@ -1059,7 +1142,7 @@ function loadCardIntoSlot(templateId) {
     slotEmptyFrames = 0;
     audio.playCard();
     const card = playerSlots[0];
-    tts.speak(`${getCardLearningLine(card)} Togli la carta.`);
+    tts.speak(`${getCardLearningLine(card)} Togli la carta.`, { channel: 'gameplay' });
     logToStatus(`${card.name} nello slot. ${getCardLearningLine(card)}`);
     return;
   }
@@ -1073,7 +1156,7 @@ function loadCardIntoSlot(templateId) {
       slotsFilled++;
       audio.playCard();
       const card = playerSlots[i];
-      tts.speak(getCardLearningLine(card));
+      tts.speak(getCardLearningLine(card), { channel: 'gameplay' });
       logToStatus(`${card.name} nello slot ${i + 1}. ${getCardLearningLine(card)}`);
       return;
     }
@@ -1115,7 +1198,7 @@ function playSequentialSlot() {
     animProgress = 0;
 
     if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
-      tts.speak(getEnemyAnnouncement(game.currentEnemy));
+      tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
     }
   });
 }
@@ -1159,7 +1242,7 @@ function playAllSlots() {
   // TTS breve con risultato
   const wins = event.results.filter(r => r === 'win').length;
   const losses = event.results.filter(r => r === 'lose').length;
-  tts.speak(`Hai fatto ${wins} vittorie e ${losses} sconfitte in questo round.`);
+  tts.speak(`Hai fatto ${wins} vittorie e ${losses} sconfitte in questo round.`, { channel: 'gameplay' });
 
   tts.onIdle(() => {
     multiSlotAnim = [];
@@ -1259,20 +1342,20 @@ function handleQRDetected(id) {
 
     if (event.action === 'start' || event.action === 'restart') {
       audio.playStart();
-      tts.speak('Inizia l\'avventura.', true);
+      tts.speak('Inizia l\'avventura.', { priority: true, channel: 'gameplay' });
       lastPlayedCard = null;
       animProgress = 0;
       multiSlotAnim = [];
       resetSlots();
       if (game.currentEnemy) {
-        tts.speak(getEnemyAnnouncement(game.currentEnemy));
+        tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
       }
       logToStatus(event.action === 'start' ? 'Avventura iniziata.' : 'Nuova avventura.');
 
       if (event.action === 'start' && id && TEMPLATE_MAP[id]) {
         storyEngine.selectStory(id).then(() => {
           const text = storyEngine.getOpeningText();
-          if (text) tts.speak(text);
+          if (text) tts.speak(text, { channel: 'story' });
           if (storyEngine.hasNext()) {
             storyEngine.advance();
             const effectsLog = storyEngine.applyGameEffects(game);
@@ -1293,7 +1376,7 @@ function handleQRDetected(id) {
       }
       return;
     } else if (event.action === 'mode') {
-      tts.speak(event.mode === 'simultaneous' ? 'Modalita sfida multipla.' : 'Modalita una carta alla volta.', true);
+      tts.speak(event.mode === 'simultaneous' ? 'Modalita sfida multipla.' : 'Modalita una carta alla volta.', { priority: true, channel: 'gameplay' });
       logToStatus(event.mode === 'simultaneous' ? 'Modalita\' sfida multipla.' : 'Modalita\' una carta alla volta.');
       if (game.state === GAME_STATE.PLAYING) {
         resetSlots();
@@ -1302,7 +1385,7 @@ function handleQRDetected(id) {
         animProgress = 0;
         if (game.currentEnemy) {
           const enemyNames = game.enemies.map(e => `${e.name} forza ${e.power}`).join(', ');
-          tts.speak(enemyNames);
+          tts.speak(enemyNames, { channel: 'gameplay' });
           logToStatus(`Carte avversarie: ${enemyNames}`);
         }
       }
@@ -1362,7 +1445,7 @@ function checkStoryEvents() {
   const eventPassage = storyEngine.getEventForRound(game.round);
   if (eventPassage) {
     storyEngine.goToPassage(eventPassage.name);
-    if (eventPassage.text) tts.speak(eventPassage.text);
+    if (eventPassage.text) tts.speak(eventPassage.text, { channel: 'story' });
     const effectsLog = storyEngine.applyGameEffects(game);
     if (effectsLog && effectsLog.length) {
       effectsLog.forEach(msg => {
@@ -1380,6 +1463,6 @@ function speakStoryEnding(victory) {
   if (!storyEngine || !storyEngine.hasStory()) return;
   const passage = storyEngine.getEnding(victory);
   if (passage && passage.text) {
-    tts.speak(passage.text);
+    tts.speak(passage.text, { channel: 'story' });
   }
 }

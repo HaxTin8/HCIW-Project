@@ -63,6 +63,60 @@ Nel file reale il blocco usa fence Markdown, ad esempio:
 
 Durante il deploy Docker, la build delle storie viene eseguita automaticamente dentro l'immagine. In repository restano quindi come sorgente autorevole i file Twine/Twee.
 
+## TTS con Piper
+
+Piper viene eseguito come **servizio separato nello stesso `docker-compose`**.
+
+Questo approccio e' preferibile rispetto a metterlo dentro il container nginx dell'app, perche':
+
+- il sito resta un servizio statico semplice da servire
+- il TTS ha il suo ciclo di vita, cache e log
+- Dokploy puo' riavviare o aggiornare Piper senza toccare il frontend
+
+L'app pubblica espone Piper tramite reverse proxy su:
+
+```text
+/api/tts/
+```
+
+Il container Piper usa l'HTTP server ufficiale del progetto.
+
+Nel frontend puoi scegliere:
+
+- `Automatico`: prova prima Piper, poi ricade sulle voci del browser
+- `Piper server`: forza il backend TTS, con fallback browser se il servizio non risponde
+- `Browser`: usa direttamente la Web Speech API locale
+
+Le voci di `gameplay` e `story` restano separate anche con Piper.
+
+### Configurazione voci
+
+Nel `docker-compose.yml` puoi impostare:
+
+```env
+PIPER_VOICES=it_IT-riccardo-x_low,it_IT-paola-medium
+PIPER_DEFAULT_VOICE=it_IT-paola-medium
+```
+
+Per il primo bootstrap puoi anche lasciare la voce di default `en_US-lessac-medium`, che e' l'esempio documentato ufficialmente da Piper.
+
+Se vuoi che il gioco parta subito in italiano, conviene impostare almeno una o due voci `it_IT`.
+
+### Endpoint utili
+
+- `GET /api/tts/voices`
+- `GET /api/tts/info`
+- `POST /api/tts/synthesize`
+
+Esempio:
+
+```bash
+curl -X POST http://localhost/api/tts/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Ciao! Questa e una prova."}' \
+  --output prova.wav
+```
+
 ### Con Node.js
 
 ```bash
@@ -76,7 +130,7 @@ Se hai Docker e Docker Compose installati:
 
 ```bash
 docker compose up --build
-# Apri http://localhost:3000
+# Apri http://localhost
 ```
 
 Per fermare:
@@ -173,6 +227,26 @@ Durante il combattimento:
 ```
 
 ## Personalizzare
+
+### Deploy con Dokploy
+
+Per Dokploy non serve una seconda app separata: basta fare deploy di questo stesso repository con il suo `docker-compose.yml`.
+
+Controlli consigliati:
+
+1. Assicurati che Dokploy usi `docker compose up --build` sul repository aggiornato.
+2. Imposta, se vuoi l'italiano subito disponibile:
+
+```env
+PIPER_VOICES=it_IT-riccardo-x_low,it_IT-paola-medium
+PIPER_DEFAULT_VOICE=it_IT-paola-medium
+```
+
+3. Verifica che il servizio esponga la porta HTTP dell'app, cioe' `80`.
+4. Al primo avvio Piper scarichera' i modelli vocali: il bootstrap iniziale puo' durare un po' piu' del solito.
+5. Il server deve poter uscire su Internet al primo avvio del container `piper-tts`, cosi' i modelli vocali possono essere scaricati.
+
+Se non imposti variabili, il deploy parte comunque, ma con la voce di esempio `en_US-lessac-medium`.
 
 - `cards.js`: modifica elementi, relazioni, template delle carte.
 - `game.js`: regole di gioco, HP iniziali, round per vincere, dimensione mano.

@@ -42,6 +42,25 @@
             <input type="checkbox" id="tts-toggle" checked>
             Voce guida attiva
           </label>
+          <label class="voice-field" for="tts-provider">
+            <span>Motore voce</span>
+            <select id="tts-provider">
+              <option value="auto">Automatico</option>
+              <option value="piper">Piper server</option>
+              <option value="browser">Browser</option>
+            </select>
+          </label>
+          <div id="tts-provider-status" class="provider-status">Controllo del motore voce in corso...</div>
+          <div class="voice-selects">
+            <label class="voice-field" for="tts-gameplay-voice">
+              <span>Voce guida</span>
+              <select id="tts-gameplay-voice"></select>
+            </label>
+            <label class="voice-field" for="tts-story-voice">
+              <span>Voce narratore</span>
+              <select id="tts-story-voice"></select>
+            </label>
+          </div>
           <button id="tts-repeat-btn" class="secondary-btn" type="button">🔊 Ripeti ultimo messaggio</button>
         </div>
 

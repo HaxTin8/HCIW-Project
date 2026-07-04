@@ -1,63 +1,404 @@
 /**
- * Text-to-Speech manager con Web Speech API.
- * Legge ad alta voce gli eventi di gioco per un'esperienza no-WIMP.
+ * Text-to-Speech manager con supporto a:
+ * - Web Speech API del browser
+ * - backend Piper via /api/tts
+ * - canali separati per gameplay e narrazione
  */
 
 (function (global) {
+  const STORAGE_KEY = 'deck-of-shadows-tts-settings';
+
   class TTSManager {
     constructor() {
       this.enabled = true;
       this.queue = [];
       this.speaking = false;
       this.onIdleCallback = null;
-      this.voices = [];
-      this.selectedVoice = null;
-      this.lastSpoken = '';
+      this.lastSpoken = null;
       this.initialized = false;
 
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        this._loadVoices();
-        if ('onvoiceschanged' in window.speechSynthesis) {
-          window.speechSynthesis.onvoiceschanged = () => this._loadVoices();
+      this.browserVoices = [];
+      this.piperVoices = [];
+      this.voiceListeners = [];
+      this.providerListeners = [];
+
+      this.preferredProvider = 'auto';
+      this.activeProvider = 'none';
+      this.audioElement = null;
+      this.currentAudioUrl = null;
+      this.currentAbortController = null;
+      this.currentSpeechToken = 0;
+      this.piperAvailable = false;
+      this.piperCheckedAt = 0;
+
+      this.channels = {
+        gameplay: {
+          label: 'Voce guida',
+          browserVoiceURI: '',
+          piperVoice: '',
+          rateDesktop: 1.08,
+          rateMobile: 1.0,
+          pitch: 1.04,
+          volume: 1
+        },
+        story: {
+          label: 'Voce narratore',
+          browserVoiceURI: '',
+          piperVoice: '',
+          rateDesktop: 0.96,
+          rateMobile: 0.92,
+          pitch: 0.96,
+          volume: 1
         }
+      };
+
+      this._loadPreferences();
+
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        this._loadBrowserVoices();
+        if ('onvoiceschanged' in window.speechSynthesis) {
+          window.speechSynthesis.onvoiceschanged = () => this._loadBrowserVoices();
+        }
+      }
+
+      this.refreshProviders();
+    }
+
+    _loadPreferences() {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.preferredProvider === 'string') {
+          this.preferredProvider = parsed.preferredProvider;
+        }
+
+        if (parsed && parsed.channels) {
+          for (const channelName of Object.keys(this.channels)) {
+            const savedChannel = parsed.channels[channelName];
+            if (!savedChannel) continue;
+            if (typeof savedChannel.browserVoiceURI === 'string') {
+              this.channels[channelName].browserVoiceURI = savedChannel.browserVoiceURI;
+            }
+            if (typeof savedChannel.piperVoice === 'string') {
+              this.channels[channelName].piperVoice = savedChannel.piperVoice;
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Impossibile leggere le preferenze TTS:', error);
+      }
+    }
+
+    _savePreferences() {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          preferredProvider: this.preferredProvider,
+          channels: {
+            gameplay: {
+              browserVoiceURI: this.channels.gameplay.browserVoiceURI,
+              piperVoice: this.channels.gameplay.piperVoice
+            },
+            story: {
+              browserVoiceURI: this.channels.story.browserVoiceURI,
+              piperVoice: this.channels.story.piperVoice
+            }
+          }
+        }));
+      } catch (error) {
+        console.warn('Impossibile salvare le preferenze TTS:', error);
       }
     }
 
     setEnabled(value) {
       this.enabled = value;
-      if (!value && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        this.queue = [];
-        this.speaking = false;
+      if (!value) {
+        this.cancel();
       }
     }
 
     prime() {
-      if (!('speechSynthesis' in window)) return;
-      this._loadVoices();
       this.initialized = true;
+      if (this._hasBrowserSupport()) {
+        this._loadBrowserVoices();
+      }
+      this.refreshProviders();
     }
 
-    _loadVoices() {
-      if (!('speechSynthesis' in window)) return;
-      this.voices = window.speechSynthesis.getVoices() || [];
-      this.selectedVoice = this._pickBestVoice(this.voices);
+    async refreshProviders(force = false) {
+      if (force || Date.now() - this.piperCheckedAt > 15000) {
+        await this._refreshPiperVoices();
+      }
+
+      this._loadBrowserVoices();
+      this._resolveActiveProvider();
+      this._notifyProviderChanged();
+      this._notifyVoicesChanged();
     }
 
-    _pickBestVoice(voices) {
+    onVoicesChanged(callback) {
+      if (typeof callback !== 'function') return;
+      this.voiceListeners.push(callback);
+      callback(this.getVoiceCatalog());
+    }
+
+    onProviderChanged(callback) {
+      if (typeof callback !== 'function') return;
+      this.providerListeners.push(callback);
+      callback(this.getProviderState());
+    }
+
+    _notifyVoicesChanged() {
+      const catalog = this.getVoiceCatalog();
+      for (const callback of this.voiceListeners) {
+        callback(catalog);
+      }
+    }
+
+    _notifyProviderChanged() {
+      const state = this.getProviderState();
+      for (const callback of this.providerListeners) {
+        callback(state);
+      }
+    }
+
+    _hasBrowserSupport() {
+      return typeof window !== 'undefined' && 'speechSynthesis' in window;
+    }
+
+    _hasPiperSupport() {
+      return typeof window !== 'undefined' && typeof window.fetch === 'function';
+    }
+
+    _loadBrowserVoices() {
+      if (!this._hasBrowserSupport()) return;
+      this.browserVoices = window.speechSynthesis.getVoices() || [];
+      this._applyDefaultVoices();
+    }
+
+    async _refreshPiperVoices() {
+      this.piperCheckedAt = Date.now();
+
+      if (!this._hasPiperSupport()) {
+        this.piperAvailable = false;
+        this.piperVoices = [];
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/tts/voices', {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        this.piperVoices = this._normalizePiperVoices(payload);
+        this.piperAvailable = true;
+        this._applyDefaultVoices();
+      } catch (error) {
+        this.piperAvailable = false;
+        this.piperVoices = [];
+        console.warn('Piper non raggiungibile, uso il fallback browser:', error);
+      }
+    }
+
+    _normalizePiperVoices(payload) {
+      if (!payload) return [];
+
+      const normalized = [];
+      const pushVoice = (voiceId, meta = {}) => {
+        if (!voiceId) return;
+        const lang = meta.lang || meta.language || meta.languageCode || (meta.language && meta.language.code) || '';
+        const name = meta.name || meta.displayName || voiceId;
+        normalized.push({
+          voiceURI: voiceId,
+          name,
+          lang,
+          default: false
+        });
+      };
+
+      if (Array.isArray(payload)) {
+        for (const item of payload) {
+          if (typeof item === 'string') {
+            pushVoice(item);
+          } else if (item && typeof item === 'object') {
+            pushVoice(item.voice || item.id || item.name || item.voiceURI, item);
+          }
+        }
+      } else if (typeof payload === 'object') {
+        for (const [voiceId, meta] of Object.entries(payload)) {
+          if (meta && typeof meta === 'object') {
+            const resolvedLang = meta.language && typeof meta.language === 'object'
+              ? meta.language.code || meta.language.name || ''
+              : meta.language || meta.lang || '';
+            pushVoice(voiceId, {
+              ...meta,
+              lang: resolvedLang
+            });
+          } else {
+            pushVoice(voiceId);
+          }
+        }
+      }
+
+      normalized.sort((a, b) => {
+        const langA = (a.lang || '').toLowerCase();
+        const langB = (b.lang || '').toLowerCase();
+        if (langA !== langB) return langA.localeCompare(langB);
+        return a.name.localeCompare(b.name);
+      });
+
+      return normalized;
+    }
+
+    _applyDefaultVoices() {
+      const autoGameplayBrowser = this._pickBestVoice(this.browserVoices, 'gameplay');
+      const autoStoryBrowser = this._pickBestVoice(this.browserVoices, 'story');
+      const autoGameplayPiper = this._pickBestVoice(this.piperVoices, 'gameplay');
+      const autoStoryPiper = this._pickBestVoice(this.piperVoices, 'story');
+
+      if (!this.channels.gameplay.browserVoiceURI && autoGameplayBrowser) {
+        this.channels.gameplay.browserVoiceURI = autoGameplayBrowser.voiceURI;
+      }
+      if (!this.channels.story.browserVoiceURI && autoStoryBrowser) {
+        this.channels.story.browserVoiceURI = autoStoryBrowser.voiceURI;
+      }
+      if (!this.channels.gameplay.piperVoice && autoGameplayPiper) {
+        this.channels.gameplay.piperVoice = autoGameplayPiper.voiceURI;
+      }
+      if (!this.channels.story.piperVoice && autoStoryPiper) {
+        this.channels.story.piperVoice = autoStoryPiper.voiceURI;
+      }
+    }
+
+    _pickBestVoice(voices, channel) {
       if (!voices || voices.length === 0) return null;
 
-      const italianVoices = voices.filter((voice) => voice.lang && voice.lang.toLowerCase().startsWith('it'));
-      if (italianVoices.length === 0) return voices[0];
+      const italianVoices = voices.filter((voice) => voice.lang && String(voice.lang).toLowerCase().startsWith('it'));
+      const pool = italianVoices.length > 0 ? italianVoices : voices;
 
-      const premiumMatch = italianVoices.find((voice) => /google|eloquence|federica|alice|elsa|premium|natural/i.test(voice.name));
-      return premiumMatch || italianVoices[0];
+      if (channel === 'story') {
+        const warmNarrator = pool.find((voice) => /alice|elsa|federica|paola|natural|premium/i.test(voice.name));
+        return warmNarrator || pool[0];
+      }
+
+      const clearGuide = pool.find((voice) => /google|eloquence|luca|riccardo|natural|premium/i.test(voice.name));
+      return clearGuide || pool[0];
+    }
+
+    _resolveActiveProvider() {
+      const browserAvailable = this.browserVoices.length > 0;
+      const piperAvailable = this.piperAvailable;
+
+      if (this.preferredProvider === 'piper') {
+        this.activeProvider = piperAvailable ? 'piper' : browserAvailable ? 'browser' : 'none';
+        return;
+      }
+
+      if (this.preferredProvider === 'browser') {
+        this.activeProvider = browserAvailable ? 'browser' : piperAvailable ? 'piper' : 'none';
+        return;
+      }
+
+      this.activeProvider = piperAvailable ? 'piper' : browserAvailable ? 'browser' : 'none';
+    }
+
+    getProviderState() {
+      const browserAvailable = this.browserVoices.length > 0;
+      const piperAvailable = this.piperAvailable;
+      let message = 'Sintesi vocale non disponibile.';
+
+      if (this.activeProvider === 'piper' && this.preferredProvider === 'auto') {
+        message = 'Provider attivo: Piper server.';
+      } else if (this.activeProvider === 'piper' && this.preferredProvider === 'piper') {
+        message = 'Provider attivo: Piper server.';
+      } else if (this.activeProvider === 'browser' && this.preferredProvider === 'browser') {
+        message = 'Provider attivo: voci del browser.';
+      } else if (this.activeProvider === 'browser' && this.preferredProvider === 'auto') {
+        message = piperAvailable
+          ? 'Provider attivo: voci del browser.'
+          : 'Piper non raggiungibile, uso le voci del browser.';
+      } else if (this.activeProvider === 'browser' && this.preferredProvider === 'piper') {
+        message = 'Piper non raggiungibile, fallback sulle voci del browser.';
+      } else if (this.activeProvider === 'piper' && this.preferredProvider === 'browser') {
+        message = 'Voci browser non disponibili, fallback su Piper.';
+      }
+
+      return {
+        preferredProvider: this.preferredProvider,
+        activeProvider: this.activeProvider,
+        available: {
+          browser: browserAvailable,
+          piper: piperAvailable
+        },
+        message
+      };
+    }
+
+    getVoiceCatalog() {
+      const provider = this.activeProvider === 'none' ? 'browser' : this.activeProvider;
+      return {
+        providerState: this.getProviderState(),
+        activeProvider: provider,
+        voices: this.getVoices(provider)
+      };
+    }
+
+    getVoices(provider = null) {
+      const resolvedProvider = provider || this.activeProvider;
+      if (resolvedProvider === 'piper') {
+        return this.piperVoices.map((voice) => ({ ...voice }));
+      }
+      return this.browserVoices.map((voice) => ({
+        voiceURI: voice.voiceURI,
+        name: voice.name,
+        lang: voice.lang,
+        default: voice.default
+      }));
+    }
+
+    getChannelConfig(channel) {
+      if (!this.channels[channel]) return null;
+      return { ...this.channels[channel] };
+    }
+
+    async setPreferredProvider(provider) {
+      this.preferredProvider = ['auto', 'browser', 'piper'].includes(provider) ? provider : 'auto';
+      this._savePreferences();
+      await this.refreshProviders(true);
+    }
+
+    setChannelVoice(channel, voiceId, provider = null) {
+      const config = this.channels[channel];
+      if (!config) return;
+
+      const resolvedProvider = provider || this.activeProvider || 'browser';
+      if (resolvedProvider === 'piper') {
+        config.piperVoice = voiceId || '';
+      } else {
+        config.browserVoiceURI = voiceId || '';
+      }
+
+      this._savePreferences();
+      this._notifyVoicesChanged();
     }
 
     _splitText(text) {
       const normalized = String(text).replace(/\s+/g, ' ').trim();
       if (!normalized) return [];
-      if (normalized.length <= 140) return [normalized];
+      if (normalized.length <= 220) return [normalized];
 
       const parts = normalized.match(/[^.!?;]+[.!?;]?/g) || [normalized];
       const chunks = [];
@@ -65,18 +406,18 @@
 
       for (const part of parts) {
         const candidate = current ? `${current} ${part}`.trim() : part.trim();
-        if (candidate.length <= 140) {
+        if (candidate.length <= 220) {
           current = candidate;
         } else {
           if (current) chunks.push(current);
-          if (part.length <= 140) {
+          if (part.length <= 220) {
             current = part.trim();
           } else {
             const words = part.trim().split(' ');
             let sentenceChunk = '';
             for (const word of words) {
               const nextChunk = sentenceChunk ? `${sentenceChunk} ${word}` : word;
-              if (nextChunk.length > 140) {
+              if (nextChunk.length > 220) {
                 if (sentenceChunk) chunks.push(sentenceChunk);
                 sentenceChunk = word;
               } else {
@@ -112,35 +453,81 @@
       }
     }
 
-    speak(text, priority = false) {
-      if (!this.enabled) return;
-      if (!text) return;
-      if (!('speechSynthesis' in window)) {
-        console.warn('Web Speech API non supportata.');
-        return;
+    _normalizeSpeakOptions(priorityOrOptions, maybeOptions) {
+      if (typeof priorityOrOptions === 'object' && priorityOrOptions !== null) {
+        return {
+          priority: Boolean(priorityOrOptions.priority),
+          channel: priorityOrOptions.channel || 'gameplay'
+        };
       }
+
+      if (typeof maybeOptions === 'object' && maybeOptions !== null) {
+        return {
+          priority: Boolean(priorityOrOptions),
+          channel: maybeOptions.channel || 'gameplay'
+        };
+      }
+
+      return {
+        priority: Boolean(priorityOrOptions),
+        channel: 'gameplay'
+      };
+    }
+
+    speak(text, priorityOrOptions = false, maybeOptions = null) {
+      if (!this.enabled || !text) return;
 
       try {
         this.prime();
+        const options = this._normalizeSpeakOptions(priorityOrOptions, maybeOptions);
 
-        if (priority) {
-          window.speechSynthesis.cancel();
-          this.queue = [];
-          this.speaking = false;
+        if (options.priority) {
+          this.cancel();
         }
 
-        this.lastSpoken = String(text).trim();
-        const chunks = this._splitText(text);
+        this.lastSpoken = {
+          text: String(text).trim(),
+          channel: options.channel
+        };
+
+        const chunks = this._splitText(text).map((chunk) => ({
+          text: chunk,
+          channel: options.channel
+        }));
         this.queue.push(...chunks);
         this._processQueue();
-      } catch (e) {
-        console.warn('TTS speak error:', e);
+      } catch (error) {
+        console.warn('TTS speak error:', error);
       }
     }
 
     repeatLast() {
       if (!this.lastSpoken) return;
-      this.speak(this.lastSpoken, true);
+      this.speak(this.lastSpoken.text, {
+        priority: true,
+        channel: this.lastSpoken.channel
+      });
+    }
+
+    _resolveBrowserVoice(channel) {
+      const channelConfig = this.channels[channel] || this.channels.gameplay;
+      const chosen = this.browserVoices.find((voice) => voice.voiceURI === channelConfig.browserVoiceURI);
+      if (chosen) return chosen;
+      return this._pickBestVoice(this.browserVoices, channel);
+    }
+
+    _resolvePiperVoice(channel) {
+      const channelConfig = this.channels[channel] || this.channels.gameplay;
+      const chosen = this.piperVoices.find((voice) => voice.voiceURI === channelConfig.piperVoice);
+      if (chosen) return chosen;
+      return this._pickBestVoice(this.piperVoices, channel);
+    }
+
+    _getChannelRate(channel) {
+      const channelConfig = this.channels[channel] || this.channels.gameplay;
+      return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        ? channelConfig.rateMobile
+        : channelConfig.rateDesktop;
     }
 
     _processQueue() {
@@ -149,41 +536,190 @@
         return;
       }
 
-      const text = this.queue.shift();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'it-IT';
-      utter.rate = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 1 : 1.08;
-      utter.pitch = 1.02;
-      utter.volume = 1;
+      this._resolveActiveProvider();
+      const item = this.queue.shift();
+      const provider = this.activeProvider;
 
-      if (this.selectedVoice) {
-        utter.voice = this.selectedVoice;
-        utter.lang = this.selectedVoice.lang || 'it-IT';
+      if (provider === 'none') {
+        console.warn('Nessun provider TTS disponibile.');
+        this._checkIdle();
+        return;
       }
 
-      utter.onend = () => {
-        this.speaking = false;
-        this._processQueue();
-        this._checkIdle();
-      };
-
-      utter.onerror = (e) => {
-        if (e.error !== 'canceled' && e.error !== 'interrupted') {
-          console.warn('TTS error:', e.error);
-        }
-        this.speaking = false;
-        this._processQueue();
-        this._checkIdle();
-      };
-
       this.speaking = true;
-      window.speechSynthesis.speak(utter);
+
+      const token = ++this.currentSpeechToken;
+
+      this._speakItem(item, provider)
+        .then(() => {
+          this._finalizeSpeech(token);
+        })
+        .catch((error) => {
+          if (token !== this.currentSpeechToken) {
+            return;
+          }
+
+          if (error && error.name === 'AbortError') {
+            this._finalizeSpeech(token);
+            return;
+          }
+
+          if (provider === 'piper' && this.browserVoices.length > 0) {
+            console.warn('Piper non disponibile durante la sintesi, fallback browser:', error);
+            this.piperAvailable = false;
+            this._resolveActiveProvider();
+            this._notifyProviderChanged();
+            this._notifyVoicesChanged();
+            this._speakItem(item, 'browser')
+              .then(() => this._finalizeSpeech(token))
+              .catch((fallbackError) => {
+                if (token !== this.currentSpeechToken) {
+                  return;
+                }
+                console.warn('Errore anche nel fallback browser:', fallbackError);
+                this._finalizeSpeech(token);
+              });
+            return;
+          }
+
+          console.warn('Errore TTS:', error);
+          this._finalizeSpeech(token);
+        });
+    }
+
+    _finalizeSpeech(token) {
+      if (token !== this.currentSpeechToken) {
+        return;
+      }
+      this.speaking = false;
+      this.currentAbortController = null;
+      this._cleanupAudioUrl();
+      this._processQueue();
+      this._checkIdle();
+    }
+
+    _speakItem(item, provider) {
+      if (provider === 'piper') {
+        return this._speakWithPiper(item.text, item.channel || 'gameplay');
+      }
+
+      return this._speakWithBrowser(item.text, item.channel || 'gameplay');
+    }
+
+    _speakWithBrowser(text, channel) {
+      if (!this._hasBrowserSupport()) {
+        return Promise.reject(new Error('Web Speech API non supportata.'));
+      }
+
+      return new Promise((resolve, reject) => {
+        const channelConfig = this.channels[channel] || this.channels.gameplay;
+        const utter = new SpeechSynthesisUtterance(text);
+        const voice = this._resolveBrowserVoice(channel);
+
+        utter.lang = voice ? (voice.lang || 'it-IT') : 'it-IT';
+        utter.rate = this._getChannelRate(channel);
+        utter.pitch = channelConfig.pitch;
+        utter.volume = channelConfig.volume;
+
+        if (voice) {
+          utter.voice = voice;
+        }
+
+        utter.onend = () => resolve();
+        utter.onerror = (event) => {
+          if (event.error === 'canceled' || event.error === 'interrupted') {
+            resolve();
+            return;
+          }
+          reject(new Error(event.error || 'browser_tts_error'));
+        };
+
+        window.speechSynthesis.speak(utter);
+      });
+    }
+
+    async _speakWithPiper(text, channel) {
+      const voice = this._resolvePiperVoice(channel);
+      const payload = {
+        text,
+        length_scale: Number((1 / this._getChannelRate(channel)).toFixed(2))
+      };
+
+      if (voice && voice.voiceURI) {
+        payload.voice = voice.voiceURI;
+      }
+
+      this.currentAbortController = new AbortController();
+
+      const response = await fetch('/api/tts/synthesize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'audio/wav'
+        },
+        body: JSON.stringify(payload),
+        signal: this.currentAbortController.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`Piper HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      this.currentAudioUrl = objectUrl;
+
+      return new Promise((resolve, reject) => {
+        const audio = this._getAudioElement();
+        audio.src = objectUrl;
+        audio.onended = () => resolve();
+        audio.onerror = () => reject(new Error('piper_audio_error'));
+        audio.onpause = () => {
+          if (!this.speaking && this.queue.length === 0) {
+            resolve();
+          }
+        };
+
+        const playPromise = audio.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.catch((error) => reject(error));
+        }
+      });
+    }
+
+    _getAudioElement() {
+      if (!this.audioElement) {
+        this.audioElement = new Audio();
+        this.audioElement.preload = 'auto';
+      }
+      return this.audioElement;
+    }
+
+    _cleanupAudioUrl() {
+      if (this.currentAudioUrl) {
+        URL.revokeObjectURL(this.currentAudioUrl);
+        this.currentAudioUrl = null;
+      }
     }
 
     cancel() {
-      if ('speechSynthesis' in window) {
+      if (this._hasBrowserSupport()) {
         window.speechSynthesis.cancel();
       }
+
+      if (this.currentAbortController) {
+        this.currentAbortController.abort();
+      }
+
+      this.currentSpeechToken += 1;
+
+      if (this.audioElement) {
+        this.audioElement.pause();
+        this.audioElement.removeAttribute('src');
+        this.audioElement.load();
+      }
+
+      this._cleanupAudioUrl();
       this.queue = [];
       this.speaking = false;
       this.onIdleCallback = null;

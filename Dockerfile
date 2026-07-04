@@ -15,6 +15,9 @@ FROM nginx:alpine
 # Rimuove la pagina di default
 RUN rm -rf /usr/share/nginx/html/*
 
+# Configura nginx come server statico + reverse proxy per TTS
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
 # Copia tutta l'app nella cartella servita da nginx
 COPY . /usr/share/nginx/html
 COPY --from=stories-build /app/stories/generated /usr/share/nginx/html/stories/generated
