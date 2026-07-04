@@ -126,7 +126,8 @@ function switchCamera() {
   if (!isMobile()) return;
   currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
   console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
-  setupWebcam();
+  // Piccolo ritardo per dare tempo al browser di rilasciare il dispositivo
+  setTimeout(() => setupWebcam(), 300);
 }
 
 function setupWebcam() {
@@ -165,10 +166,8 @@ function tryCreateCapture(constraints, attempt) {
   console.log(`[Webcam] Tentativo ${attempt}`, constraints);
 
   if (video) {
-    try {
-      video.stop();
-    } catch (e) {
-      console.warn('[Webcam] Errore stop video precedente:', e);
+    if (video.elt && video.elt.srcObject) {
+      video.elt.srcObject.getTracks().forEach(track => track.stop());
     }
     video = null;
   }
@@ -622,7 +621,9 @@ function drawWebcamPreview() {
 
   push();
   translate(px + pw, py);
-  scale(-1, 1);
+  if (currentFacingMode === 'user') {
+    scale(-1, 1);
+  }
   if (video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0) {
     image(video, 0, 0, pw, ph);
   } else {
@@ -1026,8 +1027,10 @@ function drawTTSPause() {
 
 function readQR() {
   hiddenCanvas.push();
-  hiddenCanvas.translate(hiddenCanvas.width, 0);
-  hiddenCanvas.scale(-1, 1);
+  if (currentFacingMode === 'user') {
+    hiddenCanvas.translate(hiddenCanvas.width, 0);
+    hiddenCanvas.scale(-1, 1);
+  }
   hiddenCanvas.image(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
   hiddenCanvas.pop();
 
