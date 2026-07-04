@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deck of Shadows — Carte da stampare</title>
+  <title>Specula Elementae — Carte da stampare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <style>
     * {
@@ -13,100 +16,130 @@
     body {
       margin: 0;
       padding: 20px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f4f4;
-      color: #222;
+      font-family: 'Hanken Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4eddb;
+      color: #2b2318;
     }
 
     .no-print {
       text-align: center;
       margin-bottom: 24px;
-      padding: 16px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      background: #211a11;
+      color: #f2e7ce;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
 
     .no-print h1 {
       margin-top: 0;
-      color: #e63946;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #f2e7ce;
     }
 
     .no-print p {
       margin: 6px 0;
-      color: #555;
+      color: #c9b892;
     }
 
     .no-print button {
-      padding: 10px 20px;
-      background: #e63946;
-      color: #fff;
+      padding: 10px 22px;
+      background: #b0842f;
+      color: #211a11;
       border: none;
-      border-radius: 6px;
-      font-size: 16px;
+      border-radius: 999px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 12px;
     }
 
     .card-sheet {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 22px;
       max-width: 1200px;
       margin: 0 auto;
     }
 
     .card {
-      width: 220px;
-      height: 320px;
-      background: #fff;
+      width: 230px;
+      height: 340px;
+      background: #f2e9d5;
       border-radius: 14px;
-      border: 3px solid #333;
-      padding: 12px;
+      border: 1px solid #cdbb90;
+      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+      padding: 0;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
+      overflow: hidden;
       break-inside: avoid;
       page-break-inside: avoid;
       margin: 0 auto;
+      color: #2b2318;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1.5px solid rgba(111,95,69,.35);
+      border-radius: 9px;
+      pointer-events: none;
     }
 
     .card-header {
       text-align: center;
-      padding: 6px 0;
-      border-radius: 8px;
-      color: #fff;
-      font-weight: bold;
+      padding: 10px 0;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
       font-size: 18px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
 
-    .card-emoji {
-      font-size: 72px;
-      text-align: center;
-      line-height: 1;
+    .card-medallion-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 6px 0 2px;
+    }
+
+    .card-medallion {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 40%, #fbf6e8, #e9dbbf);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .card-power {
       text-align: center;
-      font-size: 36px;
-      font-weight: bold;
-      color: #333;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 900;
+      color: #2b2318;
     }
 
     .card-desc {
-      font-size: 12px;
+      font-size: 11.5px;
       text-align: center;
-      color: #555;
-      padding: 0 6px;
+      color: #5a4a34;
+      padding: 0 10px;
+      line-height: 1.35;
     }
 
     .card-qr {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 90px;
+      height: 96px;
+      background: #fff;
+      margin: 8px 12px 6px;
+      border: 1px solid #cdbb90;
+      border-radius: 6px;
     }
 
     .card-qr img {
@@ -117,11 +150,18 @@
 
     .card-footer {
       text-align: center;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 10px;
-      color: #777;
+      letter-spacing: .05em;
+      color: #8a7a58;
+      padding-bottom: 8px;
     }
 
     @media print {
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
       .no-print {
         display: none;
       }
@@ -138,7 +178,7 @@
 <body>
   <div class="no-print">
     <h1>🖨️ Carte da stampare</h1>
-    <p>Ogni carta include il proprio QR code. Usale con Deck of Shadows.</p>
+    <p>Ogni carta include il proprio QR code. Usale con Specula Elementae.</p>
     <p>Suggerimento: stampa su carta rigida o plastifica le carte.</p>
     <button onclick="window.print()">Stampa</button>
   </div>
@@ -148,6 +188,33 @@
   <script src="cards.js"></script>
   <script>
     const sheet = document.getElementById('sheet');
+
+    function textColorForBg(hex) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+      const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return lum > 0.6 ? '#2b2318' : '#fdf6e6';
+    }
+
+    // Icona vettoriale per elemento, stessa geometria usata nel gioco (sketch.js).
+    function elementIcon(elementId, color) {
+      switch (elementId) {
+        case 'FIRE':
+          return `<svg width="56" height="56" viewBox="0 0 100 100"><polygon points="50,18 84,84 16,84" fill="${color}"/></svg>`;
+        case 'WATER':
+          return `<svg width="56" height="56" viewBox="0 0 100 100"><polygon points="16,24 84,24 50,88" fill="${color}"/></svg>`;
+        case 'NATURE':
+          return `<svg width="56" height="56" viewBox="0 0 100 100"><polygon points="50,12 86,50 50,88 14,50" fill="${color}"/></svg>`;
+        case 'LIGHT':
+          return `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="17" fill="${color}"/><g stroke="${color}" stroke-width="6" stroke-linecap="round"><line x1="50" y1="10" x2="50" y2="24"/><line x1="50" y1="76" x2="50" y2="90"/><line x1="10" y1="50" x2="24" y2="50"/><line x1="76" y1="50" x2="90" y2="50"/><line x1="22" y1="22" x2="32" y2="32"/><line x1="68" y1="68" x2="78" y2="78"/><line x1="78" y1="22" x2="68" y2="32"/><line x1="32" y1="68" x2="22" y2="78"/></g></svg>`;
+        case 'SHADOW':
+          return `<svg width="56" height="56" viewBox="0 0 100 100"><path d="M50 16 a34 34 0 1 0 0 68 a26 26 0 1 1 0 -68 z" fill="${color}"/></svg>`;
+        case 'THUNDER':
+          return `<svg width="54" height="54" viewBox="0 0 100 100"><polygon points="58,10 28,54 47,54 42,92 76,44 55,44" fill="${color}"/></svg>`;
+        default:
+          return '';
+      }
+    }
 
     function generateQR(text) {
       const typeNumber = 0;
@@ -164,11 +231,14 @@
 
       const elem = ELEMENTS[template.element];
       const qrImg = generateQR(template.id);
+      const textColor = textColorForBg(elem.color);
 
       card.innerHTML = `
-        <div class="card-header" style="background-color: ${elem.color}">${template.name}</div>
-        <div class="card-emoji">${elem.emoji}</div>
-        <div class="card-power">${template.power}</div>
+        <div class="card-header" style="background-color: ${elem.color}; color: ${textColor}">${template.name}</div>
+        <div class="card-medallion-wrap">
+          <div class="card-medallion" style="border: 3px solid ${elem.color}">${elementIcon(template.element, elem.color)}</div>
+        </div>
+        <div class="card-power" style="color: ${elem.color}">${template.power}</div>
         <div class="card-desc">${template.description}</div>
         <div class="card-qr">${qrImg}</div>
         <div class="card-footer">${template.element} · ${template.id}</div>
@@ -185,18 +255,21 @@
 
     // Carte speciali
     const specialCards = [
-      { id: 'RESTART', name: 'Restart', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#555' },
-      { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#3498db' },
-      { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#e94560' }
+      { id: 'RESTART', name: 'Restart', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#211a11' },
+      { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#3d7691' },
+      { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#b0842f' }
     ];
 
     for (const special of specialCards) {
       const card = document.createElement('div');
       card.className = 'card';
+      const textColor = textColorForBg(special.color);
       card.innerHTML = `
-        <div class="card-header" style="background-color: ${special.color}">${special.name}</div>
-        <div class="card-emoji">${special.emoji}</div>
-        <div class="card-power">—</div>
+        <div class="card-header" style="background-color: ${special.color}; color: ${textColor}">${special.name}</div>
+        <div class="card-medallion-wrap">
+          <div class="card-medallion" style="border: 3px solid ${special.color}; font-size: 46px;">${special.emoji}</div>
+        </div>
+        <div class="card-power" style="color: ${special.color}">—</div>
         <div class="card-desc">${special.desc}</div>
         <div class="card-qr">${generateQR(special.id)}</div>
         <div class="card-footer">SPECIAL · ${special.id}</div>

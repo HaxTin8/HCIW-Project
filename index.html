@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deck of Shadows — Card Recognition Game</title>
+  <title>Specula Elementae — Card Recognition Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <!-- p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -13,37 +16,12 @@
 <body>
   <div id="app">
     <header>
-      <h1>⚔️ Deck of Shadows</h1>
+      <h1>✨ Specula Elementae</h1>
       <p>Solitario a carte. Nessun click, nessuna tastiera: gioca mostrando le tue carte fisiche alla webcam. Il computer legge e risponde a voce.</p>
     </header>
 
     <main>
       <div id="canvas-container"></div>
-
-      <aside id="controls">
-        <h2>Stato</h2>
-
-        <div class="mode-toggle">
-          <label>
-            <input type="checkbox" id="qr-toggle" checked>
-            Riconoscimento QR attivo
-          </label>
-        </div>
-
-        <div class="help">
-          <h3>Come si gioca</h3>
-          <ul>
-            <li>Le tue carte sono solo <strong>fisiche</strong>: il computer non le mostra.</li>
-            <li>Mostra una carta alla webcam per <strong>iniziare</strong> o per <strong>giocarla</strong>.</li>
-            <li>Il computer legge la carta e annuncia il risultato a voce.</li>
-            <li>Se vinci, aggiungi il nemico al tuo mazzo fisico.</li>
-            <li>Se perdi, perdi 1 HP.</li>
-            <li>Vinci dopo 8 round. A Game Over, mostra una carta per ricominciare.</li>
-          </ul>
-        </div>
-
-        <div id="status" class="status">Mostra una carta alla webcam per iniziare.</div>
-      </aside>
     </main>
   </div>
 
