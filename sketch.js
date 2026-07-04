@@ -9,6 +9,7 @@ import { audio } from './audio.js';
 import { familyVoice } from './family-voice.js';
 import { tts } from './tts.js';
 import { StoryEngine } from './stories/story-engine.js';
+import magicSchoolFontUrl from './fonts/magic-school.ttf?url';
 
 var video;
 var hiddenCanvas;
@@ -83,7 +84,7 @@ const HERO_LAYOUT = {
 };
 
 function preload() {
-  magicFont = loadFont('fonts/magic-school.ttf');
+  magicFont = loadFont(magicSchoolFontUrl);
 
   heroImages.fire = loadImage('assets/hero/fire.png');
   heroImages.water = loadImage('assets/hero/water.png');
