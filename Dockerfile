@@ -17,6 +17,7 @@ COPY game.js ./game.js
 COPY index.html ./index.html
 COPY print.html ./print.html
 COPY print.js ./print.js
+COPY sketch.js ./sketch.js
 COPY scripts ./scripts
 COPY stories ./stories
 COPY style.css ./style.css
