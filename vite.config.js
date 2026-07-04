@@ -26,6 +26,8 @@ const WATCH_TARGETS = [
 ].map((target) => path.resolve(ROOT, target));
 
 const LEGACY_COPY_TARGETS = [
+  'assets',
+  'fonts',
   'stories/generated'
 ];
 
@@ -55,6 +57,9 @@ function copyLegacyRuntimePlugin() {
       for (const target of LEGACY_COPY_TARGETS) {
         const source = path.resolve(ROOT, target);
         const destination = path.resolve(DIST, target);
+        if (!fs.existsSync(source)) {
+          continue;
+        }
         fs.mkdirSync(path.dirname(destination), { recursive: true });
         fs.cpSync(source, destination, { recursive: true });
       }
