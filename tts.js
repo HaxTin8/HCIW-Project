@@ -650,20 +650,7 @@
       }
 
       this.currentAbortController = new AbortController();
-
-      const response = await fetch('/api/tts/synthesize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'audio/wav'
-        },
-        body: JSON.stringify(payload),
-        signal: this.currentAbortController.signal
-      });
-
-      if (!response.ok) {
-        throw new Error(`Piper HTTP ${response.status}`);
-      }
+      const response = await this._postToPiper(payload);
 
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -685,6 +672,39 @@
           playPromise.catch((error) => reject(error));
         }
       });
+    }
+
+    async _postToPiper(payload) {
+      const endpoints = [
+        '/api/tts/synthesize',
+        '/api/tts/'
+      ];
+
+      let lastError = null;
+
+      for (const endpoint of endpoints) {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'audio/wav'
+          },
+          body: JSON.stringify(payload),
+          signal: this.currentAbortController.signal
+        });
+
+        if (response.ok) {
+          return response;
+        }
+
+        if (response.status !== 404 && response.status !== 405) {
+          throw new Error(`Piper HTTP ${response.status}`);
+        }
+
+        lastError = new Error(`Piper HTTP ${response.status} on ${endpoint}`);
+      }
+
+      throw lastError || new Error('Piper HTTP error');
     }
 
     _getAudioElement() {
