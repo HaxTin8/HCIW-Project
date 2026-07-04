@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Beachday';
+      src: url('fonts/beachday.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <style>
     * {
@@ -17,7 +26,7 @@
       margin: 0;
       padding: 20px;
       font-family: 'Hanken Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4eddb;
+      background: #f4fbff;
       color: #2b2318;
     }
 
@@ -25,30 +34,30 @@
       text-align: center;
       margin-bottom: 24px;
       padding: 20px;
-      background: #211a11;
-      color: #f2e7ce;
+      background: #97B481;
+      color: #21361a;
       border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
 
     .no-print h1 {
       margin-top: 0;
-      font-family: 'Space Grotesk', sans-serif;
-      color: #f2e7ce;
+      font-family: 'Beachday', 'Space Grotesk', sans-serif;
+      color: #21361a;
     }
 
     .no-print p {
       margin: 6px 0;
-      color: #c9b892;
+      color: #35502a;
     }
 
     .no-print button {
       padding: 10px 22px;
-      background: #b0842f;
-      color: #211a11;
+      background: #E67E3C;
+      color: #ffffff;
       border: none;
       border-radius: 999px;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Beachday', 'Space Grotesk', sans-serif;
       font-weight: 600;
       font-size: 15px;
       cursor: pointer;
@@ -83,7 +92,7 @@
     }
 
     .card-name {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Beachday', 'Space Grotesk', sans-serif;
       font-weight: 700;
       font-size: 20px;
       text-align: center;
@@ -97,8 +106,8 @@
     }
 
     .card-medallion {
-      width: 120px;
-      height: 120px;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -122,6 +131,18 @@
       padding: 0 6px;
       line-height: 1.4;
       flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .card-desc .vs-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      vertical-align: middle;
     }
 
     .card-qr {

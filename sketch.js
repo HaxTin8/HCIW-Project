@@ -62,6 +62,7 @@ var isSwitchingCamera = false;
 var magicFont;
 var elementImages = {};
 var heartImage = null;
+var webcamFrameImg = null;
 var heroImages = {};
 var heroIntroStart = 0;
 const HERO_APPEAR = ['fire', 'water', 'river', 'towers', 'mountains'];
@@ -90,6 +91,7 @@ function preload() {
   elementImages.SHADOW = loadImage('assets/elements/shadow.png');
   elementImages.THUNDER = loadImage('assets/elements/thunder.png');
   heartImage = loadImage('assets/elements/heart-life.png');
+  webcamFrameImg = loadImage('assets/webcam-frame.png');
 }
 
 function makeBgTransparent(img) {
@@ -1022,10 +1024,19 @@ function drawWebcamPreview() {
   pop();
 
   const isReady = webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0;
-  stroke(isReady ? (qrEnabled ? '#7ca35e' : '#b77b52') : '#d3a03e');
-  strokeWeight(2);
-  noFill();
-  rect(px, py, pw, ph, 8);
+
+  if (webcamFrameImg && webcamFrameImg.width > 0) {
+    push();
+    drawingContext.shadowColor = isReady ? (qrEnabled ? '#97B481' : '#DD4B50') : '#ECBA4E';
+    drawingContext.shadowBlur = 10;
+    image(webcamFrameImg, px - 4, py - 4, pw + 8, ph + 8);
+    pop();
+  } else {
+    stroke(isReady ? (qrEnabled ? '#7ca35e' : '#b77b52') : '#d3a03e');
+    strokeWeight(2);
+    noFill();
+    rect(px, py, pw, ph, 8);
+  }
 
   fill('#5a4a34');
   noStroke();
