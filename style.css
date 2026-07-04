@@ -116,10 +116,12 @@ main {
 .camera-section {
   margin-bottom: 20px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .camera-btn {
-  display: none;
   padding: 14px 24px;
   background: #e94560;
   color: #fff;
@@ -130,10 +132,19 @@ main {
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  width: 100%;
 }
 
 .camera-btn:active {
   background: #c0392b;
+}
+
+#switch-camera-btn {
+  background: #3498db;
+}
+
+#switch-camera-btn:active {
+  background: #2980b9;
 }
 
 @media (max-width: 1100px) {

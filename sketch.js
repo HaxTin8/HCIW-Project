@@ -40,6 +40,8 @@ var waitingForTTS = false;
 
 var cameraSection;
 var cameraBtn;
+var switchCameraBtn;
+var currentFacingMode = 'environment';
 
 function setup() {
   const container = select('#canvas-container');
@@ -56,9 +58,6 @@ function setup() {
   storyEngine = new StoryEngine();
   storyEngine.loadIndex().catch(() => {});
 
-  cameraSection = select('#camera-section');
-  cameraBtn = select('#camera-btn');
-
   const qrToggle = select('#qr-toggle');
   if (qrToggle) {
     qrToggle.changed(() => {
@@ -67,11 +66,18 @@ function setup() {
     });
   }
 
+  cameraBtn = select('#camera-btn');
+  switchCameraBtn = select('#switch-camera-btn');
+
   if (cameraBtn) {
     cameraBtn.mousePressed(() => {
-      cameraBtn.hide();
+      if (cameraBtn) cameraBtn.style('display', 'none');
       setupWebcam();
     });
+  }
+
+  if (switchCameraBtn) {
+    switchCameraBtn.mousePressed(switchCamera);
   }
 
   if (!isMobile()) {
@@ -81,6 +87,7 @@ function setup() {
     webcamMessage = 'Tocca il pulsante per attivare la fotocamera.';
     updateCameraButton();
   }
+  logToStatus('Mostra una carta alla webcam per iniziare.');
 }
 
 function windowResized() {
@@ -94,17 +101,32 @@ function isMobile() {
 }
 
 function updateCameraButton() {
-  if (!cameraBtn) return;
+  if (!cameraBtn || !switchCameraBtn) return;
   if (webcamState === 'active') {
-    cameraBtn.hide();
-    if (cameraSection) cameraSection.style('display', 'none');
+    cameraBtn.style('display', 'none');
+    if (isMobile()) {
+      switchCameraBtn.style('display', 'block');
+    } else {
+      switchCameraBtn.style('display', 'none');
+    }
   } else if (webcamState === 'waiting' || webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
-    cameraBtn.show();
-    if (cameraSection) cameraSection.style('display', 'block');
+    if (isMobile()) {
+      cameraBtn.style('display', 'block');
+    } else {
+      cameraBtn.style('display', 'none');
+    }
+    switchCameraBtn.style('display', 'none');
   } else {
-    cameraBtn.hide();
-    if (cameraSection) cameraSection.style('display', 'none');
+    cameraBtn.style('display', 'none');
+    switchCameraBtn.style('display', 'none');
   }
+}
+
+function switchCamera() {
+  if (!isMobile()) return;
+  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+  console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
+  setupWebcam();
 }
 
 function setupWebcam() {
@@ -132,7 +154,7 @@ function setupWebcam() {
   };
 
   if (isMobile()) {
-    constraints.video.facingMode = { ideal: 'user' };
+    constraints.video.facingMode = { ideal: currentFacingMode };
   }
 
   tryCreateCapture(constraints, 1);
@@ -364,7 +386,7 @@ function drawPlaying() {
   drawWebcamOverlay();
   drawLog();
 
-  if (!waitingForTTS && qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
+  if (!waitingForTTS && qrEnabled && webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0 && frameCount % 10 === 0) {
     readQR();
   }
 
@@ -609,7 +631,7 @@ function drawWebcamPreview() {
   }
   pop();
 
-  const isReady = webcamState === 'active' && video && video.width > 0;
+  const isReady = webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0;
   stroke(isReady ? (qrEnabled ? '#2ecc71' : '#e74c3c') : '#f1c40f');
   strokeWeight(2);
   noFill();
