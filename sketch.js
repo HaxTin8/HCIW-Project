@@ -639,9 +639,11 @@ function drawWebcamPreview() {
   const py = 20;
 
   push();
-  translate(px + pw, py);
   if (currentFacingMode === 'user') {
+    translate(px + pw, py);
     scale(-1, 1);
+  } else {
+    translate(px, py);
   }
   if (video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0) {
     image(video, 0, 0, pw, ph);
