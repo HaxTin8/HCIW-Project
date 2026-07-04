@@ -1,7 +1,14 @@
 /* =========================================================
-   DECK OF SHADOWS — frontend p5.js, input solo da webcam QR
+   SPECULA ELEMENTAE — frontend p5.js, input solo da webcam QR
    Versione no-WIMP: il giocatore gestisce fisicamente le carte.
    ========================================================= */
+
+import { ELEMENTS, TEMPLATE_MAP, createCard } from './cards.js';
+import { Game, GAME_STATE } from './game.js';
+import { audio } from './audio.js';
+import { familyVoice } from './family-voice.js';
+import { tts } from './tts.js';
+import { StoryEngine } from './stories/story-engine.js';
 
 var video;
 var hiddenCanvas;
@@ -48,8 +55,68 @@ var ttsProviderStatus;
 var ttsGameplayVoiceSelect;
 var ttsStoryVoiceSelect;
 var helpPanel;
+var debugPanel;
+var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
+var magicFont;
+var elementImages = {};
+var heartImage = null;
+var heroImages = {};
+var heroIntroStart = 0;
+const HERO_APPEAR = ['fire', 'water', 'river', 'towers', 'mountains'];
+const HERO_ZORDER = ['mountains', 'towers', 'river', 'water', 'fire'];
+const HERO_LAYOUT = {
+  mountains: { x: 55, y: 18, w: 240 },
+  towers: { x: 0, y: 88, w: 226 },
+  river: { x: 22, y: 185, w: 252 },
+  water: { x: -32, y: 230, w: 248 },
+  fire: { x: 108, y: 268, w: 214 }
+};
+
+function preload() {
+  magicFont = loadFont('fonts/magic-school.ttf');
+
+  heroImages.fire = loadImage('assets/hero/fire.png');
+  heroImages.water = loadImage('assets/hero/water.png');
+  heroImages.river = loadImage('assets/hero/river.png');
+  heroImages.towers = loadImage('assets/hero/towers.png');
+  heroImages.mountains = loadImage('assets/hero/mountains.png');
+
+  elementImages.FIRE = loadImage('assets/elements/fire.png');
+  elementImages.WATER = loadImage('assets/elements/water.png');
+  elementImages.NATURE = loadImage('assets/elements/nature.png');
+  elementImages.LIGHT = loadImage('assets/elements/light.png');
+  elementImages.SHADOW = loadImage('assets/elements/shadow.png');
+  elementImages.THUNDER = loadImage('assets/elements/thunder.png');
+  heartImage = loadImage('assets/elements/heart-life.png');
+}
+
+function makeBgTransparent(img) {
+  if (!img) return;
+  img.loadPixels();
+  const pixels = img.pixels;
+  if (!pixels || pixels.length === 0 || pixels[3] === 0) return;
+
+  const r0 = pixels[0];
+  const g0 = pixels[1];
+  const b0 = pixels[2];
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const dr = pixels[i] - r0;
+    const dg = pixels[i + 1] - g0;
+    const db = pixels[i + 2] - b0;
+    const distance = Math.sqrt(dr * dr + dg * dg + db * db);
+
+    if (distance < 14) {
+      pixels[i + 3] = 0;
+    } else if (distance < 26) {
+      pixels[i + 3] = Math.round(((distance - 14) / 12) * 255);
+    }
+  }
+
+  img.updatePixels();
+}
 
 function getCanvasSize() {
   const container = select('#canvas-container');
@@ -63,6 +130,12 @@ function getCanvasSize() {
   }
 
   return { width: cw, height: cw * (600 / 900) };
+}
+
+function detectDebugMode() {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search || '');
+  return params.get('debug') === '1';
 }
 
 function populateProviderSelect(selectEl, providerState) {
@@ -114,6 +187,13 @@ function setup() {
   hiddenCanvas = createGraphics(320, 240);
   hiddenCanvas.pixelDensity(1);
 
+  for (const key of Object.keys(heroImages)) {
+    const img = heroImages[key];
+    if (!img) continue;
+    img.resize(620, 0);
+    makeBgTransparent(img);
+  }
+
   statusEl = select('#status');
   game = new Game();
   storyEngine = new StoryEngine();
@@ -136,6 +216,23 @@ function setup() {
   ttsGameplayVoiceSelect = select('#tts-gameplay-voice');
   ttsStoryVoiceSelect = select('#tts-story-voice');
   helpPanel = select('#help-panel');
+  debugPanel = select('#debug-panel');
+  debugMode = detectDebugMode();
+
+  if (debugMode && debugPanel && debugPanel.elt) {
+    debugPanel.elt.open = true;
+  }
+
+  const debugButtons = selectAll('.debug-btn');
+  if (debugButtons && debugButtons.length > 0) {
+    debugButtons.forEach((buttonEl) => {
+      buttonEl.mousePressed(() => {
+        const debugId = buttonEl.elt.dataset.debugId;
+        if (!debugId) return;
+        handleQRDetected(debugId);
+      });
+    });
+  }
 
   if (cameraBtn) {
     cameraBtn.mousePressed(() => {
@@ -209,7 +306,9 @@ function setup() {
     }
     updateCameraButton();
   }
-  logToStatus('Mostra una carta alla webcam per iniziare la tua avventura.');
+  logToStatus(debugMode
+    ? 'Modalita debug attiva: usa i pulsanti rapidi per simulare i QR code.'
+    : 'Mostra una carta alla webcam per iniziare la tua avventura.');
 }
 
 function windowResized() {
@@ -436,7 +535,7 @@ function tryFallbackDevice(attempt) {
 }
 
 function draw() {
-  background(22, 33, 62);
+  drawCanvasBackground();
   waitingForTTS = tts.isSpeaking();
 
   if (screenFlash > 0) {
@@ -486,28 +585,32 @@ function draw() {
    ========================================================= */
 
 function drawIdle() {
+  drawHeroArt();
   drawDecorations();
   drawWebcamPreview();
   drawWebcamOverlay();
 
-  fill(255);
+  fill('#2b2318');
   textAlign(CENTER, CENTER);
-  textSize(42);
-  textStyle(BOLD);
-  text('🌿 Avventure degli Elementi 🌿', width / 2, height / 2 - 80);
-
+  textFont(magicFont || 'Space Grotesk');
+  textSize(isCompactMobileLayout() ? 34 : 42);
   textStyle(NORMAL);
+  text('Specula Elementae', width / 2, height / 2 - 86);
+
+  textFont('Hanken Grotesk');
   textSize(18);
-  fill(200);
+  fill('#5a4a34');
   text('Gioca, ascolta e scopri i segreti degli elementi.', width / 2, height / 2 - 20);
 
   if (webcamState === 'active') {
     const t = millis() / 1000;
     const pulse = sin(t * 3) * 5;
-    fill('#e94560');
+    fill('#b0842f');
     textSize(20);
     text('📷 Mostra una carta alla webcam per iniziare', width / 2, height / 2 + 40 + pulse);
   }
+
+  textFont('Space Grotesk');
 
   idleHintTimer++;
 
@@ -636,10 +739,29 @@ function drawEndScreen(title, color, subtitle) {
    ========================================================= */
 
 function drawDecorations() {
-  stroke(255, 255, 255, 12);
+  stroke(152, 126, 76, 18);
   strokeWeight(1);
   for (let x = 0; x < width; x += 40) line(x, 0, x, height);
   for (let y = 0; y < height; y += 40) line(0, y, width, y);
+}
+
+function drawHeroArt() {
+  if (heroIntroStart === 0) heroIntroStart = millis();
+  if (isCompactMobileLayout()) return;
+
+  push();
+  for (const key of HERO_ZORDER) {
+    const img = heroImages[key];
+    if (!img || !img.width) continue;
+    const idx = HERO_APPEAR.indexOf(key);
+    const progress = constrain((millis() - heroIntroStart - idx * 450) / 850, 0, 1);
+    if (progress <= 0) continue;
+    const eased = easeOutCubic(progress);
+    const layer = HERO_LAYOUT[key];
+    tint(255, 210 * eased);
+    image(img, layer.x, layer.y + (1 - eased) * 60, layer.w, layer.w);
+  }
+  pop();
 }
 
 function isCompactMobileLayout() {
@@ -735,11 +857,22 @@ function getCanvasLayout() {
 function drawHUD() {
   const layout = getCanvasLayout();
 
-  fill(255);
+  fill('#2b2318');
   textAlign(LEFT, TOP);
   textSize(layout.hudFont);
   textStyle(BOLD);
-  text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, layout.hudX, layout.hudY);
+  if (heartImage && heartImage.width > 0) {
+    text('Cuori:', layout.hudX, layout.hudY);
+    const labelWidth = textWidth('Cuori:');
+    const heartSize = layout.compact ? 18 : 22;
+    const heartY = layout.hudY - 2;
+    for (let i = 0; i < max(game.hp, 0); i++) {
+      image(heartImage, layout.hudX + labelWidth + 10 + i * (heartSize + 4), heartY, heartSize, heartSize);
+    }
+  } else {
+    text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, layout.hudX, layout.hudY);
+  }
+  fill('#5a4a34');
   text(`Round: ${game.round}/${game.roundsToWin}`, layout.hudX, layout.hudY + (layout.compact ? 24 : 28));
   if (game.enemies.length > 0) {
     text(`Carta avversaria: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, layout.hudX, layout.hudY + (layout.compact ? 48 : 56));
@@ -748,14 +881,14 @@ function drawHUD() {
 
   const enemy = game.currentEnemy;
   if (enemy) {
-    fill(220);
+    fill('#5a4a34');
     textSize(layout.hudSmallFont);
     text(getEnemyHint(enemy), layout.hudX, layout.hudY + (layout.compact ? 72 : 84), layout.hudHintWidth, layout.compact ? 32 : 48);
   }
 
   // Indicatore modalità
   const modeLabel = game.playMode === 'simultaneous' ? 'SFIDA MULTIPLA' : 'UNA CARTA ALLA VOLTA';
-  fill(game.playMode === 'simultaneous' ? '#e94560' : '#3498db');
+  fill(game.playMode === 'simultaneous' ? '#d19725' : '#498AE2');
   textAlign(RIGHT, TOP);
   textSize(layout.modeFont);
   textStyle(BOLD);
@@ -805,14 +938,16 @@ function drawEnemies() {
     pop();
 
     const elem = ELEMENTS[enemy.element];
-    fill(elem.color);
-    noStroke();
     const badgeSize = layout.compact ? 28 : 36;
-    ellipse(x, y - cardH / 2 - layout.enemyBadgeOffsetY, badgeSize, badgeSize);
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(layout.compact ? 14 : 18);
-    text(elem.emoji, x, y - cardH / 2 - layout.enemyBadgeOffsetY);
+    push();
+    translate(x, y - cardH / 2 - layout.enemyBadgeOffsetY);
+    fill('#ffffff');
+    stroke(elem.color);
+    strokeWeight(2);
+    ellipse(0, 0, badgeSize, badgeSize);
+    noStroke();
+    drawElementImage(enemy.element, badgeSize * 0.72, elem.color);
+    pop();
   }
 }
 
@@ -825,26 +960,33 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
   fill(0, 0, 0, 80);
   rect(-w / 2 + 4, -h / 2 + 4, w, h, 10);
 
-  stroke(255, 255, 255, 60);
+  stroke('#cdbb90');
   strokeWeight(2);
-  fill(20, 25, 45);
+  fill('#f2e9d5');
   rect(-w / 2, -h / 2, w, h, 10);
+
+  noFill();
+  stroke(111, 95, 69, 60);
+  strokeWeight(1);
+  rect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 8);
 
   noStroke();
   fill(color);
   rect(-w / 2 + 4, -h / 2 + 4, w - 8, 28, 6);
 
-  fill(255);
+  fill(textColorForBg(color));
   textAlign(CENTER, CENTER);
   textSize(compact ? 11 : 13);
   textStyle(BOLD);
   text(name, 0, -h / 2 + 18);
   textStyle(NORMAL);
 
-  textSize(compact ? 34 : 48);
-  text(emoji, 0, -5);
+  push();
+  translate(0, 8);
+  drawElementImage(element, min(w, h) * 0.62, color);
+  pop();
 
-  fill(255);
+  fill('#6f5f45');
   textSize(compact ? 16 : 20);
   textStyle(BOLD);
   text(power, 0, 45);
@@ -880,12 +1022,12 @@ function drawWebcamPreview() {
   pop();
 
   const isReady = webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0;
-  stroke(isReady ? (qrEnabled ? '#2ecc71' : '#e74c3c') : '#f1c40f');
+  stroke(isReady ? (qrEnabled ? '#7ca35e' : '#b77b52') : '#d3a03e');
   strokeWeight(2);
   noFill();
   rect(px, py, pw, ph, 8);
 
-  fill(255);
+  fill('#5a4a34');
   noStroke();
   textAlign(CENTER, TOP);
   textSize(layout.compact ? 10 : 11);
@@ -905,24 +1047,25 @@ function drawWebcamOverlay() {
   const x = width / 2 - overlayW / 2;
   const y = layout.overlayY;
 
-  fill(0, 0, 0, 200);
-  noStroke();
-  rect(x, y, overlayW, overlayH, 12);
+  fill(255, 252, 245, 240);
+  stroke('#d9ccb3');
+  strokeWeight(1);
+  rect(x, y, overlayW, overlayH, 14);
 
-  fill(255);
+  fill('#7c5a1f');
   textAlign(CENTER, CENTER);
   textSize(layout.compact ? 16 : 18);
   textStyle(BOLD);
   text('📷 Webcam', width / 2, y + 30);
   textStyle(NORMAL);
 
-  fill(220);
+  fill('#5a4a34');
   textSize(layout.compact ? 12 : 14);
   text(webcamMessage, width / 2, y + 75);
 
   if (webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
     textSize(12);
-    fill('#e94560');
+    fill('#c56b57');
     text('Concedi il permesso e premi F5 per ricaricare.', width / 2, y + 105);
   }
 }
@@ -934,10 +1077,13 @@ function drawLog() {
   const w = layout.logW;
   const h = layout.logH;
 
-  fill(0, 0, 0, 120);
+  fill(255, 252, 245, 232);
+  stroke('#d9ccb3');
+  strokeWeight(1);
   rect(x, y, w, h, 8);
 
-  fill(200);
+  noStroke();
+  fill('#5a4a34');
   textAlign(LEFT, TOP);
   textSize(layout.logFont);
   const visible = game.logs.slice(-layout.logItems);
@@ -971,6 +1117,94 @@ function getCardLearningLine(card) {
 
 function getEnemyAnnouncement(enemy) {
   return `${enemy.name}, forza ${enemy.power}. ${getEnemyHint(enemy)}`;
+}
+
+function getCardPromptKey(card, requiresRemoval = false) {
+  if (!card || !card.templateId) return '';
+  return requiresRemoval ? `game.card.${card.templateId}.remove` : `game.card.${card.templateId}`;
+}
+
+function getStoryPromptKey(passageName) {
+  if (!storyEngine || typeof storyEngine.getPromptKeyForPassage !== 'function') return '';
+  return storyEngine.getPromptKeyForPassage(passageName);
+}
+
+function drawCanvasBackground() {
+  background('#f1f6fc');
+}
+
+function textColorForBg(hex) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? '#2b2318' : '#fdf6e6';
+}
+
+function drawElementGlyph(element, size, glyphColor) {
+  const s = size / 100;
+  noStroke();
+  fill(glyphColor);
+
+  push();
+  translate(-50 * s, -50 * s);
+
+  if (element === 'FIRE') {
+    triangle(50 * s, 18 * s, 84 * s, 84 * s, 16 * s, 84 * s);
+  } else if (element === 'WATER') {
+    triangle(16 * s, 24 * s, 84 * s, 24 * s, 50 * s, 88 * s);
+  } else if (element === 'NATURE') {
+    quad(50 * s, 12 * s, 86 * s, 50 * s, 50 * s, 88 * s, 14 * s, 50 * s);
+  } else if (element === 'LIGHT') {
+    ellipse(50 * s, 50 * s, 34 * s, 34 * s);
+    stroke(glyphColor);
+    strokeWeight(6 * s);
+    strokeCap(ROUND);
+    line(50 * s, 10 * s, 50 * s, 24 * s);
+    line(50 * s, 76 * s, 50 * s, 90 * s);
+    line(10 * s, 50 * s, 24 * s, 50 * s);
+    line(76 * s, 50 * s, 90 * s, 50 * s);
+    line(22 * s, 22 * s, 32 * s, 32 * s);
+    line(68 * s, 68 * s, 78 * s, 78 * s);
+    line(78 * s, 22 * s, 68 * s, 32 * s);
+    line(32 * s, 68 * s, 22 * s, 78 * s);
+    noStroke();
+  } else if (element === 'SHADOW') {
+    ellipse(50 * s, 50 * s, 68 * s, 68 * s);
+    fill('#fbf6e8');
+    ellipse(64 * s, 44 * s, 52 * s, 52 * s);
+  } else if (element === 'THUNDER') {
+    beginShape();
+    vertex(58 * s, 10 * s);
+    vertex(28 * s, 54 * s);
+    vertex(47 * s, 54 * s);
+    vertex(42 * s, 92 * s);
+    vertex(76 * s, 44 * s);
+    vertex(55 * s, 44 * s);
+    endShape(CLOSE);
+  }
+
+  pop();
+}
+
+function drawElementImage(element, size, fallbackColor) {
+  const img = elementImages[element];
+  if (img && img.width > 0) {
+    push();
+    imageMode(CENTER);
+    let w = size;
+    let h = size;
+    if (img.width > img.height) {
+      h = size * (img.height / img.width);
+    } else if (img.height > img.width) {
+      w = size * (img.width / img.height);
+    }
+    image(img, 0, 0, w, h);
+    pop();
+  } else {
+    drawElementGlyph(element, size * 0.8, fallbackColor);
+  }
 }
 
 /* =========================================================
@@ -1142,7 +1376,10 @@ function loadCardIntoSlot(templateId) {
     slotEmptyFrames = 0;
     audio.playCard();
     const card = playerSlots[0];
-    tts.speak(`${getCardLearningLine(card)} Togli la carta.`, { channel: 'gameplay' });
+    tts.speak(`${getCardLearningLine(card)} Togli la carta.`, {
+      channel: 'gameplay',
+      promptKey: getCardPromptKey(card, true)
+    });
     logToStatus(`${card.name} nello slot. ${getCardLearningLine(card)}`);
     return;
   }
@@ -1156,7 +1393,10 @@ function loadCardIntoSlot(templateId) {
       slotsFilled++;
       audio.playCard();
       const card = playerSlots[i];
-      tts.speak(getCardLearningLine(card), { channel: 'gameplay' });
+      tts.speak(getCardLearningLine(card), {
+        channel: 'gameplay',
+        promptKey: getCardPromptKey(card, false)
+      });
       logToStatus(`${card.name} nello slot ${i + 1}. ${getCardLearningLine(card)}`);
       return;
     }
@@ -1342,7 +1582,11 @@ function handleQRDetected(id) {
 
     if (event.action === 'start' || event.action === 'restart') {
       audio.playStart();
-      tts.speak('Inizia l\'avventura.', { priority: true, channel: 'gameplay' });
+      tts.speak('Inizia l\'avventura.', {
+        priority: true,
+        channel: 'gameplay',
+        promptKey: 'game.start'
+      });
       lastPlayedCard = null;
       animProgress = 0;
       multiSlotAnim = [];
@@ -1355,7 +1599,12 @@ function handleQRDetected(id) {
       if (event.action === 'start' && id && TEMPLATE_MAP[id]) {
         storyEngine.selectStory(id).then(() => {
           const text = storyEngine.getOpeningText();
-          if (text) tts.speak(text, { channel: 'story' });
+          if (text) {
+            tts.speak(text, {
+              channel: 'story',
+              promptKey: getStoryPromptKey()
+            });
+          }
           if (storyEngine.hasNext()) {
             storyEngine.advance();
             const effectsLog = storyEngine.applyGameEffects(game);
@@ -1376,7 +1625,11 @@ function handleQRDetected(id) {
       }
       return;
     } else if (event.action === 'mode') {
-      tts.speak(event.mode === 'simultaneous' ? 'Modalita sfida multipla.' : 'Modalita una carta alla volta.', { priority: true, channel: 'gameplay' });
+      tts.speak(event.mode === 'simultaneous' ? 'Modalita sfida multipla.' : 'Modalita una carta alla volta.', {
+        priority: true,
+        channel: 'gameplay',
+        promptKey: event.mode === 'simultaneous' ? 'game.mode.simultaneous' : 'game.mode.sequential'
+      });
       logToStatus(event.mode === 'simultaneous' ? 'Modalita\' sfida multipla.' : 'Modalita\' una carta alla volta.');
       if (game.state === GAME_STATE.PLAYING) {
         resetSlots();
@@ -1445,7 +1698,12 @@ function checkStoryEvents() {
   const eventPassage = storyEngine.getEventForRound(game.round);
   if (eventPassage) {
     storyEngine.goToPassage(eventPassage.name);
-    if (eventPassage.text) tts.speak(eventPassage.text, { channel: 'story' });
+    if (eventPassage.text) {
+      tts.speak(eventPassage.text, {
+        channel: 'story',
+        promptKey: getStoryPromptKey(eventPassage.name)
+      });
+    }
     const effectsLog = storyEngine.applyGameEffects(game);
     if (effectsLog && effectsLog.length) {
       effectsLog.forEach(msg => {
@@ -1463,6 +1721,17 @@ function speakStoryEnding(victory) {
   if (!storyEngine || !storyEngine.hasStory()) return;
   const passage = storyEngine.getEnding(victory);
   if (passage && passage.text) {
-    tts.speak(passage.text, { channel: 'story' });
+    tts.speak(passage.text, {
+      channel: 'story',
+      promptKey: getStoryPromptKey(passage.name)
+    });
   }
+}
+
+if (typeof window !== 'undefined') {
+  window.preload = preload;
+  window.setup = setup;
+  window.draw = draw;
+  window.windowResized = windowResized;
+  window.familyVoice = familyVoice;
 }

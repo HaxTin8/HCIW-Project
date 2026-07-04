@@ -1,18 +1,25 @@
 services:
-  deck-of-shadows:
+  specula-elementae:
     build: .
-    container_name: deck-of-shadows
+    container_name: specula-elementae
     ports:
       - "80"
     restart: unless-stopped
     depends_on:
-      - piper-tts
+      - specula-piper
+    environment:
+      APP_PORT: 80
+      APP_STATIC_ROOT: /app/dist
+      APP_DATA_DIR: /data/app
+      PIPER_BASE_URL: http://specula-piper:5000
+    volumes:
+      - specula_app_data:/data/app
 
-  piper-tts:
+  specula-piper:
     build:
       context: .
       dockerfile: docker/piper/Dockerfile
-    container_name: deck-of-shadows-piper
+    container_name: specula-elementae-piper
     restart: unless-stopped
     environment:
       PIPER_DATA_DIR: /data/voices
@@ -24,3 +31,4 @@ services:
 
 volumes:
   piper_voices:
+  specula_app_data:

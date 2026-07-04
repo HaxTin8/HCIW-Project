@@ -1,5 +1,6 @@
-const assert = require('assert');
-const { Game, GAME_STATE } = require('../game.js');
+import assert from 'node:assert';
+import { Game, GAME_STATE } from '../game.js';
+import { CARD_TEMPLATES, resolveCombat, createCard } from '../cards.js';
 
 console.log('Running test-game.js...');
 
@@ -56,7 +57,6 @@ assert.strictEqual(invalid, null);
 assert.strictEqual(g5.state, GAME_STATE.PLAYING);
 
 // Test: modalità simultanea con 3 carte
-const { CARD_TEMPLATES, resolveCombat, createCard } = require('../cards.js');
 const g6 = new Game({ playMode: 'simultaneous' });
 g6.start();
 const ids = g6.enemies.map(enemy => {

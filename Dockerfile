@@ -1,28 +1,43 @@
-# Build delle storie Twine in JSON runtime
-FROM node:20-alpine AS stories-build
+# Build frontend Vite + storie Twine
+FROM node:24-alpine AS app-build
 
 WORKDIR /app
 
 COPY package.json ./package.json
+COPY package-lock.json ./package-lock.json
+RUN npm ci
+
+COPY app-env.js ./app-env.js
+COPY audio.js ./audio.js
+COPY cards.js ./cards.js
+COPY family-voice.html ./family-voice.html
+COPY family-voice.js ./family-voice.js
+COPY fonts ./fonts
+COPY game.js ./game.js
+COPY index.html ./index.html
+COPY print.html ./print.html
+COPY print.js ./print.js
 COPY scripts ./scripts
 COPY stories ./stories
+COPY style.css ./style.css
+COPY tts.js ./tts.js
+COPY vite.config.js ./vite.config.js
+COPY assets ./assets
 
-RUN node scripts/build-stories.js
+RUN node scripts/build-stories.js && npx vite build
 
-# Serve i file statici con nginx
-FROM nginx:alpine
+# Runtime Node leggero: statici, auth, salvataggio registrazioni e proxy Piper
+FROM node:24-alpine
 
-# Rimuove la pagina di default
-RUN rm -rf /usr/share/nginx/html/*
+WORKDIR /app
 
-# Configura nginx come server statico + reverse proxy per TTS
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY . .
+COPY --from=app-build /app/stories/generated ./stories/generated
+COPY --from=app-build /app/dist ./dist
 
-# Copia tutta l'app nella cartella servita da nginx
-COPY . /usr/share/nginx/html
-COPY --from=stories-build /app/stories/generated /usr/share/nginx/html/stories/generated
+ENV APP_PORT=80
+ENV APP_STATIC_ROOT=/app/dist
 
-# Espone la porta 80
 EXPOSE 80
 
-# nginx parte in foreground di default nell'immagine ufficiale
+CMD ["node", "server/app-server.js"]

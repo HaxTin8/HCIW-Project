@@ -1,12 +1,12 @@
-const assert = require('assert');
-const {
+import assert from 'node:assert';
+import {
   CARD_TEMPLATES,
   TEMPLATE_MAP,
   ELEMENTS,
   createCard,
   resolveCombat,
   elementAdvantage
-} = require('../cards.js');
+} from '../cards.js';
 
 console.log('Running test-cards.js...');
 

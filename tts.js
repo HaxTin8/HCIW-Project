@@ -5,8 +5,15 @@
  * - canali separati per gameplay e narrazione
  */
 
-(function (global) {
-  const STORAGE_KEY = 'deck-of-shadows-tts-settings';
+import { speculaEnv } from './app-env.js';
+
+const STORAGE_KEY = 'specula-elementae-tts-settings';
+const LEGACY_STORAGE_KEY = 'deck-of-shadows-tts-settings';
+
+function resolveApiUrl(pathname) {
+  const baseUrl = typeof speculaEnv.apiBaseUrl === 'string' ? speculaEnv.apiBaseUrl : '';
+  return `${baseUrl}${pathname}`;
+}
 
   class TTSManager {
     constructor() {
@@ -68,7 +75,7 @@
       if (typeof window === 'undefined' || !window.localStorage) return;
 
       try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
+        const raw = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_STORAGE_KEY);
         if (!raw) return;
 
         const parsed = JSON.parse(raw);
@@ -191,7 +198,7 @@
       }
 
       try {
-        const response = await fetch('/api/tts/voices', {
+        const response = await fetch(resolveApiUrl('/api/tts/voices'), {
           method: 'GET',
           headers: {
             Accept: 'application/json'
@@ -457,20 +464,23 @@
       if (typeof priorityOrOptions === 'object' && priorityOrOptions !== null) {
         return {
           priority: Boolean(priorityOrOptions.priority),
-          channel: priorityOrOptions.channel || 'gameplay'
+          channel: priorityOrOptions.channel || 'gameplay',
+          promptKey: priorityOrOptions.promptKey || ''
         };
       }
 
       if (typeof maybeOptions === 'object' && maybeOptions !== null) {
         return {
           priority: Boolean(priorityOrOptions),
-          channel: maybeOptions.channel || 'gameplay'
+          channel: maybeOptions.channel || 'gameplay',
+          promptKey: maybeOptions.promptKey || ''
         };
       }
 
       return {
         priority: Boolean(priorityOrOptions),
-        channel: 'gameplay'
+        channel: 'gameplay',
+        promptKey: ''
       };
     }
 
@@ -487,13 +497,21 @@
 
         this.lastSpoken = {
           text: String(text).trim(),
-          channel: options.channel
+          channel: options.channel,
+          promptKey: options.promptKey || ''
         };
 
-        const chunks = this._splitText(text).map((chunk) => ({
-          text: chunk,
-          channel: options.channel
-        }));
+        const chunks = options.promptKey
+          ? [{
+            text: String(text).trim(),
+            channel: options.channel,
+            promptKey: options.promptKey
+          }]
+          : this._splitText(text).map((chunk) => ({
+            text: chunk,
+            channel: options.channel,
+            promptKey: ''
+          }));
         this.queue.push(...chunks);
         this._processQueue();
       } catch (error) {
@@ -505,7 +523,8 @@
       if (!this.lastSpoken) return;
       this.speak(this.lastSpoken.text, {
         priority: true,
-        channel: this.lastSpoken.channel
+        channel: this.lastSpoken.channel,
+        promptKey: this.lastSpoken.promptKey
       });
     }
 
@@ -599,11 +618,44 @@
     }
 
     _speakItem(item, provider) {
+      if (item.promptKey) {
+        return this._speakWithFamilyVoice(item.promptKey)
+          .catch((error) => {
+            console.warn('Registrazione di famiglia non disponibile, fallback TTS:', error);
+            return false;
+          })
+          .then((handled) => {
+            if (handled) return;
+            if (provider === 'piper') {
+              return this._speakWithPiper(item.text, item.channel || 'gameplay');
+            }
+            return this._speakWithBrowser(item.text, item.channel || 'gameplay');
+          });
+      }
+
       if (provider === 'piper') {
         return this._speakWithPiper(item.text, item.channel || 'gameplay');
       }
 
       return this._speakWithBrowser(item.text, item.channel || 'gameplay');
+    }
+
+    async _speakWithFamilyVoice(promptKey) {
+      if (typeof window === 'undefined' || !window.familyVoice || typeof window.familyVoice.fetchRecordingObjectUrl !== 'function') {
+        return false;
+      }
+
+      if (!window.familyVoice.isEnabled() || !window.familyVoice.hasRecording(promptKey)) {
+        return false;
+      }
+
+      const objectUrl = await window.familyVoice.fetchRecordingObjectUrl(promptKey);
+      if (!objectUrl) {
+        return false;
+      }
+
+      await this._playAudioUrl(objectUrl, false);
+      return true;
     }
 
     _speakWithBrowser(text, channel) {
@@ -656,6 +708,14 @@
       const objectUrl = URL.createObjectURL(blob);
       this.currentAudioUrl = objectUrl;
 
+      return this._playAudioUrl(objectUrl, true);
+    }
+
+    _playAudioUrl(objectUrl, revokeOnEnd) {
+      if (revokeOnEnd) {
+        this.currentAudioUrl = objectUrl;
+      }
+
       return new Promise((resolve, reject) => {
         const audio = this._getAudioElement();
         audio.src = objectUrl;
@@ -683,7 +743,7 @@
       let lastError = null;
 
       for (const endpoint of endpoints) {
-        const response = await fetch(endpoint, {
+        const response = await fetch(resolveApiUrl(endpoint), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -746,12 +806,10 @@
     }
   }
 
-  const tts = new TTSManager();
+const tts = new TTSManager();
 
-  global.TTSManager = TTSManager;
-  global.tts = tts;
+if (typeof window !== 'undefined') {
+  Object.assign(window, { TTSManager, tts });
+}
 
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { TTSManager, tts };
-  }
-})(typeof window !== 'undefined' ? window : global);
+export { TTSManager, tts };

@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Deck of Shadows: Avventure degli Elementi</title>
+  <title>Specula Elementae</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <!-- p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -15,7 +18,7 @@
 <body>
   <div id="app">
     <header>
-      <h1>🌿 Deck of Shadows: Avventure degli Elementi</h1>
+      <h1>✨ <span data-app-name>Specula Elementae</span></h1>
       <p>Un gioco di carte pensato per bambini: impara gli elementi della natura giocando con carte fisiche, voce e piccole storie educative.</p>
     </header>
 
@@ -64,6 +67,12 @@
           <button id="tts-repeat-btn" class="secondary-btn" type="button">🔊 Ripeti ultimo messaggio</button>
         </div>
 
+        <section class="family-voice-entry">
+          <h2>Studio Voci di Famiglia</h2>
+          <p>Apri la pagina dedicata per registrare i testi con una voce familiare usando il teleprompter su canvas.</p>
+          <a class="secondary-btn family-voice-link" href="family-voice.html">Apri lo studio</a>
+        </section>
+
         <details class="help" id="help-panel" open>
           <summary>Come si gioca</summary>
           <ul>
@@ -76,16 +85,29 @@
           </ul>
         </details>
 
+        <details class="debug-panel" id="debug-panel">
+          <summary>Debug Rapido</summary>
+          <div class="debug-grid">
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="ROSSO">ROSSO</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="BLU">BLU</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="VERDE">VERDE</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="GIALLO">GIALLO</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="VIOLA">VIOLA</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="NERO">NERO</button>
+          </div>
+          <div class="debug-grid debug-specials">
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="SEQUENZIALE">SEQUENZIALE</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="SIMULTANEO">SIMULTANEO</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="RESTART">RESTART</button>
+          </div>
+          <p class="debug-note">Simula i QR code senza usare carte fisiche o webcam. Per aprirlo subito usa anche <code>?debug=1</code>.</p>
+        </details>
+
         <div id="status" class="status">Mostra una carta alla webcam per iniziare la tua avventura.</div>
       </aside>
     </main>
   </div>
 
-  <script src="cards.js"></script>
-  <script src="stories/story-engine.js"></script>
-  <script src="game.js"></script>
-  <script src="audio.js"></script>
-  <script src="tts.js"></script>
-  <script src="sketch.js"></script>
+  <script type="module" src="sketch.js"></script>
 </body>
 </html>

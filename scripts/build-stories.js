@@ -1,6 +1,9 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const SOURCE_INDEX_PATH = path.join(ROOT, 'stories', 'twine', 'index.json');
 const OUTPUT_DIR = path.join(ROOT, 'stories', 'generated');
@@ -219,13 +222,13 @@ function buildStories() {
   return generatedIndex;
 }
 
-if (require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const generatedIndex = buildStories();
   const storyCount = Object.keys(generatedIndex).filter((key) => key !== '_meta').length;
   console.log(`Build storie completata: ${storyCount} storie generate in stories/generated`);
 }
 
-module.exports = {
+export {
   buildStories,
   clearOutputDir,
   compileStory,

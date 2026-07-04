@@ -1,5 +1,5 @@
 /**
- * Story Engine per Deck of Shadows
+ * Story Engine per Specula Elementae
  *
  * Legge storie Twine compilate in JSON runtime e le integra nel gioco.
  * 
@@ -12,8 +12,7 @@
  * 6. Fornisce testo da leggere via TTS
  */
 
-(function (global) {
-  class StoryEngine {
+class StoryEngine {
     constructor() {
       this.index = null;          // stories/index.json
       this.currentStory = null;   // storia attiva
@@ -228,6 +227,17 @@
       return this.currentStory ? this.currentStory.title : null;
     }
 
+    getStoryId() {
+      return this.currentStory ? this.currentStory.id : null;
+    }
+
+    getPromptKeyForPassage(passageName = null) {
+      if (!this.currentStory) return '';
+      const resolvedPassage = passageName || this.currentPassage;
+      if (!resolvedPassage) return '';
+      return `story.${this.currentStory.id}.${resolvedPassage}`;
+    }
+
     /**
      * Resetta tutto
      */
@@ -239,9 +249,8 @@
     }
   }
 
-  global.StoryEngine = StoryEngine;
+if (typeof window !== 'undefined') {
+  window.StoryEngine = StoryEngine;
+}
 
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { StoryEngine };
-  }
-})(typeof window !== 'undefined' ? window : global);
+export { StoryEngine };

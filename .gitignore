@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 
 # OS
@@ -26,3 +25,4 @@ stories/generated/
 # Environment
 .env
 .env.local
+.local-data/

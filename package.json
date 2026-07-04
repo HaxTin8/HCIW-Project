@@ -1,14 +1,22 @@
 {
-  "name": "deck-of-shadows",
+  "name": "specula-elementae",
   "version": "1.0.0",
-  "description": "Solitario a carte con riconoscimento QR via webcam, in p5.js",
+  "type": "module",
+  "description": "Gioco di carte educativo con storie Twine, TTS e riconoscimento QR via webcam",
   "scripts": {
     "build:stories": "node scripts/build-stories.js",
-    "test": "node scripts/build-stories.js && node test/test-stories-build.js && node test/test-cards.js && node test/test-game.js",
-    "serve": "node scripts/build-stories.js && npx serve ."
+    "build": "node scripts/build-stories.js && vite build",
+    "test": "node scripts/build-stories.js && node test/test-stories-build.js && node test/test-cards.js && node test/test-game.js && node test/test-prompt-catalog.js && node test/test-auth-store.js",
+    "serve": "node scripts/dev-server.js",
+    "dev": "node scripts/dev.js",
+    "debug": "node scripts/dev.js --debug",
+    "dev:backend": "node scripts/dev-server.js",
+    "preview": "vite preview --host 0.0.0.0"
   },
   "keywords": ["p5js", "qrcode", "card-game", "solitaire", "deck-builder"],
   "author": "",
   "license": "MIT",
-  "devDependencies": {}
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
 }

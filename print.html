@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Avventure degli Elementi — Carte da stampare</title>
+  <title>Specula Elementae — Carte da stampare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <style>
     * {
@@ -13,115 +16,137 @@
     body {
       margin: 0;
       padding: 20px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f4f4;
-      color: #222;
+      font-family: 'Hanken Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4eddb;
+      color: #2b2318;
     }
 
     .no-print {
       text-align: center;
       margin-bottom: 24px;
-      padding: 16px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      background: #211a11;
+      color: #f2e7ce;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
 
     .no-print h1 {
       margin-top: 0;
-      color: #e63946;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #f2e7ce;
     }
 
     .no-print p {
       margin: 6px 0;
-      color: #555;
+      color: #c9b892;
     }
 
     .no-print button {
-      padding: 10px 20px;
-      background: #e63946;
-      color: #fff;
+      padding: 10px 22px;
+      background: #b0842f;
+      color: #211a11;
       border: none;
-      border-radius: 6px;
-      font-size: 16px;
+      border-radius: 999px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 12px;
     }
 
     .card-sheet {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 22px;
       max-width: 1200px;
       margin: 0 auto;
     }
 
     .card {
-      width: 220px;
-      height: 320px;
-      background: #fff;
-      border-radius: 14px;
-      border: 3px solid #333;
-      padding: 12px;
+      width: 230px;
+      height: 340px;
+      background: #f1f6fc;
+      border-radius: 18px;
+      border: 1px solid #dce6f2;
+      box-shadow: 0 10px 24px rgba(30,60,90,.12);
+      padding: 16px 14px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      align-items: center;
       position: relative;
+      overflow: hidden;
       break-inside: avoid;
       page-break-inside: avoid;
       margin: 0 auto;
+      color: #2b2318;
     }
 
-    .card-header {
+    .card-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
       text-align: center;
-      padding: 6px 0;
-      border-radius: 8px;
-      color: #fff;
-      font-weight: bold;
-      font-size: 18px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      margin-bottom: 10px;
     }
 
-    .card-emoji {
-      font-size: 72px;
-      text-align: center;
-      line-height: 1;
+    .card-medallion-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
     }
 
-    .card-power {
-      text-align: center;
-      font-size: 36px;
-      font-weight: bold;
-      color: #333;
+    .card-medallion {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-medallion img {
+      width: 82%;
+      height: 82%;
+      object-fit: contain;
+    }
+
+    .card-medallion.circle {
+      font-size: 52px;
     }
 
     .card-desc {
       font-size: 12px;
       text-align: center;
-      color: #555;
+      color: #5a4a34;
       padding: 0 6px;
+      line-height: 1.4;
+      flex: 1;
     }
 
     .card-qr {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 90px;
+      height: 92px;
+      width: 92px;
+      background: #fff;
+      border: 1px solid #dce6f2;
+      border-radius: 10px;
+      margin-top: auto;
     }
 
     .card-qr img {
-      max-width: 90px;
-      max-height: 90px;
+      max-width: 78px;
+      max-height: 78px;
       image-rendering: pixelated;
     }
 
-    .card-footer {
-      text-align: center;
-      font-size: 10px;
-      color: #777;
-    }
-
     @media print {
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
       .no-print {
         display: none;
       }
@@ -138,71 +163,13 @@
 <body>
   <div class="no-print">
     <h1>🖨️ Carte da stampare</h1>
-    <p>Ogni carta include il proprio codice da leggere con la webcam. Usale con Avventure degli Elementi.</p>
+    <p>Ogni carta include il proprio QR code. Usale con <span data-app-name>Specula Elementae</span>.</p>
     <p>Suggerimento: stampa su carta rigida o plastifica le carte.</p>
     <button onclick="window.print()">Stampa</button>
   </div>
 
   <div id="sheet" class="card-sheet"></div>
 
-  <script src="cards.js"></script>
-  <script>
-    const sheet = document.getElementById('sheet');
-
-    function generateQR(text) {
-      const typeNumber = 0;
-      const errorCorrectionLevel = 'M';
-      const qr = qrcode(typeNumber, errorCorrectionLevel);
-      qr.addData(text);
-      qr.make();
-      return qr.createImgTag(4);
-    }
-
-    function createCardElement(template) {
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const elem = ELEMENTS[template.element];
-      const qrImg = generateQR(template.id);
-
-      card.innerHTML = `
-        <div class="card-header" style="background-color: ${elem.color}">${template.name}</div>
-        <div class="card-emoji">${elem.emoji}</div>
-        <div class="card-power">${template.power}</div>
-        <div class="card-desc">${template.description}</div>
-        <div class="card-qr">${qrImg}</div>
-        <div class="card-footer">${template.element} · ${template.id}</div>
-      `;
-      return card;
-    }
-
-    // Genera due copie di ogni carta base
-    for (let i = 0; i < 2; i++) {
-      for (const template of CARD_TEMPLATES) {
-        sheet.appendChild(createCardElement(template));
-      }
-    }
-
-    // Carte speciali
-    const specialCards = [
-      { id: 'RESTART', name: 'Restart', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#555' },
-      { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#3498db' },
-      { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#e94560' }
-    ];
-
-    for (const special of specialCards) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div class="card-header" style="background-color: ${special.color}">${special.name}</div>
-        <div class="card-emoji">${special.emoji}</div>
-        <div class="card-power">—</div>
-        <div class="card-desc">${special.desc}</div>
-        <div class="card-qr">${generateQR(special.id)}</div>
-        <div class="card-footer">SPECIAL · ${special.id}</div>
-      `;
-      sheet.appendChild(card);
-    }
-  </script>
+  <script type="module" src="print.js"></script>
 </body>
 </html>

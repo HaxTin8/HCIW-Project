@@ -5,15 +5,9 @@
  * - simultanea: N nemici, N carte caricate una alla volta, scontro simultaneo
  */
 
-(function (global) {
-  const Cards = typeof require !== 'undefined' ? require('./cards.js') : global;
+import { CARD_TEMPLATES, TEMPLATE_MAP, createCard, resolveCombat } from './cards.js';
 
-  const CARD_TEMPLATES = Cards.CARD_TEMPLATES;
-  const TEMPLATE_MAP = Cards.TEMPLATE_MAP;
-  const createCard = Cards.createCard;
-  const resolveCombat = Cards.resolveCombat;
-
-  const GAME_STATE = {
+const GAME_STATE = {
     IDLE: 'idle',
     PLAYING: 'playing',
     ROUND_RESULT: 'round_result',
@@ -21,7 +15,7 @@
     VICTORY: 'victory'
   };
 
-  class Game {
+class Game {
     constructor(options = {}) {
       this.roundsToWin = options.roundsToWin ?? 8;
       this.simultaneousCards = options.simultaneousCards ?? 3;
@@ -301,10 +295,8 @@
     }
   }
 
-  global.Game = Game;
-  global.GAME_STATE = GAME_STATE;
+if (typeof window !== 'undefined') {
+  Object.assign(window, { Game, GAME_STATE });
+}
 
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { Game, GAME_STATE };
-  }
-})(typeof window !== 'undefined' ? window : global);
+export { Game, GAME_STATE };

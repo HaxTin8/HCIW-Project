@@ -3,8 +3,7 @@
  * Genera suoni procedurali: nessun file esterno necessario.
  */
 
-(function (global) {
-  class AudioManager {
+class AudioManager {
     constructor() {
       this.ctx = null;
       this.master = null;
@@ -121,12 +120,10 @@
     }
   }
 
-  const audio = new AudioManager();
+const audio = new AudioManager();
 
-  global.AudioManager = AudioManager;
-  global.audio = audio;
+if (typeof window !== 'undefined') {
+  Object.assign(window, { AudioManager, audio });
+}
 
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { AudioManager, audio };
-  }
-})(typeof window !== 'undefined' ? window : global);
+export { AudioManager, audio };

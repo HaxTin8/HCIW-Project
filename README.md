@@ -1,11 +1,86 @@
-# Deck of Shadows
+# Specula Elementae
 
 Solitario a carte in **p5.js** con riconoscimento **QR code** tramite webcam.  
 **No click, no tastiera:** l'interazione avviene solo mostrando carte fisiche alla webcam.
 
 ## Come testare in locale
 
-La webcam richiede un server HTTP locale.
+La webcam richiede un server HTTP locale. Ora il flusso consigliato di sviluppo usa **Vite** per il frontend e il server Node leggero per API e storage.
+
+Comandi utili:
+
+```bash
+npm install
+```
+
+```bash
+npm run dev
+```
+
+Avvia:
+
+- frontend Vite su `http://localhost:5173`
+- backend API su `http://localhost:3000`
+
+Il client ora e' in **ESM nativo**: Vite gestisce HMR per il frontend e build multi-page per `index.html`, `family-voice.html` e `print.html`.
+
+```bash
+npm run debug
+```
+
+Avvia il gioco con il percorso di debug pronto su `http://localhost:5173/?debug=1`, cosi' puoi simulare le carte dai pulsanti senza QR e senza webcam.
+
+Se vuoi cambiare porte:
+
+```bash
+PORT=3001 VITE_PORT=5174 npm run debug
+```
+
+Per mantenere il server Node da solo, senza Vite:
+
+```bash
+npm run serve
+```
+
+Il backend locale continua a fare da:
+
+- host statico del gioco
+- API per login semplice e token bearer
+- archivio SQLite + file audio privati per le registrazioni familiari
+- proxy verso Piper su `/api/tts/`
+
+## Variabili ambiente
+
+Con Vite, backend separato e moduli ESM ora puoi configurare piu' facilmente:
+
+```env
+PORT=3000
+VITE_PORT=5173
+VITE_API_TARGET=http://127.0.0.1:3000
+VITE_API_BASE_URL=
+PIPER_BASE_URL=http://127.0.0.1:5000
+APP_STATIC_ROOT=/app/dist
+```
+
+Note:
+
+- `VITE_API_TARGET` serve al proxy dev di Vite.
+- `VITE_API_BASE_URL` e' utile se vuoi puntare il frontend a un backend esterno senza usare il proxy.
+- `APP_STATIC_ROOT` in deploy fa servire al backend la build Vite in `dist/`.
+
+## Voci di famiglia
+
+Il gioco include una sezione **Voci di Famiglia** nell'interfaccia principale.
+
+Flusso:
+
+1. Un genitore crea un profilo semplice con `username` e `password`.
+2. Il server genera un `bearer token` e salva i dati in SQLite.
+3. Il teleprompter mostra i prompt del gameplay e i passaggi delle storie Twine.
+4. Ogni prompt puo' essere registrato, riascoltato o eliminato.
+5. Le registrazioni restano private per quell'utente e non sono accessibili dagli altri profili.
+
+Quando esiste una registrazione per un prompt, il gioco usa prima quella; in assenza della clip continua a usare Piper o le voci del browser come fallback.
 
 ## Storie Twine
 
@@ -67,9 +142,9 @@ Durante il deploy Docker, la build delle storie viene eseguita automaticamente d
 
 Piper viene eseguito come **servizio separato nello stesso `docker-compose`**.
 
-Questo approccio e' preferibile rispetto a metterlo dentro il container nginx dell'app, perche':
+Questo approccio e' preferibile rispetto a metterlo dentro il server applicativo, perche':
 
-- il sito resta un servizio statico semplice da servire
+- il gioco e l'API restano un solo servizio leggero
 - il TTS ha il suo ciclo di vita, cache e log
 - Dokploy puo' riavviare o aggiornare Piper senza toccare il frontend
 
@@ -120,8 +195,8 @@ curl -X POST http://localhost/api/tts/synthesize \
 ### Con Node.js
 
 ```bash
-npm run serve
-# Apri l'indirizzo mostrato (di solito http://localhost:3000)
+npm run dev
+# Apri l'indirizzo mostrato (di solito http://localhost:5173)
 ```
 
 ### Con Docker Compose
@@ -130,7 +205,7 @@ Se hai Docker e Docker Compose installati:
 
 ```bash
 docker compose up --build
-# Apri http://localhost
+# Apri il dominio o la porta esposta dal servizio applicativo
 ```
 
 Per fermare:
@@ -209,16 +284,24 @@ Durante il combattimento:
 ├── cards.js            # Database carte + logica combattimento
 ├── game.js             # Stato del gioco, testabile
 ├── audio.js            # Suoni procedurali Web Audio API
-├── tts.js              # Sintesi vocale (Text-to-Speech)
+├── family-voice.js     # UI registrazioni familiari + auth client
+├── tts.js              # Sintesi vocale con fallback su registrazioni familiari
 ├── sketch.js           # Rendering p5.js + webcam + animazioni
 ├── scripts/
-│   └── build-stories.js
+│   ├── build-stories.js
+│   └── dev-server.js
+├── server/
+│   ├── app-server.js   # Server leggero: statici, auth, upload audio, proxy Piper
+│   ├── auth-store.js   # SQLite + token + metadata registrazioni
+│   └── prompt-catalog.js
 ├── stories/
 │   ├── twine/          # Sorgenti Twee versionati
 │   └── generated/      # JSON runtime generati
 ├── test/
+│   ├── test-auth-store.js
 │   ├── test-cards.js
 │   ├── test-game.js
+│   ├── test-prompt-catalog.js
 │   └── test-stories-build.js
 ├── package.json
 ├── Dockerfile
@@ -244,7 +327,8 @@ PIPER_DEFAULT_VOICE=it_IT-paola-medium
 
 3. Verifica che il servizio esponga la porta HTTP dell'app, cioe' `80`.
 4. Al primo avvio Piper scarichera' i modelli vocali: il bootstrap iniziale puo' durare un po' piu' del solito.
-5. Il server deve poter uscire su Internet al primo avvio del container `piper-tts`, cosi' i modelli vocali possono essere scaricati.
+5. Il server deve poter uscire su Internet al primo avvio del container `specula-piper`, cosi' i modelli vocali possono essere scaricati.
+6. Le registrazioni familiari vengono salvate nel volume Docker `specula_app_data`, quindi non si perdono ai riavvii normali del servizio.
 
 Se non imposti variabili, il deploy parte comunque, ma con la voce di esempio `en_US-lessac-medium`.
 

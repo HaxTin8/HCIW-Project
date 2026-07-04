@@ -1,6 +1,10 @@
-const assert = require('assert');
-const path = require('path');
-const { buildStories, compileStory } = require('../scripts/build-stories.js');
+import assert from 'node:assert';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildStories, compileStory } from '../scripts/build-stories.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('Running test-stories-build.js...');
 
