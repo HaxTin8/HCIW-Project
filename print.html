@@ -66,14 +66,14 @@
     .card {
       width: 230px;
       height: 340px;
-      background: #f2e9d5;
-      border-radius: 14px;
-      border: 1px solid #cdbb90;
-      box-shadow: 0 10px 24px rgba(0,0,0,.22);
-      padding: 0;
+      background: #f1f6fc;
+      border-radius: 18px;
+      border: 1px solid #dce6f2;
+      box-shadow: 0 10px 24px rgba(30,60,90,.12);
+      padding: 16px 14px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      align-items: center;
       position: relative;
       overflow: hidden;
       break-inside: avoid;
@@ -82,79 +82,64 @@
       color: #2b2318;
     }
 
-    .card::before {
-      content: '';
-      position: absolute;
-      inset: 6px;
-      border: 1.5px solid rgba(111,95,69,.35);
-      border-radius: 9px;
-      pointer-events: none;
-    }
-
-    .card-header {
-      text-align: center;
-      padding: 10px 0;
+    .card-name {
       font-family: 'Space Grotesk', sans-serif;
       font-weight: 700;
-      font-size: 18px;
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 10px;
     }
 
     .card-medallion-wrap {
       display: flex;
       justify-content: center;
-      padding: 6px 0 2px;
+      margin-bottom: 10px;
     }
 
     .card-medallion {
-      width: 96px;
-      height: 96px;
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
-      background: radial-gradient(circle at 50% 40%, #fbf6e8, #e9dbbf);
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .card-power {
-      text-align: center;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 30px;
-      font-weight: 900;
-      color: #2b2318;
+    .card-medallion img {
+      width: 82%;
+      height: 82%;
+      object-fit: contain;
+    }
+
+    .card-medallion.circle {
+      font-size: 52px;
     }
 
     .card-desc {
-      font-size: 11.5px;
+      font-size: 12px;
       text-align: center;
       color: #5a4a34;
-      padding: 0 10px;
-      line-height: 1.35;
+      padding: 0 6px;
+      line-height: 1.4;
+      flex: 1;
     }
 
     .card-qr {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 96px;
+      height: 92px;
+      width: 92px;
       background: #fff;
-      margin: 8px 12px 6px;
-      border: 1px solid #cdbb90;
-      border-radius: 6px;
+      border: 1px solid #dce6f2;
+      border-radius: 10px;
+      margin-top: auto;
     }
 
     .card-qr img {
-      max-width: 90px;
-      max-height: 90px;
+      max-width: 78px;
+      max-height: 78px;
       image-rendering: pixelated;
-    }
-
-    .card-footer {
-      text-align: center;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 10px;
-      letter-spacing: .05em;
-      color: #8a7a58;
-      padding-bottom: 8px;
     }
 
     @media print {
@@ -197,23 +182,9 @@
     }
 
     // Icona vettoriale per elemento, stessa geometria usata nel gioco (sketch.js).
-    function elementIcon(elementId, color) {
-      switch (elementId) {
-        case 'FIRE':
-          return `<svg width="56" height="56" viewBox="0 0 100 100"><polygon points="50,18 84,84 16,84" fill="${color}"/></svg>`;
-        case 'WATER':
-          return `<svg width="56" height="56" viewBox="0 0 100 100"><polygon points="16,24 84,24 50,88" fill="${color}"/></svg>`;
-        case 'NATURE':
-          return `<svg width="56" height="56" viewBox="0 0 100 100"><polygon points="50,12 86,50 50,88 14,50" fill="${color}"/></svg>`;
-        case 'LIGHT':
-          return `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="17" fill="${color}"/><g stroke="${color}" stroke-width="6" stroke-linecap="round"><line x1="50" y1="10" x2="50" y2="24"/><line x1="50" y1="76" x2="50" y2="90"/><line x1="10" y1="50" x2="24" y2="50"/><line x1="76" y1="50" x2="90" y2="50"/><line x1="22" y1="22" x2="32" y2="32"/><line x1="68" y1="68" x2="78" y2="78"/><line x1="78" y1="22" x2="68" y2="32"/><line x1="32" y1="68" x2="22" y2="78"/></g></svg>`;
-        case 'SHADOW':
-          return `<svg width="56" height="56" viewBox="0 0 100 100"><path d="M50 16 a34 34 0 1 0 0 68 a26 26 0 1 1 0 -68 z" fill="${color}"/></svg>`;
-        case 'THUNDER':
-          return `<svg width="54" height="54" viewBox="0 0 100 100"><polygon points="58,10 28,54 47,54 42,92 76,44 55,44" fill="${color}"/></svg>`;
-        default:
-          return '';
-      }
+    function elementIcon(elementId) {
+      const name = elementId.toLowerCase();
+      return `<img src="assets/elements/${name}.png" alt="${elementId}" style="width: 100%; height: 100%; object-fit: contain;">`;
     }
 
     function generateQR(text) {
@@ -231,17 +202,14 @@
 
       const elem = ELEMENTS[template.element];
       const qrImg = generateQR(template.id);
-      const textColor = textColorForBg(elem.color);
 
       card.innerHTML = `
-        <div class="card-header" style="background-color: ${elem.color}; color: ${textColor}">${template.name}</div>
+        <div class="card-name" style="color: ${elem.color}">${template.name}</div>
         <div class="card-medallion-wrap">
-          <div class="card-medallion" style="border: 3px solid ${elem.color}">${elementIcon(template.element, elem.color)}</div>
+          <div class="card-medallion" style="background-color: ${elem.color}1a">${elementIcon(template.element)}</div>
         </div>
-        <div class="card-power" style="color: ${elem.color}">${template.power}</div>
         <div class="card-desc">${template.description}</div>
         <div class="card-qr">${qrImg}</div>
-        <div class="card-footer">${template.element} · ${template.id}</div>
       `;
       return card;
     }
@@ -253,26 +221,22 @@
       }
     }
 
-    // Carte speciali
     const specialCards = [
       { id: 'RESTART', name: 'Restart', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#211a11' },
-      { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#3d7691' },
-      { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#b0842f' }
+      { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#498AE2' },
+      { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#ECBA4E' }
     ];
 
     for (const special of specialCards) {
       const card = document.createElement('div');
       card.className = 'card';
-      const textColor = textColorForBg(special.color);
       card.innerHTML = `
-        <div class="card-header" style="background-color: ${special.color}; color: ${textColor}">${special.name}</div>
+        <div class="card-name" style="color: ${special.color}">${special.name}</div>
         <div class="card-medallion-wrap">
-          <div class="card-medallion" style="border: 3px solid ${special.color}; font-size: 46px;">${special.emoji}</div>
+          <div class="card-medallion circle" style="background-color: ${special.color}1a">${special.emoji}</div>
         </div>
-        <div class="card-power" style="color: ${special.color}">—</div>
         <div class="card-desc">${special.desc}</div>
         <div class="card-qr">${generateQR(special.id)}</div>
-        <div class="card-footer">SPECIAL · ${special.id}</div>
       `;
       sheet.appendChild(card);
     }

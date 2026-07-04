@@ -28,6 +28,10 @@ var magicFont;
 var scaleFactor = 1;
 var isCompact = false;
 
+// Element and heart assets
+var elementImages = {};
+var heartImage;
+
 // Illustrazione hero (schermata idle): livelli composti a sinistra
 // del canvas, che appaiono dal basso con dissolvenza in sequenza.
 var heroImages = {};
@@ -65,6 +69,15 @@ function preload() {
   heroImages.river = loadImage('assets/hero/river.png');
   heroImages.towers = loadImage('assets/hero/towers.png');
   heroImages.mountains = loadImage('assets/hero/mountains.png');
+
+  // Caricamento nuove icone degli elementi e della vita
+  elementImages.FIRE = loadImage('assets/elements/fire.png');
+  elementImages.WATER = loadImage('assets/elements/water.png');
+  elementImages.NATURE = loadImage('assets/elements/nature.png');
+  elementImages.LIGHT = loadImage('assets/elements/light.png');
+  elementImages.SHADOW = loadImage('assets/elements/shadow.png');
+  elementImages.THUNDER = loadImage('assets/elements/thunder.png');
+  heartImage = loadImage('assets/elements/heart-life.png');
 }
 
 // Rende trasparente lo sfondo uniforme dell'immagine (chroma-key sul
@@ -91,40 +104,22 @@ function updateCanvasDimensions() {
   const container = document.getElementById('canvas-container');
   if (!container) return;
 
-  // Consider padding
-  const paddingX = 20; 
-  const paddingY = 20; 
+  let w = container.clientWidth;
+  let h = container.clientHeight;
 
-  let availW = container.clientWidth - paddingX;
-  let availH = container.clientHeight - paddingY;
-
-  if (availW <= 0) {
-    availW = windowWidth < 720 ? windowWidth - 40 : 900;
+  if (w <= 0) {
+    w = windowWidth < 720 ? windowWidth - 40 : 900;
   }
-  if (availH <= 0) {
-    availH = windowHeight < 600 ? windowHeight - 160 : 600;
+  if (h <= 0) {
+    h = windowHeight < 600 ? windowHeight - 160 : 600;
   }
 
-  let w, h;
-  if (availW >= 720) {
-    w = availW;
-    h = w / 1.5;
+  isCompact = w < 720;
 
-    // Se l'altezza supera quella disponibile, riduci l'ampiezza per contenere il canvas
-    if (h > availH) {
-      h = availH;
-      w = h * 1.5;
-    }
-
-    scaleFactor = w / 900;
-    isCompact = false;
+  if (!isCompact) {
+    scaleFactor = min(w / 900, h / 600);
   } else {
-    w = availW;
-    h = min(520, availH);
-
-    // Riduci la scala sia in base all'altezza che alla larghezza
     scaleFactor = min(w / 380, h / 520);
-    isCompact = true;
   }
 
   resizeCanvas(w, h);
@@ -322,10 +317,10 @@ function draw() {
       drawRoundResult();
       break;
     case GAME_STATE.GAME_OVER:
-      drawEndScreen('GAME OVER', '#b5482f', 'Mostra una carta per ricominciare.');
+      drawEndScreen('GAME OVER', '#DD4B50', 'Mostra una carta per ricominciare.');
       break;
     case GAME_STATE.VICTORY:
-      drawEndScreen('VITTORIA!', '#d8b25a', 'Mostra una carta per una nuova run.');
+      drawEndScreen('VITTORIA!', '#ECBA4E', 'Mostra una carta per una nuova run.');
       break;
   }
 }
@@ -542,7 +537,7 @@ function drawRoundResult() {
     if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
       resetSlots();
       if (game.round !== oldRound) {
-        tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
+        tts.speak(`${game.currentEnemy.name}.`);
       }
     }
   }
@@ -581,7 +576,21 @@ function drawHUD() {
   textAlign(LEFT, TOP);
   textSize(18 * scaleFactor);
   textStyle(BOLD);
-  text(`HP: ${'❤️'.repeat(max(game.hp, 0))}`, sx(20), sy(20));
+
+  // Disegna l'icona del cuore se disponibile, altrimenti fai il fallback al testo emoji
+  if (heartImage && heartImage.width > 0) {
+    text('HP: ', sx(20), sy(20));
+    const hpLabelWidth = textWidth('HP: ');
+    const heartSize = sx(20);
+    const heartY = sy(20) - sy(1);
+    for (let i = 0; i < max(game.hp, 0); i++) {
+      const heartX = sx(20) + hpLabelWidth + i * (heartSize + sx(4));
+      image(heartImage, heartX, heartY, heartSize, heartSize);
+    }
+  } else {
+    text(`HP: ${'❤️'.repeat(max(game.hp, 0))}`, sx(20), sy(20));
+  }
+
   fill('#5a4a34');
   textSize(11 * scaleFactor);
   textStyle(NORMAL);
@@ -592,7 +601,7 @@ function drawHUD() {
 
   // Indicatore modalità
   const modeLabel = game.playMode === 'simultaneous' ? 'SIMULTANEO' : 'SEQUENZIALE';
-  fill(game.playMode === 'simultaneous' ? '#d8b25a' : '#3d7691');
+  fill(game.playMode === 'simultaneous' ? '#ECBA4E' : '#498AE2');
   textAlign(RIGHT, TOP);
   textSize(11 * scaleFactor);
   textStyle(BOLD);
@@ -699,6 +708,27 @@ function drawElementGlyph(element, size, glyphColor) {
   pop();
 }
 
+// Disegna l'icona dell'elemento caricata come immagine, con fallback vettoriale
+function drawElementImage(element, size, fallbackColor) {
+  const img = elementImages[element];
+  if (img && img.width > 0) {
+    push();
+    imageMode(CENTER);
+    let w = size;
+    let h = size;
+    if (img.width > img.height) {
+      h = size * (img.height / img.width);
+    } else if (img.height > img.width) {
+      w = size * (img.width / img.height);
+    }
+    image(img, 0, 0, w, h);
+    pop();
+  } else {
+    // Ridimensiona leggermente per far corrispondere le dimensioni del fallback vettoriale
+    drawElementGlyph(element, size * 0.8, fallbackColor);
+  }
+}
+
 function drawCardFrame(x, y, w, h, cardColor, emoji, name, power, element) {
   push();
   translate(x, y);
@@ -729,29 +759,11 @@ function drawCardFrame(x, y, w, h, cardColor, emoji, name, power, element) {
   textStyle(NORMAL);
 
   const medR = min(w, h) * 0.32;
-  stroke(cardColor);
-  strokeWeight(sx(2));
-  fill('#fbf6e8');
-  ellipse(0, sy(4), medR * 2, medR * 2);
 
   push();
   translate(0, sy(4));
-  drawElementGlyph(element, medR * 1.1, cardColor);
+  drawElementImage(element, medR * 2.1, cardColor);
   pop();
-
-  const bx = w / 2 - sx(22);
-  const by = -h / 2 + sy(34);
-  fill('#f7f2e4');
-  stroke(cardColor);
-  strokeWeight(sx(2));
-  ellipse(bx, by, sx(34), sx(34));
-
-  noStroke();
-  fill(cardColor);
-  textSize(16 * scaleFactor);
-  textStyle(BOLD);
-  text(power, bx, by + sy(1));
-  textStyle(NORMAL);
 
   fill('#6f5f45');
   textSize(11 * scaleFactor);
@@ -786,8 +798,8 @@ function drawQrToggleButton() {
   const ctx = drawingContext;
   const grad = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
   if (qrEnabled) {
-    grad.addColorStop(0, hovering ? '#e0bd6e' : '#d8b25a');
-    grad.addColorStop(1, hovering ? '#bb8f3a' : '#b0842f');
+    grad.addColorStop(0, hovering ? '#F3C562' : '#ECBA4E');
+    grad.addColorStop(1, hovering ? '#DCA42C' : '#CA9424');
   } else {
     grad.addColorStop(0, hovering ? '#a4a29b' : '#8a7a58');
     grad.addColorStop(1, hovering ? '#6d6a60' : '#5a4a34');
@@ -849,10 +861,6 @@ function drawWebcamPreview() {
   pop();
 
   const isReady = webcamState === 'active' && video && video.width > 0;
-  stroke(isReady ? (qrEnabled ? '#2f8562' : '#b5482f') : '#d8b25a');
-  strokeWeight(sx(2));
-  noFill();
-  rect(px, py, pw, ph, sx(8));
 
   fill('#5a4a34');
   noStroke();
@@ -870,33 +878,57 @@ function drawWebcamPreview() {
 function drawWebcamOverlay() {
   if (webcamState === 'active') return;
 
-  const overlayW = isCompact ? width - sx(30) : sx(420);
-  const overlayH = isCompact ? sy(160) : sy(140);
-  const x = width / 2 - overlayW / 2;
-  const y = isCompact ? sy(280) : height / 2 + sy(60);
+  const isProblem = webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported';
+  const accent = isProblem ? '#DD4B50' : '#498AE2';
+  const hint = isProblem ? 'Concedi il permesso e premi F5 per ricaricare.' : null;
 
-  fill(23, 16, 9, 235);
-  stroke(176, 132, 47, 100);
-  strokeWeight(sx(1));
-  rect(x, y, overlayW, overlayH, sx(12));
+  const alertW = isCompact ? width - sx(30) : sx(440);
+  const alertH = hint ? sy(88) : sy(64);
+  const x = width / 2 - alertW / 2;
+  const y = height - alertH - sy(24);
+  const r = sx(14);
 
+  // Corpo dell'alert (card chiara con accento a sinistra)
   noStroke();
-  fill('#f4ead0');
+  fill('#ffffff');
+  rect(x, y, alertW, alertH, r);
+  fill(accent);
+  rect(x, y, sx(6), alertH, r, 0, 0, r);
+
+  // Pallino con emoji webcam / warning
+  const icoX = x + sx(34);
+  const icoY = y + alertH / 2;
+  fill(accent);
+  const dot = sx(28);
+  ellipse(icoX, icoY, dot, dot);
+  fill('#ffffff');
   textAlign(CENTER, CENTER);
-  textSize(18 * scaleFactor);
+  textSize(15 * scaleFactor);
+  text(isProblem ? '!' : '📷', icoX, icoY);
+
+  // Testi
+  const tx = x + sx(58);
+  const tw = alertW - sx(70);
+  textAlign(LEFT, CENTER);
+
+  textFont('Space Grotesk');
   textStyle(BOLD);
-  text('📷 Webcam', width / 2, y + sy(30));
+  fill('#2b2318');
+  textSize(13 * scaleFactor);
+  const titleY = hint ? y + sy(22) : icoY - sy(8);
+  text('Webcam', tx, titleY);
   textStyle(NORMAL);
 
   textFont('Hanken Grotesk');
-  fill('#c9b892');
-  textSize(14 * scaleFactor);
-  text(webcamMessage, width / 2, y + sy(75));
+  fill('#5a4a34');
+  textSize(12 * scaleFactor);
+  const msgY = hint ? y + sy(40) : icoY + sy(9);
+  text(webcamMessage, tx, msgY, tw);
 
-  if (webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
-    textSize(12 * scaleFactor);
-    fill('#d8b25a');
-    text('Concedi il permesso e premi F5 per ricaricare.', width / 2, y + sy(105));
+  if (hint) {
+    fill(accent);
+    textSize(11 * scaleFactor);
+    text(hint, tx, y + sy(62), tw);
   }
   textFont('Space Grotesk');
 }
@@ -1234,13 +1266,13 @@ function playSequentialSlot() {
 
   if (event.result === 'win') {
     audio.playWin();
-    spawnFloater('VITTORIA', width / 2, sy(120), '#2f8562');
+    spawnFloater('VITTORIA', width / 2, sy(120), '#97B481');
   } else if (event.result === 'lose') {
     audio.playLose();
-    spawnFloater('SCONFITTA', width / 2, sy(120), '#b5482f');
+    spawnFloater('SCONFITTA', width / 2, sy(120), '#DD4B50');
   } else {
     audio.playDraw();
-    spawnFloater('PAREGGIO', width / 2, sy(120), '#d8b25a');
+    spawnFloater('PAREGGIO', width / 2, sy(120), '#ECBA4E');
   }
 
   tts.onIdle(() => {
@@ -1249,7 +1281,7 @@ function playSequentialSlot() {
     animProgress = 0;
 
     if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
-      tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
+      tts.speak(`${game.currentEnemy.name}.`);
     }
   });
 }
@@ -1298,13 +1330,13 @@ function playAllSlots() {
   tts.onIdle(() => {
     multiSlotAnim = [];
     if (event.lastResult === 'win') {
-      screenFlash = { color: [47, 133, 98], alpha: 120 };
-      spawnFloater('+ NEMICI', width / 2, sy(120), '#2f8562');
+      screenFlash = { color: [151, 180, 129], alpha: 120 };
+      spawnFloater('+ NEMICI', width / 2, sy(120), '#97B481');
     } else if (event.lastResult === 'lose') {
-      screenFlash = { color: [181, 72, 47], alpha: 120 };
-      spawnFloater('-1 HP', width / 2, sy(120), '#b5482f');
+      screenFlash = { color: [221, 75, 80], alpha: 120 };
+      spawnFloater('-1 HP', width / 2, sy(120), '#DD4B50');
     } else {
-      screenFlash = { color: [216, 178, 90], alpha: 100 };
+      screenFlash = { color: [236, 186, 78], alpha: 100 };
     }
     resultTimer = 0;
     slotLocked = false;
@@ -1431,7 +1463,7 @@ function handleQRDetected(id) {
       multiSlotAnim = [];
       resetSlots();
       if (game.currentEnemy) {
-        tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
+        tts.speak(`${game.currentEnemy.name}.`);
       }
       logToStatus(event.action === 'start' ? 'Partita iniziata.' : 'Nuova partita.');
     } else if (event.action === 'mode') {
@@ -1443,7 +1475,7 @@ function handleQRDetected(id) {
         lastPlayedCard = null;
         animProgress = 0;
         if (game.currentEnemy) {
-          const enemyNames = game.enemies.map(e => `${e.name} ${e.power}`).join(', ');
+          const enemyNames = game.enemies.map(e => e.name).join(', ');
           tts.speak(enemyNames);
           logToStatus(`Nemici: ${enemyNames}`);
         }

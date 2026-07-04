@@ -10,12 +10,12 @@
 
 (function (global) {
   const ELEMENTS = {
-    FIRE: { id: 'FIRE', name: 'Fuoco', emoji: '🔥', color: '#b5482f', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
-    WATER: { id: 'WATER', name: 'Acqua', emoji: '💧', color: '#3d7691', weakTo: ['NATURE', 'SHADOW'], strongVs: ['FIRE', 'THUNDER'] },
-    NATURE: { id: 'NATURE', name: 'Natura', emoji: '🌿', color: '#2f8562', weakTo: ['FIRE', 'THUNDER'], strongVs: ['WATER', 'LIGHT'] },
-    LIGHT: { id: 'LIGHT', name: 'Luce', emoji: '☀️', color: '#d8b25a', weakTo: ['NATURE', 'FIRE'], strongVs: ['SHADOW', 'THUNDER'] },
-    SHADOW: { id: 'SHADOW', name: 'Ombra', emoji: '🌑', color: '#6a5a8f', weakTo: ['FIRE', 'LIGHT'], strongVs: ['WATER', 'NATURE'] },
-    THUNDER: { id: 'THUNDER', name: 'Tuono', emoji: '⚡', color: '#c2892c', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] }
+    FIRE: { id: 'FIRE', name: 'Fuoco', emoji: '🔥', color: '#DD4B50', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
+    WATER: { id: 'WATER', name: 'Acqua', emoji: '💧', color: '#498AE2', weakTo: ['NATURE', 'SHADOW'], strongVs: ['FIRE', 'THUNDER'] },
+    NATURE: { id: 'NATURE', name: 'Natura', emoji: '🌿', color: '#97B481', weakTo: ['FIRE', 'THUNDER'], strongVs: ['WATER', 'LIGHT'] },
+    LIGHT: { id: 'LIGHT', name: 'Luce', emoji: '☀️', color: '#ECE64E', weakTo: ['NATURE', 'FIRE'], strongVs: ['SHADOW', 'THUNDER'] },
+    SHADOW: { id: 'SHADOW', name: 'Ombra', emoji: '🌑', color: '#8380BC', weakTo: ['FIRE', 'LIGHT'], strongVs: ['WATER', 'NATURE'] },
+    THUNDER: { id: 'THUNDER', name: 'Tuono', emoji: '⚡', color: '#ECBA4E', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] }
   };
 
   const CARD_TEMPLATES = [
