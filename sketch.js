@@ -42,6 +42,7 @@ var cameraSection;
 var cameraBtn;
 var switchCameraBtn;
 var currentFacingMode = 'environment';
+var isSwitchingCamera = false;
 
 function setup() {
   const container = select('#canvas-container');
@@ -123,11 +124,17 @@ function updateCameraButton() {
 }
 
 function switchCamera() {
-  if (!isMobile()) return;
+  if (!isMobile() || isSwitchingCamera) return;
+  isSwitchingCamera = true;
   currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
   console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
-  // Piccolo ritardo per dare tempo al browser di rilasciare il dispositivo
-  setTimeout(() => setupWebcam(), 300);
+  webcamState = 'loading';
+  webcamMessage = 'Cambio fotocamera...';
+  updateCameraButton();
+  setTimeout(() => {
+    setupWebcam();
+    setTimeout(() => { isSwitchingCamera = false; }, 2000);
+  }, 400);
 }
 
 function setupWebcam() {
@@ -169,6 +176,7 @@ function tryCreateCapture(constraints, attempt) {
     if (video.elt && video.elt.srcObject) {
       video.elt.srcObject.getTracks().forEach(track => track.stop());
     }
+    video.remove();
     video = null;
   }
 
@@ -189,17 +197,28 @@ function tryCreateCapture(constraints, attempt) {
         video.size(320, 240);
         video.hide();
 
-        // Aspetta il canplay per passare ad active senza fidarsi solo del timeout
-        video.elt.addEventListener('canplay', () => {
-          console.log('[Webcam] Evento canplay ricevuto');
+        function setActive() {
+          console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
           if (webcamState !== 'active') {
-            console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
             webcamState = 'active';
             webcamMessage = 'Fotocamera attiva.';
             logToStatus('Fotocamera attiva. Mostra una carta per iniziare.');
             updateCameraButton();
           }
-        }, { once: true });
+        }
+
+        if (video.elt.readyState >= 2) {
+          console.log('[Webcam] Video già pronto al callback');
+          setActive();
+        } else {
+          // Aspetta il canplay per passare ad active senza fidarsi solo del timeout
+          video.elt.addEventListener('canplay', () => {
+            console.log('[Webcam] Evento canplay ricevuto');
+            if (webcamState !== 'active') {
+              setActive();
+            }
+          }, { once: true });
+        }
 
         video.elt.play().catch(e => console.warn('[Webcam] Autoplay bloccato:', e));
       }

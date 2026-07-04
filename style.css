@@ -157,3 +157,81 @@ main {
     width: 100%;
   }
 }
+
+@media (max-width: 767px) {
+  #app {
+    padding: 12px;
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+  }
+
+  header p {
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  main {
+    gap: 12px;
+  }
+
+  #canvas-container {
+    min-height: auto;
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  #canvas-container canvas {
+    max-height: 52vh;
+  }
+
+  #controls {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  #controls h2 {
+    font-size: 1.2rem;
+  }
+
+  .mode-toggle {
+    margin-bottom: 12px;
+    padding: 10px;
+  }
+
+  .mode-toggle label {
+    font-size: 0.95rem;
+  }
+
+  .camera-section {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .camera-btn {
+    padding: 16px 20px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .help {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .help h3 {
+    font-size: 1rem;
+  }
+
+  .help ul {
+    font-size: 0.88rem;
+    padding-left: 16px;
+  }
+
+  .status {
+    padding: 10px;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+}
