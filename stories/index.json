@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "description": "Mappa tra ID carta iniziale e storia da narrare",
+    "version": "1.0"
+  },
+  "ROSSO": {
+    "id": "fuoco-del-destino",
+    "title": "Il Fuoco del Destino",
+    "file": "stories/story-rosso.json"
+  },
+  "BLU": {
+    "id": "acque-del-tempo",
+    "title": "Le Acque del Tempo",
+    "file": "stories/story-blu.json"
+  },
+  "VERDE": {
+    "id": "radici-dimenticate",
+    "title": "Le Radici Dimenticate",
+    "file": "stories/story-verde.json"
+  },
+  "GIALLO": {
+    "id": "luce-prima-dellalba",
+    "title": "La Luce Prima dell'Alba",
+    "file": "stories/story-giallo.json"
+  },
+  "VIOLA": {
+    "id": "ombre-del-passato",
+    "title": "Le Ombre del Passato",
+    "file": "stories/story-viola.json"
+  },
+  "NERO": {
+    "id": "tuono-delle-origini",
+    "title": "Il Tuono delle Origini",
+    "file": "stories/story-nero.json"
+  }
+}

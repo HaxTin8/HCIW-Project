@@ -1,0 +1,45 @@
+{
+  "id": "luce-prima-dellalba",
+  "title": "La Luce Prima dell'Alba",
+  "author": "Deck of Shadows",
+  "passages": [
+    {
+      "pid": 1,
+      "name": "prologo",
+      "tags": ["opening"],
+      "text": "Il Raggio penetra l'oscurita'. Hai scelto la Luce, e la Luce sceglie chi e' degno. Illumina il tuo cammino.",
+      "links": [{ "target": "inizio-avventura", "text": "Illumina" }]
+    },
+    {
+      "pid": 2,
+      "name": "inizio-avventura",
+      "tags": [],
+      "text": "Anche la luce piu' brillante parte da una scintilla. Gioca con determinazione, e l'alba e' tua.",
+      "links": []
+    },
+    {
+      "pid": 3,
+      "name": "evento-round-4",
+      "tags": ["mid-story"],
+      "text": "L'alba e' vicina. La luce ti rivela i punti deboli del nemico: per questo round, i suoi punti di forza elementale sono dimezzati.",
+      "links": [],
+      "gameEffects": {
+        "halfElementBonus": true,
+        "roundSpecific": 4
+      }
+    },
+    {
+      "pid": 4,
+      "name": "epilogo-vittoria",
+      "tags": ["ending", "victory"],
+      "text": "Hai portato l'alba nel mondo delle ombre. La tua luce splendera' per sempre."
+    },
+    {
+      "pid": 5,
+      "name": "epilogo-sconfitta",
+      "tags": ["ending", "defeat"],
+      "text": "La notte e' lunga, ma mai eterna. Il tuo raggio tornera' a rischiare."
+    }
+  ],
+  "startPassage": "prologo"
+}

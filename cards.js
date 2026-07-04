@@ -56,24 +56,26 @@
   /**
    * Determina il risultato di uno scontro.
    * Ritorna: 'win', 'lose', 'draw'
+   * Opzioni: halfElementBonus (boolean), ignoreWeakness (boolean)
    */
-  function resolveCombat(playerCard, enemyCard) {
+  function resolveCombat(playerCard, enemyCard, options = {}) {
     const pElem = ELEMENTS[playerCard.element];
     const eElem = ELEMENTS[enemyCard.element];
 
     let playerPower = playerCard.power;
     let enemyPower = enemyCard.power;
+    const elemBonus = options.halfElementBonus ? 1 : 3;
 
     if (pElem.strongVs.includes(enemyCard.element)) {
-      playerPower += 3;
-    } else if (pElem.weakTo.includes(enemyCard.element)) {
-      playerPower -= 3;
+      playerPower += elemBonus;
+    } else if (pElem.weakTo.includes(enemyCard.element) && !options.ignoreWeakness) {
+      playerPower -= elemBonus;
     }
 
-    if (eElem.strongVs.includes(playerCard.element)) {
-      enemyPower += 3;
+    if (eElem.strongVs.includes(playerCard.element) && !options.ignoreWeakness) {
+      enemyPower += elemBonus;
     } else if (eElem.weakTo.includes(playerCard.element)) {
-      enemyPower -= 3;
+      enemyPower -= elemBonus;
     }
 
     if (playerPower > enemyPower) return 'win';

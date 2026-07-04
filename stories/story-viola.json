@@ -1,0 +1,45 @@
+{
+  "id": "ombre-del-passato",
+  "title": "Le Ombre del Passato",
+  "author": "Deck of Shadows",
+  "passages": [
+    {
+      "pid": 1,
+      "name": "prologo",
+      "tags": ["opening"],
+      "text": "L'Eclissi copre il cielo. Le ombre ti riconoscono come uno dei loro. Nel buio troverai i tuoi alleati.",
+      "links": [{ "target": "inizio-avventura", "text": "Entra nell'ombra" }]
+    },
+    {
+      "pid": 2,
+      "name": "inizio-avventura",
+      "tags": [],
+      "text": "L'ombra non e' debolezza: e' potenziale nascosto. Usa l'oscurita' a tuo vantaggio.",
+      "links": []
+    },
+    {
+      "pid": 3,
+      "name": "evento-round-5",
+      "tags": ["mid-story"],
+      "text": "Le ombre ti avvolgono. Per un round, sei nascosto: il nemico non puo' sfruttare il tuo elemento debole.",
+      "links": [],
+      "gameEffects": {
+        "ignoreWeakness": true,
+        "roundSpecific": 5
+      }
+    },
+    {
+      "pid": 4,
+      "name": "epilogo-vittoria",
+      "tags": ["ending", "victory"],
+      "text": "Hai dominato l'oscurita' senza perderti. Sei diventato l'Eclissi stessa."
+    },
+    {
+      "pid": 5,
+      "name": "epilogo-sconfitta",
+      "tags": ["ending", "defeat"],
+      "text": "L'ombra ti ha inghiottito, ma solo per un istante. La prossima Eclissi sara' piu' profonda."
+    }
+  ],
+  "startPassage": "prologo"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "radici-dimenticate",
+  "title": "Le Radici Dimenticate",
+  "author": "Deck of Shadows",
+  "passages": [
+    {
+      "pid": 1,
+      "name": "prologo",
+      "tags": ["opening"],
+      "text": "Il Germoglio spunta dal terreno di questo mondo dimenticato. La natura ha scelto te come suo campione. Crescerai con ogni sfida.",
+      "links": [
+        { "target": "inizio-avventura", "text": "Cresci" }
+      ]
+    },
+    {
+      "pid": 2,
+      "name": "inizio-avventura",
+      "tags": [],
+      "text": "La natura non ha fretta, ma non si ferma mai. Ogni round e' una stagione: preparati a fiorire.",
+      "links": []
+    },
+    {
+      "pid": 3,
+      "name": "evento-round-2",
+      "tags": ["mid-story"],
+      "text": "Una radice antica emerge dal terreno. Scopri un tesoro naturale: la prossima carta che giochi avra' +1 potenza.",
+      "links": [],
+      "gameEffects": {
+        "nextCardPowerBonus": 1,
+        "roundSpecific": 2
+      }
+    },
+    {
+      "pid": 4,
+      "name": "epilogo-vittoria",
+      "tags": ["ending", "victory"],
+      "text": "Hai raggiunto la vetta della foresta. Le radici che hai piantato oggi diventeranno alberi che ombreggieranno le generazioni future."
+    },
+    {
+      "pid": 5,
+      "name": "epilogo-sconfitta",
+      "tags": ["ending", "defeat"],
+      "text": "La natura non conosce la sconfitta definitiva. I semi che hai seminato oggi germoglieranno domani."
+    }
+  ],
+  "startPassage": "prologo"
+}

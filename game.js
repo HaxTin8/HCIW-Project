@@ -44,6 +44,17 @@
       this.lastPlayedCards = [];
       this.lastRoundResults = [];
       this.logs = [];
+      this.resetStoryEffects();
+    }
+
+    resetStoryEffects() {
+      delete this._storyNextCardBonus;
+      delete this._storyAllCardsBonus;
+      delete this._storyHpPenaltyOnLoss;
+      delete this._storyDrawAsWin;
+      delete this._storyHalfElement;
+      delete this._storyIgnoreWeakness;
+      // enemyPowerModifier gestito in regenerateEnemiesForCurrentRound
     }
 
     start(seedTemplateId = null) {
@@ -72,8 +83,15 @@
       this.lastRoundResults = [];
       for (let i = 0; i < this.cardsPerRound; i++) {
         const template = CARD_TEMPLATES[Math.floor(Math.random() * CARD_TEMPLATES.length)];
-        const bonus = Math.floor(this.round / 2);
+        let bonus = Math.floor(this.round / 2);
+        if (this._storyEnemyPowerMod) {
+          bonus += this._storyEnemyPowerMod;
+        }
         this.enemies.push(createCard(template.id, bonus));
+      }
+      if (this._storyEnemyPowerModFirstRound) {
+        delete this._storyEnemyPowerMod;
+        delete this._storyEnemyPowerModFirstRound;
       }
       return this.enemies;
     }
@@ -88,10 +106,23 @@
     playCardSequential(templateId) {
       if (this.state !== GAME_STATE.PLAYING || !this.currentEnemy) return null;
 
-      const card = createCard(templateId);
+      let bonusPower = 0;
+      if (this._storyNextCardBonus) {
+        bonusPower += this._storyNextCardBonus;
+        delete this._storyNextCardBonus;
+      }
+      if (this._storyAllCardsBonus) {
+        bonusPower += this._storyAllCardsBonus;
+      }
+      const card = createCard(templateId, bonusPower);
       if (!card) return null;
 
-      const result = resolveCombat(card, this.currentEnemy);
+      const combatOptions = {
+        halfElementBonus: this._storyHalfElement,
+        ignoreWeakness: this._storyIgnoreWeakness
+      };
+      let result = resolveCombat(card, this.currentEnemy, combatOptions);
+      if (result === 'draw' && this._storyDrawAsWin) result = 'win';
       this.lastPlayedCards = [card];
       this.lastRoundResults = [result];
 
@@ -102,6 +133,9 @@
       } else if (result === 'lose') {
         this.lastResult = 'lose';
         this.hp--;
+        if (this._storyHpPenaltyOnLoss) {
+          this.hp -= this._storyHpPenaltyOnLoss;
+        }
         this.log(`${card.name} perde contro ${this.currentEnemy.name}.`);
         this.state = GAME_STATE.ROUND_RESULT;
       } else {
@@ -123,11 +157,24 @@
       this.lastPlayedCards = [];
       this.lastRoundResults = [];
       for (let i = 0; i < this.cardsPerRound; i++) {
-        const card = createCard(templateIds[i]);
-        const result = resolveCombat(card, this.enemies[i]);
+        let bonusPower = 0;
+        if (i === 0 && this._storyNextCardBonus) {
+          bonusPower += this._storyNextCardBonus;
+        }
+        if (this._storyAllCardsBonus) {
+          bonusPower += this._storyAllCardsBonus;
+        }
+        const card = createCard(templateIds[i], bonusPower);
+        const combatOptions = {
+          halfElementBonus: this._storyHalfElement,
+          ignoreWeakness: this._storyIgnoreWeakness
+        };
+        let result = resolveCombat(card, this.enemies[i], combatOptions);
+        if (result === 'draw' && this._storyDrawAsWin) result = 'win';
         this.lastPlayedCards.push(card);
         this.lastRoundResults.push(result);
       }
+      delete this._storyNextCardBonus;
 
       const wins = this.lastRoundResults.filter(r => r === 'win').length;
       const losses = this.lastRoundResults.filter(r => r === 'lose').length;
@@ -138,6 +185,9 @@
       } else if (losses > wins) {
         this.lastResult = 'lose';
         this.hp--;
+        if (this._storyHpPenaltyOnLoss) {
+          this.hp -= this._storyHpPenaltyOnLoss;
+        }
         this.log(`Round perso: ${wins}-${losses}.`);
       } else {
         this.lastResult = 'draw';
@@ -178,6 +228,7 @@
         // Pareggio: nemici restano
       }
 
+      this.resetStoryEffects();
       this.state = GAME_STATE.PLAYING;
       this.log('Via.');
       return this.state;
@@ -193,6 +244,7 @@
 
       if (id === 'SEQUENZIALE') {
         this.playMode = 'sequential';
+        this.resetStoryEffects();
         if (this.state === GAME_STATE.PLAYING) {
           this.regenerateEnemiesForCurrentRound();
         }
@@ -202,6 +254,7 @@
 
       if (id === 'SIMULTANEO') {
         this.playMode = 'simultaneous';
+        this.resetStoryEffects();
         if (this.state === GAME_STATE.PLAYING) {
           this.regenerateEnemiesForCurrentRound();
         }

@@ -8,6 +8,8 @@ var hiddenCanvas;
 var qrEnabled = true;
 var statusEl;
 var game;
+var storyEngine;
+var prevGameState = null;
 
 var resultTimer = 0;
 var idleHintTimer = 0;
@@ -36,9 +38,14 @@ const SLOT_AUTOPLAY_THRESHOLD = 120; // frame con la stessa carta ferma -> gioca
 var multiSlotAnim = [];  // { card, targetEnemyIndex, progress }
 var waitingForTTS = false;
 
+var cameraSection;
+var cameraBtn;
+
 function setup() {
   const container = select('#canvas-container');
-  const canvas = createCanvas(900, 600);
+  const cw = min((container.elt ? container.elt.clientWidth : windowWidth - 40), 900);
+  const h = cw * (600 / 900);
+  const canvas = createCanvas(cw, h);
   canvas.parent(container);
 
   hiddenCanvas = createGraphics(320, 240);
@@ -46,6 +53,11 @@ function setup() {
 
   statusEl = select('#status');
   game = new Game();
+  storyEngine = new StoryEngine();
+  storyEngine.loadIndex().catch(() => {});
+
+  cameraSection = select('#camera-section');
+  cameraBtn = select('#camera-btn');
 
   const qrToggle = select('#qr-toggle');
   if (qrToggle) {
@@ -55,8 +67,44 @@ function setup() {
     });
   }
 
-  setupWebcam();
-  logToStatus('Mostra una carta alla webcam per iniziare.');
+  if (cameraBtn) {
+    cameraBtn.mousePressed(() => {
+      cameraBtn.hide();
+      setupWebcam();
+    });
+  }
+
+  if (!isMobile()) {
+    setupWebcam();
+  } else {
+    webcamState = 'waiting';
+    webcamMessage = 'Tocca il pulsante per attivare la fotocamera.';
+    updateCameraButton();
+  }
+}
+
+function windowResized() {
+  const container = select('#canvas-container');
+  const cw = min((container.elt ? container.elt.clientWidth : windowWidth - 40), 900);
+  resizeCanvas(cw, cw * (600 / 900));
+}
+
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function updateCameraButton() {
+  if (!cameraBtn) return;
+  if (webcamState === 'active') {
+    cameraBtn.hide();
+    if (cameraSection) cameraSection.style('display', 'none');
+  } else if (webcamState === 'waiting' || webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
+    cameraBtn.show();
+    if (cameraSection) cameraSection.style('display', 'block');
+  } else {
+    cameraBtn.hide();
+    if (cameraSection) cameraSection.style('display', 'none');
+  }
 }
 
 function setupWebcam() {
@@ -64,17 +112,16 @@ function setupWebcam() {
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     webcamState = 'unsupported';
-    webcamMessage = 'Questo browser non supporta la webcam. Prova Chrome, Edge o Firefox.';
+    webcamMessage = 'Questo browser non supporta la fotocamera. Prova Chrome, Edge o Safari.';
     console.error('[Webcam]', webcamMessage);
     logToStatus(webcamMessage);
+    updateCameraButton();
     return;
   }
 
   webcamState = 'loading';
-  webcamMessage = 'Richiesta accesso webcam...';
+  webcamMessage = 'Richiesta accesso fotocamera...';
 
-  // Constraints di base: nessun facingMode (su Windows spesso problematico),
-  // risoluzione standard e framerate stabile.
   const constraints = {
     video: {
       width: { ideal: 640 },
@@ -84,7 +131,12 @@ function setupWebcam() {
     audio: false
   };
 
+  if (isMobile()) {
+    constraints.video.facingMode = { ideal: 'user' };
+  }
+
   tryCreateCapture(constraints, 1);
+  updateCameraButton();
 }
 
 function tryCreateCapture(constraints, attempt) {
@@ -102,14 +154,33 @@ function tryCreateCapture(constraints, attempt) {
   try {
     video = createCapture(constraints, (stream) => {
       console.log('[Webcam] createCapture callback:', stream ? 'stream ricevuto' : 'no stream');
-      if (video) {
+      if (video && video.elt) {
+        video.elt.setAttribute('playsinline', '');
+        video.elt.setAttribute('webkit-playsinline', 'true');
+        video.elt.setAttribute('muted', '');
+        video.elt.setAttribute('autoplay', '');
+
+        // Proprietà DOM necessarie per iOS Safari
+        video.elt.playsInline = true;
+        video.elt.muted = true;
+        video.elt.autoplay = true;
+
         video.size(320, 240);
         video.hide();
-        if (video.elt) {
-          video.elt.setAttribute('playsinline', '');
-          video.elt.setAttribute('muted', '');
-          video.elt.play().catch(e => console.warn('[Webcam] Autoplay bloccato:', e));
-        }
+
+        // Aspetta il canplay per passare ad active senza fidarsi solo del timeout
+        video.elt.addEventListener('canplay', () => {
+          console.log('[Webcam] Evento canplay ricevuto');
+          if (webcamState !== 'active') {
+            console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
+            webcamState = 'active';
+            webcamMessage = 'Fotocamera attiva.';
+            logToStatus('Fotocamera attiva. Mostra una carta per iniziare.');
+            updateCameraButton();
+          }
+        }, { once: true });
+
+        video.elt.play().catch(e => console.warn('[Webcam] Autoplay bloccato:', e));
       }
     });
   } catch (e) {
@@ -118,28 +189,31 @@ function tryCreateCapture(constraints, attempt) {
     return;
   }
 
-  // Timeout per verificare se il video è effettivamente attivo
+  const timeoutMs = isMobile() ? 15000 : 4000;
   setTimeout(() => {
     if (webcamState === 'active') return;
 
-    if (video && video.width > 0 && video.height > 0) {
-      console.log('[Webcam] Video attivo, dimensioni:', video.width, video.height);
+    const isPlaying = video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0;
+    if (isPlaying) {
+      console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
       webcamState = 'active';
-      webcamMessage = 'Webcam attiva.';
-      logToStatus('Webcam attiva. Mostra una carta per iniziare.');
+      webcamMessage = 'Fotocamera attiva.';
+      logToStatus('Fotocamera attiva. Mostra una carta per iniziare.');
+      updateCameraButton();
       return;
     }
 
     console.warn(`[Webcam] Video nero o non attivo al tentativo ${attempt}`);
     if (attempt < 3) {
-      webcamMessage = `Tentativo webcam ${attempt + 1}/3...`;
+      webcamMessage = `Tentativo fotocamera ${attempt + 1}/3...`;
       tryFallbackDevice(attempt + 1);
     } else {
       webcamState = 'error';
-      webcamMessage = 'Impossibile attivare la webcam. Prova a cambiare dispositivo nelle impostazioni del browser.';
+      webcamMessage = 'Impossibile attivare la fotocamera. Tocca il pulsante per riprovare.';
       logToStatus(webcamMessage);
+      updateCameraButton();
     }
-  }, 2500);
+  }, timeoutMs);
 }
 
 function tryFallbackDevice(attempt) {
@@ -149,15 +223,27 @@ function tryFallbackDevice(attempt) {
       console.log('[Webcam] Dispositivi trovati:', videoDevices.map(d => d.label || 'senza nome'));
 
       if (videoDevices.length === 0) {
-        webcamState = 'error';
-        webcamMessage = 'Nessuna webcam trovata. Collegane una e ricarica.';
-        logToStatus(webcamMessage);
+        if (isMobile() && attempt === 1) {
+          const mobileConstraints = {
+            video: {
+              facingMode: { exact: 'user' },
+              width: { ideal: 640 },
+              height: { ideal: 480 },
+              frameRate: { ideal: 30 }
+            },
+            audio: false
+          };
+          tryCreateCapture(mobileConstraints, attempt + 1);
+        } else {
+          webcamState = 'error';
+          webcamMessage = 'Nessuna fotocamera trovata. Collegane una e ricarica.';
+          logToStatus(webcamMessage);
+          updateCameraButton();
+        }
         return;
       }
 
       if (attempt <= videoDevices.length) {
-        // Prova i dispositivi in ordine inverso: su Windows la webcam fisica
-        // è spesso l'ultima, mentre le prime possono essere virtuali.
         const index = videoDevices.length - attempt;
         const deviceId = videoDevices[index].deviceId;
         console.log(`[Webcam] Provo dispositivo ${index}:`, videoDevices[index].label || 'senza nome');
@@ -174,15 +260,17 @@ function tryFallbackDevice(attempt) {
         tryCreateCapture(constraints, attempt);
       } else {
         webcamState = 'error';
-        webcamMessage = 'Nessuna webcam funzionante trovata.';
+        webcamMessage = 'Nessuna fotocamera funzionante trovata.';
         logToStatus(webcamMessage);
+        updateCameraButton();
       }
     })
     .catch(err => {
       console.error('[Webcam] enumerateDevices error:', err);
       webcamState = 'error';
-      webcamMessage = 'Errore nell\'elenco delle webcam.';
+      webcamMessage = 'Errore nell\'elenco delle fotocamere.';
       logToStatus(webcamMessage);
+      updateCameraButton();
     });
 }
 
@@ -202,6 +290,16 @@ function draw() {
   drawParticles();
   updateFloaters();
   drawFloaters();
+
+  // Epilogo narrativo su cambio stato finale
+  if (prevGameState !== game.state) {
+    if (game.state === GAME_STATE.VICTORY) {
+      speakStoryEnding(true);
+    } else if (game.state === GAME_STATE.GAME_OVER) {
+      speakStoryEnding(false);
+    }
+    prevGameState = game.state;
+  }
 
   switch (game.state) {
     case GAME_STATE.IDLE:
@@ -252,7 +350,7 @@ function drawIdle() {
 
   idleHintTimer++;
 
-  if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
+  if (qrEnabled && webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0 && frameCount % 10 === 0) {
     readQR();
   }
 }
@@ -341,6 +439,7 @@ function drawRoundResult() {
 
     if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
       resetSlots();
+      checkStoryEvents();
       if (game.round !== oldRound) {
         tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
       }
@@ -366,7 +465,7 @@ function drawEndScreen(title, color, subtitle) {
   const finalSubtitle = webcamState === 'active' ? subtitle : webcamMessage;
   text(finalSubtitle, width / 2, height / 2 + 30);
 
-  if (qrEnabled && webcamState === 'active' && video && video.width > 0 && frameCount % 10 === 0) {
+  if (qrEnabled && webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0 && frameCount % 10 === 0) {
     readQR();
   }
 }
@@ -502,7 +601,7 @@ function drawWebcamPreview() {
   push();
   translate(px + pw, py);
   scale(-1, 1);
-  if (video && video.width > 0 && video.elt.readyState >= 2) {
+  if (video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0) {
     image(video, 0, 0, pw, ph);
   } else {
     fill(0);
@@ -948,6 +1047,30 @@ function handleQRDetected(id) {
         tts.speak(`${game.currentEnemy.name} ${game.currentEnemy.power}.`);
       }
       logToStatus(event.action === 'start' ? 'Partita iniziata.' : 'Nuova partita.');
+
+      if (event.action === 'start' && id && TEMPLATE_MAP[id]) {
+        storyEngine.selectStory(id).then(() => {
+          const text = storyEngine.getOpeningText();
+          if (text) tts.speak(text);
+          if (storyEngine.hasNext()) {
+            storyEngine.advance();
+            const effectsLog = storyEngine.applyGameEffects(game);
+            if (effectsLog && effectsLog.length) {
+              effectsLog.forEach(msg => {
+                game.log(msg);
+                logToStatus(msg);
+              });
+            }
+            const passage = storyEngine.getCurrentPassage();
+            if (passage && passage.gameEffects && passage.gameEffects.enemyPowerModifier !== undefined) {
+              game.regenerateEnemiesForCurrentRound();
+            }
+          }
+        });
+      } else {
+        storyEngine.reset();
+      }
+      return;
     } else if (event.action === 'mode') {
       tts.speak(event.mode === 'simultaneous' ? 'Simultaneo.' : 'Sequenziale.', true);
       logToStatus(`Modalità ${event.mode}.`);
@@ -1007,4 +1130,35 @@ function lighten(hex, percent) {
   const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
   const B = Math.min(255, (num & 0x0000FF) + amt);
   return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+}
+
+/* =========================================================
+    NARRAZIONE / STORY ENGINE
+   ========================================================= */
+
+function checkStoryEvents() {
+  if (!storyEngine || !storyEngine.hasStory()) return;
+  const eventPassage = storyEngine.getEventForRound(game.round);
+  if (eventPassage) {
+    storyEngine.goToPassage(eventPassage.name);
+    if (eventPassage.text) tts.speak(eventPassage.text);
+    const effectsLog = storyEngine.applyGameEffects(game);
+    if (effectsLog && effectsLog.length) {
+      effectsLog.forEach(msg => {
+        game.log(msg);
+        logToStatus(msg);
+      });
+    }
+    if (eventPassage.gameEffects && eventPassage.gameEffects.enemyPowerModifier !== undefined) {
+      game.regenerateEnemiesForCurrentRound();
+    }
+  }
+}
+
+function speakStoryEnding(victory) {
+  if (!storyEngine || !storyEngine.hasStory()) return;
+  const passage = storyEngine.getEnding(victory);
+  if (passage && passage.text) {
+    tts.speak(passage.text);
+  }
 }

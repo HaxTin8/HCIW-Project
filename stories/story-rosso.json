@@ -1,0 +1,60 @@
+{
+  "id": "fuoco-del-destino",
+  "title": "Il Fuoco del Destino",
+  "author": "Deck of Shadows",
+  "passages": [
+    {
+      "pid": 1,
+      "name": "prologo",
+      "tags": ["opening"],
+      "text": "Le Braci ardono tra le tue dita. Non e' un fuoco comune: e' il fuoco del Destino, acceso dalla prima scintilla della tua anima. Ogni carta che giocherai da oggi in poi sara' infuocata dal tuo coraggio.",
+      "links": [
+        { "target": "nemici-modificati", "text": "Continua" }
+      ]
+    },
+    {
+      "pid": 2,
+      "name": "nemici-modificati",
+      "tags": ["game-effect"],
+      "text": "I nemici del primo round sentono il calore. Il tuo avversario iniziale ha paura del fuoco: la sua forza e' ridotta di 1.",
+      "links": [
+        { "target": "inizio-avventura", "text": "Inizia l'avventura" }
+      ],
+      "gameEffects": {
+        "enemyPowerModifier": -1,
+        "firstRoundOnly": true
+      }
+    },
+    {
+      "pid": 3,
+      "name": "inizio-avventura",
+      "tags": [],
+      "text": "Il cammino e' lungo. Ogni vittoria alimenta le tue Braci. Ogni sconfitta le oscura. Vincerai perche' il fuoco non si spegne mai.",
+      "links": []
+    },
+    {
+      "pid": 4,
+      "name": "evento-round-3",
+      "tags": ["mid-story"],
+      "text": "A meta' strada, un vento gelido soffia dalle montagne. I tuoi nemici ora sono piu' resistenti, ma il tuo fuoco interno ti concede un punto ferita extra.",
+      "links": [],
+      "gameEffects": {
+        "hpBonus": 1,
+        "enemyPowerModifier": 1
+      }
+    },
+    {
+      "pid": 5,
+      "name": "epilogo-vittoria",
+      "tags": ["ending", "victory"],
+      "text": "Le Braci sono diventate un incendio sacro. Hai domato le ombre e il tuo nome ardera' per sempre nella storia di Deck of Shadows."
+    },
+    {
+      "pid": 6,
+      "name": "epilogo-sconfitta",
+      "tags": ["ending", "defeat"],
+      "text": "Le Braci si sono spente, ma una scintilla resta. Anche il fuoco piu' forte a volte vacilla. La prossima volta, l'incendio sara' implacabile."
+    }
+  ],
+  "startPassage": "prologo"
+}

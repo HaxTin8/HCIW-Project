@@ -1,0 +1,46 @@
+{
+  "id": "tuono-delle-origini",
+  "title": "Il Tuono delle Origini",
+  "author": "Deck of Shadows",
+  "passages": [
+    {
+      "pid": 1,
+      "name": "prologo",
+      "tags": ["opening"],
+      "text": "La Saetta squarcia il cielo. Il tuono annuncia la tua venuta. Ogni carta sara' un fulmine che riscrivera' il destino.",
+      "links": [{ "target": "inizio-avventura", "text": "Colpisci" }]
+    },
+    {
+      "pid": 2,
+      "name": "inizio-avventura",
+      "tags": [],
+      "text": "Il fulmine non colpisce due volte nello stesso modo. Ogni round e' unico: adattati e distruggi.",
+      "links": []
+    },
+    {
+      "pid": 3,
+      "name": "evento-round-2",
+      "tags": ["mid-story"],
+      "text": "Una tempesta si avvicina. Il tuono ti carica: per questo round, la tua carta ha +2 potenza ma -1 ferita se perdi.",
+      "links": [],
+      "gameEffects": {
+        "allCardsPowerBonus": 2,
+        "hpPenaltyOnLoss": 1,
+        "roundSpecific": 2
+      }
+    },
+    {
+      "pid": 4,
+      "name": "epilogo-vittoria",
+      "tags": ["ending", "victory"],
+      "text": "Hai risvegliato il tuono primordiale. Il cielo stesso ti applaude."
+    },
+    {
+      "pid": 5,
+      "name": "epilogo-sconfitta",
+      "tags": ["ending", "defeat"],
+      "text": "Il fulmine e' ritornato nelle nuvole. Ma le tempeste non dimenticano."
+    }
+  ],
+  "startPassage": "prologo"
+}
