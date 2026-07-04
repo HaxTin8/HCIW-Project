@@ -35,6 +35,8 @@ function resolveApiUrl(pathname) {
       this.currentAudioUrl = null;
       this.currentAbortController = null;
       this.currentSpeechToken = 0;
+      this.currentSpeechStartedAt = 0;
+      this.currentSpeechSafetyTimer = null;
       this.piperAvailable = false;
       this.piperCheckedAt = 0;
 
@@ -441,6 +443,12 @@ function resolveApiUrl(pathname) {
     }
 
     isSpeaking() {
+      if (this.speaking && this.currentSpeechStartedAt > 0) {
+        const elapsed = Date.now() - this.currentSpeechStartedAt;
+        if (elapsed > 10000) {
+          this._forceSpeechRecovery('stale_speaking_state');
+        }
+      }
       return this.speaking || this.queue.length > 0;
     }
 
@@ -568,6 +576,8 @@ function resolveApiUrl(pathname) {
       this.speaking = true;
 
       const token = ++this.currentSpeechToken;
+      this.currentSpeechStartedAt = Date.now();
+      this._armSpeechSafetyTimer(token);
 
       this._speakItem(item, provider)
         .then(() => {
@@ -611,6 +621,48 @@ function resolveApiUrl(pathname) {
         return;
       }
       this.speaking = false;
+      this.currentSpeechStartedAt = 0;
+      this._clearSpeechSafetyTimer();
+      this.currentAbortController = null;
+      this._cleanupAudioUrl();
+      this._processQueue();
+      this._checkIdle();
+    }
+
+    _armSpeechSafetyTimer(token) {
+      this._clearSpeechSafetyTimer();
+      this.currentSpeechSafetyTimer = window.setTimeout(() => {
+        if (token !== this.currentSpeechToken || !this.speaking) {
+          return;
+        }
+        this._forceSpeechRecovery('safety_timeout');
+      }, 8000);
+    }
+
+    _clearSpeechSafetyTimer() {
+      if (this.currentSpeechSafetyTimer) {
+        window.clearTimeout(this.currentSpeechSafetyTimer);
+        this.currentSpeechSafetyTimer = null;
+      }
+    }
+
+    _forceSpeechRecovery(reason) {
+      console.warn(`[TTS] Recupero forzato: ${reason}`);
+
+      if (this.currentAbortController) {
+        this.currentAbortController.abort();
+      }
+
+      if (this.audioElement) {
+        this.audioElement.pause();
+        this.audioElement.removeAttribute('src');
+        this.audioElement.load();
+      }
+
+      this.currentSpeechToken += 1;
+      this.speaking = false;
+      this.currentSpeechStartedAt = 0;
+      this._clearSpeechSafetyTimer();
       this.currentAbortController = null;
       this._cleanupAudioUrl();
       this._processQueue();
@@ -792,6 +844,8 @@ function resolveApiUrl(pathname) {
       }
 
       this.currentSpeechToken += 1;
+      this.currentSpeechStartedAt = 0;
+      this._clearSpeechSafetyTimer();
 
       if (this.audioElement) {
         this.audioElement.pause();

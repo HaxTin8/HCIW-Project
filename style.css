@@ -834,6 +834,32 @@ body.family-voice-page {
   gap: 10px;
 }
 
+.privacy-note {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(73, 138, 226, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(232, 244, 255, 0.92) 100%);
+  color: #35502a;
+  box-shadow: 0 10px 24px rgba(58, 78, 104, 0.06);
+}
+
+.privacy-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #2b2318;
+  font-family: 'Beachday', 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.privacy-note p {
+  margin: 0;
+  color: #38526f;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .camera-btn {
   padding: 14px 24px;
   background: linear-gradient(180deg, #f3c562 0%, #e1ab33 100%);
@@ -920,6 +946,15 @@ body.family-voice-page {
   .camera-section {
     margin-bottom: 12px;
     gap: 8px;
+  }
+
+  .privacy-note {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+  }
+
+  .privacy-note p {
+    font-size: 0.8rem;
   }
 
   .camera-btn {

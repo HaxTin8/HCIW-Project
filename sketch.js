@@ -37,9 +37,11 @@ var playerSlots = [];
 var slotFrames = [];     // frame con la stessa carta in ogni slot
 var slotEmptyFrames = 0; // frame senza QR rilevato
 var slotLocked = false;
+var slotLockFrames = 0;
 var slotsFilled = 0;
 const SLOT_EMPTY_THRESHOLD = 8;      // frame senza QR prima di giocare la carta rimossa
 const SLOT_AUTOPLAY_THRESHOLD = 120; // frame con la stessa carta ferma -> gioca automaticamente
+const SLOT_LOCK_TIMEOUT = 300;
 
 // Animazione multi-slot
 var multiSlotAnim = [];  // { card, targetEnemyIndex, progress }
@@ -63,6 +65,11 @@ var magicFont;
 var elementImages = {};
 var heartImage = null;
 var webcamFrameImg = null;
+var mapImage = null;
+const MAP_ROUND_POINTS = [
+  [48, 83], [68, 70], [39, 62], [33, 53],
+  [72, 53], [59, 39], [31, 38], [59, 24]
+];
 var heroImages = {};
 var heroIntroStart = 0;
 const HERO_APPEAR = ['fire', 'water', 'river', 'towers', 'mountains'];
@@ -92,6 +99,7 @@ function preload() {
   elementImages.THUNDER = loadImage('assets/elements/thunder.png');
   heartImage = loadImage('assets/elements/heart-life.png');
   webcamFrameImg = loadImage('assets/webcam-frame.png');
+  mapImage = loadImage('assets/mappa.png');
 }
 
 function makeBgTransparent(img) {
@@ -540,6 +548,19 @@ function draw() {
   drawCanvasBackground();
   waitingForTTS = tts.isSpeaking();
 
+  if (slotLocked) {
+    slotLockFrames++;
+    if (slotLockFrames > SLOT_LOCK_TIMEOUT) {
+      console.warn('[Game] Sblocco automatico degli slot dopo timeout TTS.');
+      slotLocked = false;
+      slotLockFrames = 0;
+      waitingForTTS = false;
+      tts.cancel();
+    }
+  } else {
+    slotLockFrames = 0;
+  }
+
   if (screenFlash > 0) {
     noStroke();
     fill(screenFlash.color[0], screenFlash.color[1], screenFlash.color[2], screenFlash.alpha);
@@ -595,21 +616,22 @@ function drawIdle() {
   fill('#2b2318');
   textAlign(CENTER, CENTER);
   textFont(magicFont || 'Space Grotesk');
-  textSize(isCompactMobileLayout() ? 34 : 42);
+  textSize(isCompactMobileLayout() ? 38 : 46);
   textStyle(NORMAL);
   text('Specula Elementae', width / 2, height / 2 - 86);
 
-  textFont('Hanken Grotesk');
-  textSize(18);
+  textFont('Nunito');
+  textSize(isCompactMobileLayout() ? 16 : 18);
   fill('#5a4a34');
-  text('Gioca, ascolta e scopri i segreti degli elementi.', width / 2, height / 2 - 20);
+  text('Un solitario alchemico guidato dalla magia della tua webcam.', width / 2, height / 2 - 20);
 
   if (webcamState === 'active') {
     const t = millis() / 1000;
     const pulse = sin(t * 3) * 5;
-    fill('#b0842f');
-    textSize(20);
-    text('📷 Mostra una carta alla webcam per iniziare', width / 2, height / 2 + 40 + pulse);
+    fill('#498AE2');
+    textFont('Beachday');
+    textSize(isCompactMobileLayout() ? 22 : 26);
+    text('Mostra una carta alla webcam per iniziare', width / 2, height / 2 + 42 + pulse);
   }
 
   textFont('Space Grotesk');
@@ -624,6 +646,7 @@ function drawIdle() {
 function drawPlaying() {
   drawDecorations();
   drawHUD();
+  drawMapOverlay();
   drawEnemies();
   drawSlots();
   drawWebcamPreview();
@@ -938,18 +961,6 @@ function drawEnemies() {
       rect(-cardW / 2, -cardH / 2, cardW, cardH, 10);
     }
     pop();
-
-    const elem = ELEMENTS[enemy.element];
-    const badgeSize = layout.compact ? 28 : 36;
-    push();
-    translate(x, y - cardH / 2 - layout.enemyBadgeOffsetY);
-    fill('#ffffff');
-    stroke(elem.color);
-    strokeWeight(2);
-    ellipse(0, 0, badgeSize, badgeSize);
-    noStroke();
-    drawElementImage(enemy.element, badgeSize * 0.72, elem.color);
-    pop();
   }
 }
 
@@ -959,39 +970,37 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
   translate(x, y);
 
   noStroke();
-  fill(0, 0, 0, 80);
-  rect(-w / 2 + 4, -h / 2 + 4, w, h, 10);
+  fill(0, 0, 0, 40);
+  rect(-w / 2 + 3, -h / 2 + 3, w, h, 14);
 
-  stroke('#cdbb90');
-  strokeWeight(2);
-  fill('#f2e9d5');
-  rect(-w / 2, -h / 2, w, h, 10);
-
-  noFill();
-  stroke(111, 95, 69, 60);
+  stroke('#dce6f2');
   strokeWeight(1);
-  rect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 8);
+  fill('#f1f6fc');
+  rect(-w / 2, -h / 2, w, h, 14);
 
   noStroke();
   fill(color);
-  rect(-w / 2 + 4, -h / 2 + 4, w - 8, 28, 6);
-
-  fill(textColorForBg(color));
   textAlign(CENTER, CENTER);
   textSize(compact ? 11 : 13);
   textStyle(BOLD);
   text(name, 0, -h / 2 + 18);
   textStyle(NORMAL);
 
+  const medY = 8;
+  const medR = min(w, h) * 0.36;
+  const c = colorObj(color);
+  fill(c.r, c.g, c.b, 26);
+  ellipse(0, medY, medR * 2, medR * 2);
+
   push();
-  translate(0, 8);
-  drawElementImage(element, min(w, h) * 0.62, color);
+  translate(0, medY);
+  drawElementImage(element, medR * 1.9, color);
   pop();
 
   fill('#6f5f45');
   textSize(compact ? 16 : 20);
   textStyle(BOLD);
-  text(power, 0, 45);
+  text(power, 0, compact ? 42 : 45);
   textStyle(NORMAL);
 
   fill(color);
@@ -1101,6 +1110,77 @@ function drawLog() {
   for (let i = 0; i < visible.length; i++) {
     text('• ' + visible[i], x + 10, y + 10 + i * (layout.compact ? 18 : 20), w - 20, layout.compact ? 16 : 18);
   }
+}
+
+function drawMapOverlay() {
+  const isPlayingState = game.state === GAME_STATE.PLAYING || game.state === GAME_STATE.ROUND_RESULT;
+  if (!isPlayingState || isCompactMobileLayout()) return;
+
+  const mw = 210;
+  const mh = mapImage && mapImage.width > 0 ? mw * (mapImage.height / mapImage.width) : mw * 1.333;
+  const cx = width * 0.22;
+  const cy = height / 2;
+
+  push();
+  translate(cx - mw / 2, cy - mh / 2);
+
+  noStroke();
+  if (mapImage && mapImage.width > 0) {
+    image(mapImage, 0, 0, mw, mh);
+  } else {
+    fill('#f2e9d5');
+    rect(0, 0, mw, mh, 12);
+  }
+
+  const points = MAP_ROUND_POINTS.map(([px, py]) => [px / 100 * mw, py / 100 * mh]);
+
+  stroke('#e02424');
+  strokeWeight(1.3);
+  noFill();
+  drawingContext.setLineDash([4, 3]);
+  const stepsDone = constrain(game.round - 1, 0, points.length - 1);
+  for (let i = 0; i < stepsDone; i++) {
+    line(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]);
+  }
+  drawingContext.setLineDash([]);
+
+  for (let r = 1; r <= 8; r++) {
+    const [px, py] = points[r - 1];
+    let dotColor;
+    let dotTextColor;
+    let dotR = 10;
+
+    if (r < game.round) {
+      dotColor = '#97B481';
+      dotTextColor = '#ffffff';
+    } else if (r === game.round) {
+      dotColor = '#ECBA4E';
+      dotTextColor = '#ffffff';
+      dotR = 12;
+      const pulse = sin(millis() / 250) * 0.5 + 0.5;
+      noStroke();
+      fill(236, 186, 78, 90 * pulse);
+      ellipse(px, py, dotR * 2 + 12 * pulse, dotR * 2 + 12 * pulse);
+    } else {
+      dotColor = '#e6dfd1';
+      dotTextColor = '#a49784';
+    }
+
+    stroke('#5c3e1e');
+    strokeWeight(1.5);
+    fill(dotColor);
+    ellipse(px, py, dotR * 2, dotR * 2);
+
+    noStroke();
+    fill(dotTextColor);
+    textAlign(CENTER, CENTER);
+    textSize(9);
+    textStyle(BOLD);
+    text(r, px, py);
+    textStyle(NORMAL);
+  }
+
+  pop();
 }
 
 function getStrongAgainstText(elementId) {
@@ -1308,6 +1388,7 @@ function resetSlots() {
   }
   slotsFilled = 0;
   slotLocked = false;
+  slotLockFrames = 0;
   slotEmptyFrames = 0;
 }
 
@@ -1353,7 +1434,7 @@ function drawSlots() {
 }
 
 function updateSlots() {
-  if (slotLocked || waitingForTTS) return;
+  if (slotLocked) return;
 
   // Modalità sequenziale: slot singolo, togli per giocare
   if (game.playMode === 'sequential') {
@@ -1375,7 +1456,7 @@ function updateSlots() {
 }
 
 function loadCardIntoSlot(templateId) {
-  if (slotLocked || waitingForTTS) return;
+  if (slotLocked) return;
 
   if (game.playMode === 'sequential') {
     if (playerSlots[0]) {
