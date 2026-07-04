@@ -47,11 +47,24 @@ var helpPanel;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
 
+function getCanvasSize() {
+  const container = select('#canvas-container');
+  const availableWidth = (container && container.elt ? container.elt.clientWidth : windowWidth - 40);
+  const cw = min(availableWidth, 900);
+
+  if (isMobile()) {
+    const viewportH = windowHeight || window.innerHeight || 740;
+    const desiredH = min(max(cw * 1.18, 460), viewportH * 0.72);
+    return { width: cw, height: desiredH };
+  }
+
+  return { width: cw, height: cw * (600 / 900) };
+}
+
 function setup() {
   const container = select('#canvas-container');
-  const cw = min((container.elt ? container.elt.clientWidth : windowWidth - 40), 900);
-  const h = cw * (600 / 900);
-  const canvas = createCanvas(cw, h);
+  const size = getCanvasSize();
+  const canvas = createCanvas(size.width, size.height);
   canvas.parent(container);
 
   hiddenCanvas = createGraphics(320, 240);
@@ -117,9 +130,8 @@ function setup() {
 }
 
 function windowResized() {
-  const container = select('#canvas-container');
-  const cw = min((container.elt ? container.elt.clientWidth : windowWidth - 40), 900);
-  resizeCanvas(cw, cw * (600 / 900));
+  const size = getCanvasSize();
+  resizeCanvas(size.width, size.height);
 }
 
 function isMobile() {
@@ -547,45 +559,140 @@ function drawDecorations() {
   for (let y = 0; y < height; y += 40) line(0, y, width, y);
 }
 
+function isCompactMobileLayout() {
+  return isMobile() || width <= 520;
+}
+
+function getCanvasLayout() {
+  const compact = isCompactMobileLayout();
+
+  if (!compact) {
+    return {
+      compact,
+      hudX: 20,
+      hudY: 20,
+      hudHintWidth: 360,
+      hudFont: 18,
+      hudSmallFont: 13,
+      modeFont: 14,
+      enemyCardW: 140,
+      enemyCardH: 200,
+      enemyGap: 30,
+      enemyY: 160,
+      enemyBadgeOffsetY: 22,
+      slotCardW: 100,
+      slotCardH: 145,
+      slotGap: 20,
+      slotsY: height - 145 / 2 - 40,
+      previewW: 160,
+      previewH: 120,
+      previewX: width - 160 - 20,
+      previewY: 20,
+      logX: 20,
+      logY: height - 150,
+      logW: 320,
+      logH: 110,
+      logFont: 12,
+      logItems: 5,
+      overlayW: 420,
+      overlayH: 140,
+      overlayY: height / 2 + 60,
+      ttsPauseY: height - 210
+    };
+  }
+
+  const previewW = min(118, width * 0.31);
+  const previewH = round(previewW * 0.75);
+  const hudX = 14;
+  const hudY = 16;
+  const previewX = width - previewW - 14;
+  const topReserved = max(previewH + 34, 112);
+  const enemyCardW = game && game.playMode === 'simultaneous' ? 82 : 112;
+  const enemyCardH = game && game.playMode === 'simultaneous' ? 118 : 154;
+  const slotCardW = game && game.playMode === 'simultaneous' ? 72 : 84;
+  const slotCardH = game && game.playMode === 'simultaneous' ? 102 : 118;
+  const logH = 72;
+  const bottomSafe = 18;
+  const slotsY = height - slotCardH / 2 - logH - bottomSafe - 14;
+
+  return {
+    compact,
+    hudX,
+    hudY,
+    hudHintWidth: width - hudX * 2,
+    hudFont: 14,
+    hudSmallFont: 11,
+    modeFont: 11,
+    enemyCardW,
+    enemyCardH,
+    enemyGap: game && game.playMode === 'simultaneous' ? 10 : 18,
+    enemyY: topReserved + enemyCardH / 2 + 16,
+    enemyBadgeOffsetY: 16,
+    slotCardW,
+    slotCardH,
+    slotGap: game && game.playMode === 'simultaneous' ? 8 : 12,
+    slotsY,
+    previewW,
+    previewH,
+    previewX,
+    previewY: 14,
+    logX: 14,
+    logY: height - logH - bottomSafe,
+    logW: width - 28,
+    logH,
+    logFont: 11,
+    logItems: 2,
+    overlayW: min(width - 28, 360),
+    overlayH: 120,
+    overlayY: height / 2 + 20,
+    ttsPauseY: height - 140
+  };
+}
+
 function drawHUD() {
+  const layout = getCanvasLayout();
+
   fill(255);
   textAlign(LEFT, TOP);
-  textSize(18);
+  textSize(layout.hudFont);
   textStyle(BOLD);
-  text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, 20, 20);
-  text(`Round: ${game.round}/${game.roundsToWin}`, 20, 48);
+  text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, layout.hudX, layout.hudY);
+  text(`Round: ${game.round}/${game.roundsToWin}`, layout.hudX, layout.hudY + (layout.compact ? 24 : 28));
   if (game.enemies.length > 0) {
-    text(`Carta avversaria: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, 20, 76);
+    text(`Carta avversaria: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, layout.hudX, layout.hudY + (layout.compact ? 48 : 56));
   }
   textStyle(NORMAL);
 
   const enemy = game.currentEnemy;
   if (enemy) {
     fill(220);
-    textSize(13);
-    text(getEnemyHint(enemy), 20, 104, 360, 48);
+    textSize(layout.hudSmallFont);
+    text(getEnemyHint(enemy), layout.hudX, layout.hudY + (layout.compact ? 72 : 84), layout.hudHintWidth, layout.compact ? 32 : 48);
   }
 
   // Indicatore modalità
   const modeLabel = game.playMode === 'simultaneous' ? 'SFIDA MULTIPLA' : 'UNA CARTA ALLA VOLTA';
   fill(game.playMode === 'simultaneous' ? '#e94560' : '#3498db');
   textAlign(RIGHT, TOP);
-  textSize(14);
+  textSize(layout.modeFont);
   textStyle(BOLD);
-  text(modeLabel, width - 20, 20);
+  if (!layout.compact) {
+    text(modeLabel, width - 20, layout.hudY);
+  }
   textStyle(NORMAL);
 }
 
 function drawEnemies() {
+  const layout = getCanvasLayout();
   const n = game.enemies.length;
   if (n === 0) return;
 
-  const cardW = 140;
-  const cardH = 200;
-  const gap = 30;
+  const cardW = layout.enemyCardW;
+  const cardH = layout.enemyCardH;
+  const gap = layout.enemyGap;
   const totalW = n * cardW + (n - 1) * gap;
   const startX = (width - totalW) / 2 + cardW / 2;
-  const y = 160;
+  const y = layout.enemyY;
 
   for (let i = 0; i < n; i++) {
     const enemy = game.enemies[i];
@@ -602,7 +709,7 @@ function drawEnemies() {
     translate(x, y);
     drawCardFrame(0, 0, cardW, cardH, enemy.color, enemy.emoji, enemy.name, enemy.power, enemy.element);
 
-    textSize(12);
+    textSize(layout.compact ? 10 : 12);
     fill(255);
     textAlign(CENTER, TOP);
     text(`NEMICO ${i + 1}`, 0, -cardH / 2 + 8);
@@ -617,15 +724,17 @@ function drawEnemies() {
     const elem = ELEMENTS[enemy.element];
     fill(elem.color);
     noStroke();
-    ellipse(x, y - cardH / 2 - 22, 36, 36);
+    const badgeSize = layout.compact ? 28 : 36;
+    ellipse(x, y - cardH / 2 - layout.enemyBadgeOffsetY, badgeSize, badgeSize);
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(18);
-    text(elem.emoji, x, y - cardH / 2 - 22);
+    textSize(layout.compact ? 14 : 18);
+    text(elem.emoji, x, y - cardH / 2 - layout.enemyBadgeOffsetY);
   }
 }
 
 function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
+  const compact = isCompactMobileLayout();
   push();
   translate(x, y);
 
@@ -644,32 +753,33 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
 
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(13);
+  textSize(compact ? 11 : 13);
   textStyle(BOLD);
   text(name, 0, -h / 2 + 18);
   textStyle(NORMAL);
 
-  textSize(48);
+  textSize(compact ? 34 : 48);
   text(emoji, 0, -5);
 
   fill(255);
-  textSize(20);
+  textSize(compact ? 16 : 20);
   textStyle(BOLD);
   text(power, 0, 45);
   textStyle(NORMAL);
 
   fill(color);
-  textSize(11);
+  textSize(compact ? 9 : 11);
   text(ELEMENTS[element].name, 0, h / 2 - 18);
 
   pop();
 }
 
 function drawWebcamPreview() {
-  const pw = 160;
-  const ph = 120;
-  const px = width - pw - 20;
-  const py = 20;
+  const layout = getCanvasLayout();
+  const pw = layout.previewW;
+  const ph = layout.previewH;
+  const px = layout.previewX;
+  const py = layout.previewY;
 
   push();
   if (currentFacingMode === 'user') {
@@ -695,7 +805,7 @@ function drawWebcamPreview() {
   fill(255);
   noStroke();
   textAlign(CENTER, TOP);
-  textSize(11);
+  textSize(layout.compact ? 10 : 11);
   if (isReady) {
     text(qrEnabled ? 'Carte: lettura attiva' : 'Carte: lettura in pausa', px + pw / 2, py + ph + 6);
   } else {
@@ -706,10 +816,11 @@ function drawWebcamPreview() {
 function drawWebcamOverlay() {
   if (webcamState === 'active') return;
 
-  const overlayW = 420;
-  const overlayH = 140;
+  const layout = getCanvasLayout();
+  const overlayW = layout.overlayW;
+  const overlayH = layout.overlayH;
   const x = width / 2 - overlayW / 2;
-  const y = height / 2 + 60;
+  const y = layout.overlayY;
 
   fill(0, 0, 0, 200);
   noStroke();
@@ -717,13 +828,13 @@ function drawWebcamOverlay() {
 
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(18);
+  textSize(layout.compact ? 16 : 18);
   textStyle(BOLD);
   text('📷 Webcam', width / 2, y + 30);
   textStyle(NORMAL);
 
   fill(220);
-  textSize(14);
+  textSize(layout.compact ? 12 : 14);
   text(webcamMessage, width / 2, y + 75);
 
   if (webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
@@ -734,20 +845,21 @@ function drawWebcamOverlay() {
 }
 
 function drawLog() {
-  const x = 20;
-  const y = height - 150;
-  const w = 320;
-  const h = 110;
+  const layout = getCanvasLayout();
+  const x = layout.logX;
+  const y = layout.logY;
+  const w = layout.logW;
+  const h = layout.logH;
 
   fill(0, 0, 0, 120);
   rect(x, y, w, h, 8);
 
   fill(200);
   textAlign(LEFT, TOP);
-  textSize(12);
-  const visible = game.logs.slice(-5);
+  textSize(layout.logFont);
+  const visible = game.logs.slice(-layout.logItems);
   for (let i = 0; i < visible.length; i++) {
-    text('• ' + visible[i], x + 10, y + 10 + i * 20);
+    text('• ' + visible[i], x + 10, y + 10 + i * (layout.compact ? 18 : 20), w - 20, layout.compact ? 16 : 18);
   }
 }
 
@@ -872,13 +984,14 @@ function resetSlots() {
 }
 
 function drawSlots() {
+  const layout = getCanvasLayout();
   const n = game.cardsPerRound;
-  const cardW = 100;
-  const cardH = 145;
-  const gap = 20;
+  const cardW = layout.slotCardW;
+  const cardH = layout.slotCardH;
+  const gap = layout.slotGap;
   const totalW = n * cardW + (n - 1) * gap;
   const startX = (width - totalW) / 2 + cardW / 2;
-  const y = height - cardH / 2 - 40;
+  const y = layout.slotsY;
 
   for (let i = 0; i < n; i++) {
     const sx = startX + i * (cardW + gap);
@@ -900,9 +1013,9 @@ function drawSlots() {
     } else if (isNext) {
       fill(255, 255, 255, 80);
       textAlign(CENTER, CENTER);
-      textSize(13);
+      textSize(layout.compact ? 11 : 13);
       text('SLOT', 0, -5);
-      textSize(10);
+      textSize(layout.compact ? 9 : 10);
       fill(255, 255, 255, 120);
       text(`${i + 1}`, 0, 12);
     }
@@ -1092,14 +1205,15 @@ function updateMultiSlotAnim() {
 }
 
 function drawTTSPause() {
+  const layout = getCanvasLayout();
   fill(0, 0, 0, 100);
   noStroke();
   rect(0, 0, width, height);
 
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(18);
-  text('🔊 Ascolta...', width / 2, height - 210);
+  textSize(layout.compact ? 16 : 18);
+  text('🔊 Ascolta...', width / 2, layout.ttsPauseY);
 }
 
 /* =========================================================
