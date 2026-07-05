@@ -8,21 +8,21 @@
  * - usa i colori della carta per i moduli del QR (mantieni buon contrasto)
  */
 const ELEMENTS = {
-  FIRE: { id: 'FIRE', name: 'Fuoco', emoji: '🔥', color: '#DD4B50', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
-  WATER: { id: 'WATER', name: 'Acqua', emoji: '💧', color: '#498AE2', weakTo: ['NATURE', 'SHADOW'], strongVs: ['FIRE', 'THUNDER'] },
-  NATURE: { id: 'NATURE', name: 'Natura', emoji: '🌿', color: '#97B481', weakTo: ['FIRE', 'THUNDER'], strongVs: ['WATER', 'LIGHT'] },
-  LIGHT: { id: 'LIGHT', name: 'Luce', emoji: '☀️', color: '#ECE64E', weakTo: ['NATURE', 'FIRE'], strongVs: ['SHADOW', 'THUNDER'] },
-  SHADOW: { id: 'SHADOW', name: 'Ombra', emoji: '🌑', color: '#8380BC', weakTo: ['FIRE', 'LIGHT'], strongVs: ['WATER', 'NATURE'] },
-  THUNDER: { id: 'THUNDER', name: 'Tuono', emoji: '⚡', color: '#ECBA4E', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] }
+  FIRE: { id: 'FIRE', name: 'Braci', emoji: '🔥', color: '#DD4B50', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
+  WATER: { id: 'WATER', name: 'Goccia', emoji: '💧', color: '#498AE2', weakTo: ['NATURE', 'SHADOW'], strongVs: ['FIRE', 'THUNDER'] },
+  NATURE: { id: 'NATURE', name: 'Germoglio', emoji: '🌿', color: '#97B481', weakTo: ['FIRE', 'THUNDER'], strongVs: ['WATER', 'LIGHT'] },
+  LIGHT: { id: 'LIGHT', name: 'Raggio', emoji: '☀️', color: '#ECE64E', weakTo: ['NATURE', 'FIRE'], strongVs: ['SHADOW', 'THUNDER'] },
+  SHADOW: { id: 'SHADOW', name: 'Eclissi', emoji: '🌑', color: '#8380BC', weakTo: ['FIRE', 'LIGHT'], strongVs: ['WATER', 'NATURE'] },
+  THUNDER: { id: 'THUNDER', name: 'Saetta', emoji: '⚡', color: '#ECBA4E', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] }
 };
 
 const CARD_TEMPLATES = [
-    { id: 'ROSSO', name: 'Braci', element: 'FIRE', power: 3, animation: 'pulse', description: 'Il fuoco scalda e illumina. E\' forte contro Natura e Ombra, ma va usato con cura.' },
-    { id: 'BLU', name: 'Goccia', element: 'WATER', power: 3, animation: 'waves', description: 'L\'acqua aiuta la vita a crescere. E\' forte contro Fuoco e Tuono.' },
-    { id: 'VERDE', name: 'Germoglio', element: 'NATURE', power: 3, animation: 'leaves', description: 'La natura cresce con pazienza. E\' forte contro Acqua e Luce.' },
-    { id: 'GIALLO', name: 'Raggio', element: 'LIGHT', power: 3, animation: 'sunburst', description: 'La luce mostra la strada. E\' forte contro Ombra e Tuono.' },
-    { id: 'VIOLA', name: 'Eclissi', element: 'SHADOW', power: 3, animation: 'bats', description: 'L\'ombra invita a osservare con calma. E\' forte contro Acqua e Natura.' },
-    { id: 'NERO', name: 'Saetta', element: 'THUNDER', power: 3, animation: 'notes', description: 'Il tuono arriva veloce e potente. E\' forte contro Natura e Ombra.' }
+    { id: 'ROSSO', name: 'Braci', element: 'FIRE', power: 3, animation: 'pulse', description: 'Le Braci scaldano e illuminano. E\' forte contro Germoglio e Eclissi, ma va usato con cura.' },
+    { id: 'BLU', name: 'Goccia', element: 'WATER', power: 3, animation: 'waves', description: 'La Goccia aiuta la vita a crescere. E\' forte contro Braci e Saetta.' },
+    { id: 'VERDE', name: 'Germoglio', element: 'NATURE', power: 3, animation: 'leaves', description: 'Il Germoglio cresce con pazienza. E\' forte contro Goccia e Raggio.' },
+    { id: 'GIALLO', name: 'Raggio', element: 'LIGHT', power: 3, animation: 'sunburst', description: 'Il Raggio mostra la strada. E\' forte contro Eclissi e Saetta.' },
+    { id: 'VIOLA', name: 'Eclissi', element: 'SHADOW', power: 3, animation: 'bats', description: 'L\'Eclissi invita a osservare con calma. E\' forte contro Goccia e Germoglio.' },
+    { id: 'NERO', name: 'Saetta', element: 'THUNDER', power: 3, animation: 'notes', description: 'La Saetta arriva veloce e potente. E\' forte contro Germoglio e Eclissi.' }
   ];
 
 const TEMPLATE_MAP = Object.fromEntries(CARD_TEMPLATES.map(c => [c.id, c]));
