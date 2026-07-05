@@ -1,8 +1,3 @@
-/* =========================================================
-   SPECULA ELEMENTAE — frontend p5.js, input solo da webcam QR
-   Versione no-WIMP: il giocatore gestisce fisicamente le carte.
-   ========================================================= */
-
 import { ELEMENTS, TEMPLATE_MAP, createCard } from './cards.js';
 import { Game, GAME_STATE } from './game.js';
 import { audio } from './audio.js';
@@ -10,6 +5,7 @@ import { familyVoice } from './family-voice.js';
 import { tts } from './tts.js';
 import { StoryEngine } from './stories/story-engine.js';
 import magicSchoolFontUrl from './fonts/magic-school.ttf?url';
+import kiddosFontUrl from './fonts/kiddos.ttf?url';
 
 var video;
 var hiddenCanvas;
@@ -33,14 +29,14 @@ var webcamState = 'loading';
 var webcamMessage = 'Sto preparando la fotocamera...';
 var statusMessage = 'Mostra una carta alla webcam per iniziare la tua avventura.';
 
-// Slot fisico virtuale: il giocatore carica una carta alla volta.
+// Player load one card at a time
 var playerSlots = [];
-var slotFrames = [];     // frame con la stessa carta in ogni slot
-var slotEmptyFrames = 0; // frame senza QR rilevato
+var slotFrames = [];
+var slotEmptyFrames = 0;
 var slotLocked = false;
 var slotLockFrames = 0;
-const SLOT_EMPTY_THRESHOLD = 8;      // frame senza QR prima di giocare la carta rimossa
-const SLOT_AUTOPLAY_THRESHOLD = 120; // frame con la stessa carta ferma -> gioca automaticamente
+const SLOT_EMPTY_THRESHOLD = 8;
+const SLOT_AUTOPLAY_THRESHOLD = 120;
 const SLOT_LOCK_TIMEOUT = 300;
 var scaleFactor = 1;
 var isCompact = false;
@@ -63,10 +59,15 @@ var settingsModal;
 var settingsOpenBtn;
 var settingsCloseBtn;
 var settingsBackdrop;
+var privacyInfoBtn;
+var privacyInfoPopover;
+var familyVoiceEntryLink;
+var familyVoiceEntryStatus;
 var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
 var magicFont;
+var kiddosFont;
 var elementImages = {};
 var heartImage = null;
 var webcamFrameImg = null;
@@ -80,15 +81,16 @@ var heroIntroStart = 0;
 const HERO_APPEAR = ['fire', 'water', 'river', 'towers', 'mountains'];
 const HERO_ZORDER = ['mountains', 'towers', 'river', 'water', 'fire'];
 const HERO_LAYOUT = {
-  mountains: { x: 55, y: 18, w: 240 },
-  towers: { x: 0, y: 88, w: 226 },
-  river: { x: 22, y: 185, w: 252 },
-  water: { x: -32, y: 230, w: 248 },
-  fire: { x: 108, y: 268, w: 214 }
+  mountains: { x: 25, y: -20, w: 340 },
+  towers: { x: -40, y: 90, w: 280 },
+  river: { x: -15, y: 210, w: 310 },
+  water: { x: -80, y: 240, w: 320 },
+  fire: { x: 80, y: 300, w: 270 }
 };
 
 function preload() {
   magicFont = loadFont(magicSchoolFontUrl);
+  kiddosFont = loadFont(kiddosFontUrl);
 
   heroImages.fire = loadImage('assets/hero/fire.png');
   heroImages.water = loadImage('assets/hero/water.png');
@@ -134,23 +136,34 @@ function makeBgTransparent(img) {
 }
 
 function getCanvasSize() {
-  const container = document.getElementById('canvas-container');
+  const parent = document.querySelector('main');
+  
+  // Read the available space in the <main> tag
+  let availableW = parent ? parent.clientWidth : windowWidth;
+  let availableH = parent ? parent.clientHeight : windowHeight;
 
-  let w = container ? container.clientWidth : 0;
-  let h = container ? container.clientHeight : 0;
-
-  if (w <= 0) {
-    w = windowWidth < 720 ? windowWidth - 40 : 900;
+  // Calculate the usable canvas space
+  if (parent) {
+    const style = window.getComputedStyle(parent);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+    
+    availableW = availableW - paddingLeft - paddingRight;
+    availableH = availableH - paddingTop - paddingBottom;
   }
 
-  if (h <= 0) {
-    h = windowHeight < 600 ? windowHeight - 160 : 600;
-  }
+  if (availableW <= 0) availableW = windowWidth - 40;
+  if (availableH <= 0) availableH = windowHeight - 200;
 
-  isCompact = w < 720;
-  scaleFactor = !isCompact ? min(w / 900, h / 600) : min(w / 380, h / 520);
+  isCompact = availableW < 720;
+  const logicalW = !isCompact ? 900 : 380;
+  const logicalH = !isCompact ? 600 : 520;
 
-  return { width: w, height: h };
+  scaleFactor = min(availableW / logicalW, availableH / logicalH);
+
+  return { width: availableW, height: availableH };
 }
 
 function sx(v) {
@@ -243,6 +256,10 @@ function setup() {
   settingsOpenBtn = select('#settings-open-btn');
   settingsCloseBtn = select('#settings-close-btn');
   settingsBackdrop = select('#settings-backdrop');
+  privacyInfoBtn = select('#privacy-info-btn');
+  privacyInfoPopover = select('#privacy-info-popover');
+  familyVoiceEntryLink = select('#family-voice-entry-link');
+  familyVoiceEntryStatus = select('#family-voice-entry-status');
   debugMode = detectDebugMode();
 
   if (debugMode && debugPanel && debugPanel.elt) {
@@ -272,9 +289,32 @@ function setup() {
     settingsBackdrop.mousePressed(closeSettingsModal);
   }
 
+  if (privacyInfoBtn) {
+    privacyInfoBtn.mousePressed((event) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      togglePrivacyInfoPopover();
+    });
+  }
+
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeSettingsModal();
+      if (event.key === 'Escape') {
+        closeSettingsModal();
+        closePrivacyInfoPopover();
+      }
+    });
+    window.addEventListener('family-voice-session-changed', updateFamilyVoiceSettingsState);
+    window.addEventListener('click', (event) => {
+      if (!privacyInfoPopover || !privacyInfoPopover.elt || privacyInfoPopover.elt.hidden) return;
+      const clickedButton = privacyInfoBtn && privacyInfoBtn.elt && privacyInfoBtn.elt.contains(event.target);
+      const clickedPopover = privacyInfoPopover.elt.contains(event.target);
+      if (!clickedButton && !clickedPopover) closePrivacyInfoPopover();
+    });
+  }
+
+  if (familyVoiceEntryLink && familyVoiceEntryLink.elt) {
+    familyVoiceEntryLink.elt.addEventListener('click', () => {
+      updateFamilyVoiceSettingsState();
     });
   }
 
@@ -340,6 +380,8 @@ function setup() {
     updateProviderStatus(providerState);
   });
 
+  updateFamilyVoiceSettingsState();
+
   if (!isMobile()) {
     setupWebcam();
   } else {
@@ -362,6 +404,7 @@ function windowResized() {
 
 function openSettingsModal() {
   if (!settingsModal || !settingsModal.elt) return;
+  updateFamilyVoiceSettingsState();
   settingsModal.elt.hidden = false;
   document.body.classList.add('settings-modal-open');
 }
@@ -370,6 +413,35 @@ function closeSettingsModal() {
   if (!settingsModal || !settingsModal.elt) return;
   settingsModal.elt.hidden = true;
   document.body.classList.remove('settings-modal-open');
+}
+
+function updateFamilyVoiceSettingsState() {
+  const authenticated = Boolean(
+    familyVoice
+    && typeof familyVoice.isAuthenticated === 'function'
+    && familyVoice.isAuthenticated()
+  );
+
+  if (familyVoiceEntryStatus && familyVoiceEntryStatus.elt) {
+    familyVoiceEntryStatus.elt.textContent = authenticated
+      ? 'Accesso attivo. Le registrazioni di famiglia possono essere usate dal gioco quando disponibili.'
+      : 'Accesso richiesto. Prima entra nello studio, poi potrai usare le registrazioni di famiglia nel gioco.';
+  }
+
+  if (familyVoiceEntryLink && familyVoiceEntryLink.elt) {
+    familyVoiceEntryLink.elt.textContent = authenticated ? 'Apri lo studio' : 'Accedi per usare la voce';
+    familyVoiceEntryLink.elt.dataset.state = authenticated ? 'ready' : 'locked';
+  }
+}
+
+function togglePrivacyInfoPopover() {
+  if (!privacyInfoPopover || !privacyInfoPopover.elt) return;
+  privacyInfoPopover.elt.hidden = !privacyInfoPopover.elt.hidden;
+}
+
+function closePrivacyInfoPopover() {
+  if (!privacyInfoPopover || !privacyInfoPopover.elt) return;
+  privacyInfoPopover.elt.hidden = true;
 }
 
 function isMobile() {
@@ -465,7 +537,6 @@ function tryCreateCapture(constraints, attempt) {
         video.elt.setAttribute('muted', '');
         video.elt.setAttribute('autoplay', '');
 
-        // Proprietà DOM necessarie per iOS Safari
         video.elt.playsInline = true;
         video.elt.muted = true;
         video.elt.autoplay = true;
@@ -487,7 +558,6 @@ function tryCreateCapture(constraints, attempt) {
           console.log('[Webcam] Video già pronto al callback');
           setActive();
         } else {
-          // Aspetta il canplay per passare ad active senza fidarsi solo del timeout
           video.elt.addEventListener('canplay', () => {
             console.log('[Webcam] Evento canplay ricevuto');
             if (webcamState !== 'active') {
@@ -620,7 +690,7 @@ function draw() {
   updateFloaters();
   drawFloaters();
 
-  // Epilogo narrativo su cambio stato finale
+  // Narrative epilogue on the final state
   if (prevGameState !== game.state) {
     if (game.state === GAME_STATE.VICTORY) {
       speakStoryEnding(true);
@@ -651,9 +721,7 @@ function draw() {
   updateLogBalloon();
 }
 
-/* =========================================================
-   SCHERMATE
-   ========================================================= */
+//Screens
 
 function drawIdle() {
   drawHeroArt();
@@ -665,25 +733,36 @@ function drawIdle() {
     const tx = sx(20);
     const tw = width - sx(40);
     const centerX = width / 2;
-    const gradW = 105 * scaleFactor;
-    const grad = drawingContext.createLinearGradient(centerX - gradW, sy(24), centerX + gradW, sy(24));
-    grad.addColorStop(0, '#DD4B50');
-    grad.addColorStop(0.2, '#498AE2');
-    grad.addColorStop(0.4, '#ECE64E');
-    grad.addColorStop(0.6, '#97B481');
-    grad.addColorStop(0.8, '#498AE2');
-    grad.addColorStop(1, '#8380BC');
-
+    const titleY = sy(20);
+    const titleLeading = 70 * scaleFactor;
+    const shiftX = sx(40);
     textFont(magicFont || 'Space Grotesk');
-    textSize(52 * scaleFactor);
-    drawingContext.fillStyle = grad;
-    textAlign(CENTER, TOP);
-    text('Specula Elementae', width / 2, sy(24));
+    textSize(68 * scaleFactor);
 
-    textSize(13 * scaleFactor);
+    const textW = textWidth('Elementae') + shiftX;
+    const gradStartX = centerX - textW / 2;
+    const gradEndX = centerX + textW / 2;
+    const gradCenterY = titleY + titleLeading / 2;
+
+    const grad = drawingContext.createLinearGradient(gradStartX, gradCenterY, gradEndX, gradCenterY);
+    grad.addColorStop(0, '#DD4B50');   // Fuoco
+    grad.addColorStop(0.2, '#ECBA4E');  // Tuono
+    grad.addColorStop(0.4, '#ECE64E');  // Luce
+    grad.addColorStop(0.6, '#97B481');  // Natura
+    grad.addColorStop(0.8, '#498AE2');  // Acqua
+    grad.addColorStop(1, '#8380BC');    // Ombra
+
+    drawingContext.fillStyle = grad;
+    textAlign(LEFT, TOP);
+    text('Speculae', centerX - textW / 2, titleY);
+    text('Elementae', centerX - textW / 2 + shiftX, titleY + titleLeading);
+
+    textSize(16 * scaleFactor);
+    textLeading(19 * scaleFactor);
     fill('#5a4a34');
-    textFont('Nunito');
-    text('Un solitario alchemico guidato dalla magia della tua webcam.', tx, sy(95), tw);
+    textFont(kiddosFont || 'Space Grotesk');
+    textAlign(CENTER, TOP);
+    text('Un solitario elementale guidato dalla magia della tua webcam.', tx, sy(195), tw);
 
     if (webcamState === 'active') {
       const t = millis() / 1000;
@@ -693,7 +772,7 @@ function drawIdle() {
       textSize(24 * scaleFactor);
       textLeading(30 * scaleFactor);
       textAlign(CENTER, TOP);
-      text('Mostra una carta alla webcam per iniziare', tx, sy(145) + pulse, tw);
+      text('Mostra una carta alla webcam per iniziare', tx, sy(245) + pulse, tw);
     }
 
     fill('#2b2318');
@@ -704,26 +783,36 @@ function drawIdle() {
   } else {
     const tx = sx(380);
     const tw = sx(380);
-    const centerX = tx + tw / 2;
-    const gradW = sx(135) * scaleFactor;
-    const grad = drawingContext.createLinearGradient(centerX - gradW, sy(120), centerX + gradW, sy(120));
-    grad.addColorStop(0, '#DD4B50');
-    grad.addColorStop(0.2, '#498AE2');
-    grad.addColorStop(0.4, '#ECE64E');
-    grad.addColorStop(0.6, '#97B481');
-    grad.addColorStop(0.8, '#498AE2');
-    grad.addColorStop(1, '#8380BC');
-
+    const titleX = sx(370);
+    const titleY = sy(60);
+    const titleLeading = 110 * scaleFactor;
+    const shiftX = sx(75);
     textFont(magicFont || 'Space Grotesk');
-    textSize(70 * scaleFactor);
-    drawingContext.fillStyle = grad;
-    textAlign(CENTER, TOP);
-    text('Specula Elementae', tx, sy(120), tw);
+    textSize(110 * scaleFactor);
 
-    textSize(14 * scaleFactor);
+    const textW = textWidth('Elementae') + shiftX;
+    const gradStartX = titleX;
+    const gradEndX = titleX + textW;
+    const gradCenterY = titleY + titleLeading;
+    const grad = drawingContext.createLinearGradient(gradStartX, gradCenterY, gradEndX, gradCenterY);
+    grad.addColorStop(0, '#DD4B50');   // Fuoco
+    grad.addColorStop(0.2, '#ECBA4E');  // Tuono
+    grad.addColorStop(0.4, '#ECE64E');  // Luce
+    grad.addColorStop(0.6, '#97B481');  // Natura
+    grad.addColorStop(0.8, '#498AE2');  // Acqua
+    grad.addColorStop(1, '#8380BC');    // Ombra
+
+    drawingContext.fillStyle = grad;
+    textAlign(LEFT, TOP);
+    text('Speculae', titleX, titleY);
+    text('Elementae', titleX + shiftX, titleY + titleLeading);
+
+    textSize(20 * scaleFactor);
+    textLeading(24 * scaleFactor);
     fill('#5a4a34');
-    textFont('Nunito');
-    text('Un solitario alchemico guidato dalla magia della tua webcam.', tx, sy(225), tw);
+    textFont(kiddosFont || 'Space Grotesk');
+    textAlign(CENTER, TOP);
+    text('Un solitario elementale guidato dalla magia della tua webcam.', tx, sy(330), tw);
 
     if (webcamState === 'active') {
       const t = millis() / 1000;
@@ -733,7 +822,7 @@ function drawIdle() {
       textSize(26 * scaleFactor);
       textLeading(36 * scaleFactor);
       textAlign(CENTER, TOP);
-      text('Mostra una carta alla webcam per iniziare', tx, sy(295) + pulse, tw);
+      text('Mostra una carta alla webcam per iniziare', tx, sy(400) + pulse, tw);
     }
   }
 
@@ -780,7 +869,6 @@ function drawPlaying() {
 function drawRoundResult() {
   drawPlaying();
 
-  // Animazione sequenziale della carta verso il nemico
   if (lastPlayedCard) {
     animProgress += 0.04;
     const cx = lerp(width / 2, width / 2, animProgress);
@@ -923,15 +1011,15 @@ function getCanvasLayout() {
       hudFont: 18,
       hudSmallFont: 13,
       modeFont: 14,
-      enemyCardW: 140,
-      enemyCardH: 200,
-      enemyGap: 30,
-      enemyY: 160,
+      enemyCardW: 180,
+      enemyCardH: 258,
+      enemyGap: 34,
+      enemyY: 180,
       enemyBadgeOffsetY: 22,
-      slotCardW: 100,
-      slotCardH: 145,
+      slotCardW: 130,
+      slotCardH: 188,
       slotGap: 20,
-      slotsY: height - 145 / 2 - 40,
+      slotsY: height - 188 / 2 - 40,
       previewW: sx(160),
       previewH: sy(120),
       previewX: width - sx(160) - sx(20),
@@ -1016,7 +1104,7 @@ function drawHUD() {
   } else {
     text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, layout.hudX, layout.hudY);
   }
-  fill('#5a4a34');
+  fill('#000000');
   text(`Round: ${game.round}/${game.roundsToWin}`, layout.hudX, layout.hudY + (layout.compact ? 24 : 28));
   if (game.enemies.length > 0) {
     text(`Carta avversaria: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, layout.hudX, layout.hudY + (layout.compact ? 48 : 56));
@@ -1025,7 +1113,7 @@ function drawHUD() {
 
   const enemy = game.currentEnemy;
   if (enemy) {
-    fill('#5a4a34');
+    fill('#000000');
     textSize(layout.hudSmallFont);
     text(getEnemyHint(enemy), layout.hudX, layout.hudY + (layout.compact ? 72 : 84), layout.hudHintWidth, layout.compact ? 32 : 48);
   }
@@ -1055,11 +1143,6 @@ function drawEnemies() {
     push();
     translate(x, y);
     drawCardFrame(0, 0, cardW, cardH, enemy.color, enemy.emoji, enemy.name, enemy.power, enemy.element);
-
-    textSize(layout.compact ? 10 : 12);
-    fill(255);
-    textAlign(CENTER, TOP);
-    text(`NEMICO ${i + 1}`, 0, -cardH / 2 + 8);
     pop();
   }
 }
@@ -1081,7 +1164,7 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
   noStroke();
   fill(color);
   textAlign(CENTER, CENTER);
-  textSize(compact ? 11 : 13);
+  textSize(compact ? 13 : 17);
   textStyle(BOLD);
   text(name, 0, -h / 2 + 18);
   textStyle(NORMAL);
@@ -1096,16 +1179,6 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
   translate(0, medY);
   drawElementImage(element, medR * 1.9, color);
   pop();
-
-  fill('#6f5f45');
-  textSize(compact ? 16 : 20);
-  textStyle(BOLD);
-  text(power, 0, compact ? 42 : 45);
-  textStyle(NORMAL);
-
-  fill(color);
-  textSize(compact ? 9 : 11);
-  text(ELEMENTS[element].name, 0, h / 2 - 18);
 
   pop();
 }
@@ -1229,6 +1302,8 @@ function drawHelpPanel() {
   const padX = sx(14);
   const innerW = pw - padX * 2;
 
+  drawHoloFrame(px, py, pw, ph, sx(12));
+
   noStroke();
   fill('#ffffff');
   stroke('#dce6f2');
@@ -1312,10 +1387,10 @@ function drawMapOverlay() {
   const isPlayingState = game.state === GAME_STATE.PLAYING || game.state === GAME_STATE.ROUND_RESULT;
   if (!isPlayingState || isCompactMobileLayout()) return;
 
-  const mw = 210;
+  const mw = 250;
   const mh = mapImage && mapImage.width > 0 ? mw * (mapImage.height / mapImage.width) : mw * 1.333;
-  const cx = width * 0.22;
-  const cy = height / 2;
+  const cx = width * 0.09;
+  const cy = height * 0.45;
 
   push();
   translate(cx - mw / 2, cy - mh / 2);
@@ -1417,7 +1492,7 @@ function getStoryPromptKey(passageName) {
 }
 
 function drawCanvasBackground() {
-  background('#f1f6fc');
+  clear();
 }
 
 function textColorForBg(hex) {
@@ -1572,9 +1647,58 @@ function easeOutCubic(t) {
 }
 
 /* =========================================================
-    SLOT CARTE
+    EFFETTO "HOLO CARD" — bordo/glow a gradiente rotante,
+    stessa idea della carta olografica CSS, coi colori del tema.
    ========================================================= */
 
+const HOLO_COLORS = ['#DD4B50', '#ECBA4E', '#ECE64E', '#97B481', '#498AE2', '#8380BC'];
+
+function drawRoundRectPath(x, y, w, h, r) {
+  const ctx = drawingContext;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Fills the (rounded) shape with a linear gradient that rotates over
+function paintHoloGradient(x, y, w, h, r, angle, blurPx) {
+  const ctx = drawingContext;
+  ctx.save();
+  if (blurPx) ctx.filter = `blur(${blurPx}px)`;
+  drawRoundRectPath(x, y, w, h, r);
+  ctx.clip();
+
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const diag = Math.sqrt(w * w + h * h);
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  const grad = ctx.createLinearGradient(-diag / 2, 0, diag / 2, 0);
+  const n = HOLO_COLORS.length;
+  HOLO_COLORS.forEach((c, i) => grad.addColorStop(i / (n - 1), c));
+  ctx.fillStyle = grad;
+  ctx.fillRect(-diag, -diag, diag * 2, diag * 2);
+
+  ctx.restore();
+}
+
+// Draws a blurred glow + a rotating sharp border
+// and the actual content of the box should be drawn ON TOP
+function drawHoloFrame(x, y, w, h, r) {
+  const angle = (millis() / 16000) * TWO_PI;
+  const glowPad = sx(4);
+  const borderPad = sx(1.2);
+
+  paintHoloGradient(x - glowPad, y - glowPad, w + glowPad * 2, h + glowPad * 2, r + glowPad, angle, sx(6));
+  paintHoloGradient(x - borderPad, y - borderPad, w + borderPad * 2, h + borderPad * 2, r + borderPad, angle, 0);
+}
+
+// Card Slots
 function resetSlots() {
   playerSlots = [];
   slotFrames = [];
@@ -1605,23 +1729,25 @@ function drawSlots() {
     push();
     translate(sx, y);
 
-    noFill();
-    stroke(255, 255, 255, card ? 180 : isNext ? 100 : 50);
-    strokeWeight(3);
-    drawingContext.setLineDash(card ? [] : [8, 5]);
-    rect(-cardW / 2, -cardH / 2, cardW, cardH, 10);
-    drawingContext.setLineDash([]);
+    if (!card) {
+      noFill();
+      stroke('#498AE2');
+      strokeWeight(3);
+      drawingContext.setLineDash([8, 5]);
+      rect(-cardW / 2, -cardH / 2, cardW, cardH, 10);
+      drawingContext.setLineDash([]);
+    }
 
     if (card) {
       drawCardFrame(0, 0, cardW - 8, cardH - 8, card.color, card.emoji, card.name, card.power, card.element);
-    } else if (isNext) {
-      fill(255, 255, 255, 80);
+    } else {
+      noStroke();
+      fill('#2d62a3');
       textAlign(CENTER, CENTER);
-      textSize(layout.compact ? 11 : 13);
-      text('SLOT', 0, -5);
-      textSize(layout.compact ? 9 : 10);
-      fill(255, 255, 255, 120);
-      text(`${i + 1}`, 0, 12);
+      textFont('Beachday');
+      textSize(layout.compact ? 16 : 22);
+      textLeading(layout.compact ? 19 : 26);
+      text('La tua\ncarta', 0, 0);
     }
 
     pop();
@@ -1702,20 +1828,18 @@ function playSequentialSlot() {
 
 function drawTTSPause() {
   const layout = getCanvasLayout();
-  fill(0, 0, 0, 100);
+  fill(0, 0, 0, 140);
   noStroke();
   rect(0, 0, width, height);
 
   fill(255);
   textAlign(CENTER, CENTER);
-  textSize(layout.compact ? 16 : 18);
-  text('🔊 Ascolta...', width / 2, layout.ttsPauseY);
+  textFont('Beachday');
+  textSize(layout.compact ? 28 : 42);
+  text('Ascolta...', width / 2, height * 0.42);
 }
 
-/* =========================================================
-    RICONOSCIMENTO QR
-   ========================================================= */
-
+// QR reader
 function readQR() {
   hiddenCanvas.push();
   if (currentFacingMode === 'user') {
@@ -1746,7 +1870,6 @@ function handleQRDetected(id) {
   audio.init();
   tts.prime();
 
-  // Gestione start/restart: questi non passano dallo slot
   if (id === 'RESTART' ||
       game.state === GAME_STATE.IDLE ||
       game.state === GAME_STATE.GAME_OVER ||
@@ -1802,13 +1925,10 @@ function handleQRDetected(id) {
     return;
   }
 
-  // Durante un round result gli slot sono bloccati
   if (game.state !== GAME_STATE.PLAYING || slotLocked) return;
 
-  // Solo carte valide possono essere giocate
   if (!TEMPLATE_MAP[id]) return;
 
-  // Se la carta è già in uno slot, incrementa il contatore
   let foundInSlot = false;
   for (let i = 0; i < game.cardsPerRound; i++) {
     if (playerSlots[i] && playerSlots[i].templateId === id) {
@@ -1822,10 +1942,7 @@ function handleQRDetected(id) {
   loadCardIntoSlot(id);
 }
 
-/* =========================================================
-    UI DOM
-   ========================================================= */
-
+// UI DOM
 function logToStatus(message) {
   statusMessage = message;
   if (statusEl) statusEl.html(message);
@@ -1839,10 +1956,7 @@ function logToStatus(message) {
   }
 }
 
-/* =========================================================
-    UTILITY
-   ========================================================= */
-
+//Utility
 function lighten(hex, percent) {
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -1852,10 +1966,7 @@ function lighten(hex, percent) {
   return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
-/* =========================================================
-    NARRAZIONE / STORY ENGINE
-   ========================================================= */
-
+// Story Engine
 function checkStoryEvents() {
   if (!storyEngine || !storyEngine.hasStory()) return;
   const eventPassage = storyEngine.getEventForRound(game.round);
@@ -1890,6 +2001,8 @@ function speakStoryEnding(victory) {
     });
   }
 }
+
+
 
 if (typeof window !== 'undefined') {
   window.preload = preload;

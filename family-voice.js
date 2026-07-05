@@ -70,6 +70,10 @@ function resolveApiUrl(pathname) {
       this._loadState();
     }
 
+    isAuthenticated() {
+      return Boolean(this.token && this.user);
+    }
+
     _loadState() {
       if (typeof window === 'undefined' || !window.localStorage) return;
       this.token = window.localStorage.getItem(TOKEN_KEY) || '';
@@ -89,6 +93,17 @@ function resolveApiUrl(pathname) {
 
     isEnabled() {
       return this.enabled;
+    }
+
+    _emitSessionState() {
+      if (typeof window === 'undefined') return;
+      window.dispatchEvent(new CustomEvent('family-voice-session-changed', {
+        detail: {
+          authenticated: this.isAuthenticated(),
+          enabled: this.enabled,
+          username: this.user ? this.user.username : ''
+        }
+      }));
     }
 
     hasRecording(promptKey) {
@@ -206,6 +221,8 @@ function resolveApiUrl(pathname) {
       if (this.isHeadless) {
         if (this.token) {
           this.restoreSession();
+        } else {
+          this._emitSessionState();
         }
         return;
       }
@@ -243,6 +260,7 @@ function resolveApiUrl(pathname) {
         this.enabledToggle.addEventListener('change', () => {
           this.enabled = this.enabledToggle.checked;
           this._saveState();
+          this._emitSessionState();
           this.render();
         });
       }
@@ -320,17 +338,13 @@ function resolveApiUrl(pathname) {
 
       if (typeof window !== 'undefined') {
         window.addEventListener('resize', () => {
-          if (this.selectedPrompt) {
-            this._drawStage();
-          }
+          this._drawStage();
         });
       }
 
       if (typeof ResizeObserver !== 'undefined' && this.stageCanvas) {
         this.stageResizeObserver = new ResizeObserver(() => {
-          if (this.selectedPrompt) {
-            this._drawStage();
-          }
+          this._drawStage();
         });
         this.stageResizeObserver.observe(this.stageCanvas);
       }
@@ -340,6 +354,10 @@ function resolveApiUrl(pathname) {
           this.closeStudio();
         }
       });
+
+      if (this.stageCanvas && (this.isEmbeddedStudio || (this.studioEl && !this.studioEl.hidden))) {
+        this._startStageLoop();
+      }
 
       if (this.token) {
         this.restoreSession();
@@ -353,6 +371,7 @@ function resolveApiUrl(pathname) {
         const response = await this._request('/api/family-voice/auth/me', { method: 'GET' });
         const payload = await response.json();
         this.user = payload.user;
+        this._emitSessionState();
         await this.loadLibrary();
       } catch (error) {
         this._clearSession();
@@ -438,6 +457,7 @@ function resolveApiUrl(pathname) {
       this.token = payload.token;
       this.user = payload.user;
       this._saveState();
+      this._emitSessionState();
       if (this.passwordInput) this.passwordInput.value = '';
     }
 
@@ -447,6 +467,7 @@ function resolveApiUrl(pathname) {
       this.library = null;
       this._releaseCachedAudio();
       this._saveState();
+      this._emitSessionState();
     }
 
     _setStatus(message) {
@@ -557,15 +578,15 @@ function resolveApiUrl(pathname) {
       const frameToken = ++this.stageFrame;
       const tick = () => {
         if (frameToken !== this.stageFrame) return;
-        if (!this.studioEl || (!this.isEmbeddedStudio && this.studioEl.hidden) || !this.selectedPrompt) return;
+        if (!this.studioEl || (!this.isEmbeddedStudio && this.studioEl.hidden)) return;
         this._drawStage();
-        window.requestAnimationFrame(tick);
+        if (this.selectedPrompt) window.requestAnimationFrame(tick);
       };
       window.requestAnimationFrame(tick);
     }
 
     _drawStage() {
-      if (!this.stageCtx || !this.stageCanvas || !this.selectedPrompt) return;
+      if (!this.stageCtx || !this.stageCanvas) return;
 
       const canvas = this.stageCanvas;
       const ctx = this.stageCtx;
@@ -580,6 +601,35 @@ function resolveApiUrl(pathname) {
 
       const w = canvas.width;
       const h = canvas.height;
+
+      if (!this.selectedPrompt) {
+        ctx.clearRect(0, 0, w, h);
+        const idleBg = ctx.createLinearGradient(0, 0, 0, h);
+        idleBg.addColorStop(0, '#22355f');
+        idleBg.addColorStop(1, '#131b30');
+        ctx.fillStyle = idleBg;
+        ctx.fillRect(0, 0, w, h);
+
+        const cardInset = Math.round(w * 0.055);
+        const cardW = w - cardInset * 2;
+        const cardH = h - cardInset * 2;
+        ctx.fillStyle = '#fff8ea';
+        this._roundRect(ctx, cardInset, cardInset, cardW, cardH, 30 * ratio);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(176, 132, 47, 0.2)';
+        ctx.lineWidth = 2 * ratio;
+        ctx.stroke();
+
+        ctx.fillStyle = '#77654a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `600 ${20 * ratio}px "Hanken Grotesk", sans-serif`;
+        ctx.fillText('Scegli un prompt dalla libreria per iniziare', w / 2, h / 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        return;
+      }
+
       const recommended = this.getRecommendedDuration(this.selectedPrompt);
       const elapsed = this.mediaRecorder && this.mediaRecorder.state !== 'inactive'
         ? (performance.now() - this.recordingStartedAt) / 1000
@@ -821,6 +871,13 @@ function resolveApiUrl(pathname) {
       if (!this.panel) return;
 
       if (!this.user) {
+        if (this.panel) this.panel.hidden = false;
+        if (this.studioEl) {
+          this.studioEl.hidden = true;
+          this.studioEl.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.add('family-voice-auth-only');
+        document.body.classList.remove('family-voice-studio-only');
         this._setStatus('Accedi o crea un profilo per salvare registrazioni private.');
         if (this.libraryEl) this.libraryEl.innerHTML = '';
         if (this.logoutBtn) this.logoutBtn.hidden = true;
@@ -829,6 +886,13 @@ function resolveApiUrl(pathname) {
         return;
       }
 
+      if (this.panel) this.panel.hidden = true;
+      if (this.studioEl) {
+        this.studioEl.hidden = false;
+        this.studioEl.setAttribute('aria-hidden', 'false');
+      }
+      document.body.classList.remove('family-voice-auth-only');
+      document.body.classList.add('family-voice-studio-only');
       if (this.logoutBtn) this.logoutBtn.hidden = false;
       if (this.refreshBtn) this.refreshBtn.hidden = false;
       if (this.authForm) this.authForm.hidden = true;
