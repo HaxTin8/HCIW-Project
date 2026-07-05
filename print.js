@@ -9,7 +9,8 @@ function beatsDescription(elementId) {
     const name = id.toLowerCase();
     return `<img class="vs-icon" src="assets/elements/${name}.png" alt="${ELEMENTS[id].name}" title="${ELEMENTS[id].name}">`;
   });
-  return `<span>${elem.name} batte</span> ${icons[0]} <span>e</span> ${icons[1]}`;
+  const verb = elementId === 'FIRE' ? 'battono' : 'batte';
+  return `<span>${elem.name} ${verb}</span> ${icons[0]} <span>e</span> ${icons[1]}`;
 }
 
 function elementIcon(elementId) {

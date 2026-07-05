@@ -433,7 +433,6 @@ function updateFamilyVoiceSettingsState() {
     familyVoiceEntryLink.elt.dataset.state = authenticated ? 'ready' : 'locked';
   }
 }
-
 function togglePrivacyInfoPopover() {
   if (!privacyInfoPopover || !privacyInfoPopover.elt) return;
   privacyInfoPopover.elt.hidden = !privacyInfoPopover.elt.hidden;

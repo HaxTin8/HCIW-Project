@@ -1,6 +1,6 @@
 /**
- * Logica di gioco pura, testabile in Node.js.
- * Versione no-WIMP semplificata: 1 nemico, 1 carta per round.
+ * Game logic
+ * 1 enemy, 1 card for round.
  */
 
 import { CARD_TEMPLATES, TEMPLATE_MAP, createCard, resolveCombat } from './cards.js';
@@ -90,9 +90,7 @@ class Game {
       return this.enemies[this.currentEnemyIndex] || null;
     }
 
-    /**
-     * Modalita sequenziale: gioca una carta contro il nemico corrente.
-     */
+  /**Sequential mode*/
     playCardSequential(templateId) {
       if (this.state !== GAME_STATE.PLAYING || !this.currentEnemy) return null;
 
@@ -157,9 +155,8 @@ class Game {
           this.log('L\'avventura si ferma qui, ma puoi riprovare.');
           return this.state;
         }
-        // Nemici restano
       } else {
-        // Pareggio: nemici restano
+        // draw with the enemies
       }
 
       this.resetStoryEffects();

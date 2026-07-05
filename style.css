@@ -1193,7 +1193,6 @@ body.family-voice-page {
   overflow-x: hidden;
   overflow-y: auto;
 }
-
 body.family-voice-page main {
   overflow: visible;
   padding: 0;
@@ -1450,7 +1449,6 @@ main {
 .family-voice-link[data-state="locked"]:active {
   background: linear-gradient(180deg, #fbe6d7 0%, #f7d1b7 100%);
 }
-
 .settings-modal-topbar {
   display: flex;
   justify-content: space-between;

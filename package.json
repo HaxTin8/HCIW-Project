@@ -13,10 +13,20 @@
     "dev:backend": "node scripts/dev-server.js",
     "preview": "vite preview --host 0.0.0.0"
   },
-  "keywords": ["p5js", "qrcode", "card-game", "solitaire", "deck-builder"],
+  "keywords": [
+    "p5js",
+    "qrcode",
+    "card-game",
+    "solitaire",
+    "deck-builder"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "vite": "^7.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true
   }
 }
