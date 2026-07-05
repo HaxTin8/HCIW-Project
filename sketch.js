@@ -419,6 +419,11 @@ function setup() {
   logToStatus(debugMode
     ? 'Modalita debug attiva: usa i pulsanti rapidi per simulare i QR code.'
     : 'Mostra una carta alla webcam per iniziare la tua avventura.');
+
+  const loadingOverlay = select('#loading-overlay');
+  if (loadingOverlay && loadingOverlay.elt) {
+    loadingOverlay.elt.classList.add('is-hidden');
+  }
 }
 
 function windowResized() {
