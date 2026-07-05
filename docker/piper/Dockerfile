@@ -11,7 +11,7 @@ RUN apt-get update \
 
 RUN python3 -m pip install --no-cache-dir "piper-tts[http]"
 
-COPY docker/piper/entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENV PIPER_DATA_DIR=/data/voices

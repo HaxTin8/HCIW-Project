@@ -6,12 +6,18 @@
 node_modules
 yarn.lock
 npm-debug.log*
+dist
+.local-data
 
 # Editor/OS
 .vscode
 .idea
 .DS_Store
 Thumbs.db
+
+# Workspace-local extra projects
+presentazione-blockchain
+sapienza-tesi-md
 
 # Docker stesso
 Dockerfile

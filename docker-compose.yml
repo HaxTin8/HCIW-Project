@@ -17,8 +17,8 @@ services:
 
   specula-piper:
     build:
-      context: .
-      dockerfile: docker/piper/Dockerfile
+      context: ./docker/piper
+      dockerfile: Dockerfile
     container_name: specula-elementae-piper
     restart: unless-stopped
     environment:

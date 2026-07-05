@@ -32,7 +32,11 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-COPY . .
+COPY package.json ./package.json
+COPY package-lock.json ./package-lock.json
+COPY app-env.js ./app-env.js
+COPY cards.js ./cards.js
+COPY server ./server
 COPY --from=app-build /app/stories/generated ./stories/generated
 COPY --from=app-build /app/dist ./dist
 
