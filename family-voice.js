@@ -320,17 +320,13 @@ function resolveApiUrl(pathname) {
 
       if (typeof window !== 'undefined') {
         window.addEventListener('resize', () => {
-          if (this.selectedPrompt) {
-            this._drawStage();
-          }
+          this._drawStage();
         });
       }
 
       if (typeof ResizeObserver !== 'undefined' && this.stageCanvas) {
         this.stageResizeObserver = new ResizeObserver(() => {
-          if (this.selectedPrompt) {
-            this._drawStage();
-          }
+          this._drawStage();
         });
         this.stageResizeObserver.observe(this.stageCanvas);
       }
@@ -340,6 +336,10 @@ function resolveApiUrl(pathname) {
           this.closeStudio();
         }
       });
+
+      if (this.stageCanvas && (this.isEmbeddedStudio || (this.studioEl && !this.studioEl.hidden))) {
+        this._startStageLoop();
+      }
 
       if (this.token) {
         this.restoreSession();
@@ -557,15 +557,15 @@ function resolveApiUrl(pathname) {
       const frameToken = ++this.stageFrame;
       const tick = () => {
         if (frameToken !== this.stageFrame) return;
-        if (!this.studioEl || (!this.isEmbeddedStudio && this.studioEl.hidden) || !this.selectedPrompt) return;
+        if (!this.studioEl || (!this.isEmbeddedStudio && this.studioEl.hidden)) return;
         this._drawStage();
-        window.requestAnimationFrame(tick);
+        if (this.selectedPrompt) window.requestAnimationFrame(tick);
       };
       window.requestAnimationFrame(tick);
     }
 
     _drawStage() {
-      if (!this.stageCtx || !this.stageCanvas || !this.selectedPrompt) return;
+      if (!this.stageCtx || !this.stageCanvas) return;
 
       const canvas = this.stageCanvas;
       const ctx = this.stageCtx;
@@ -580,6 +580,35 @@ function resolveApiUrl(pathname) {
 
       const w = canvas.width;
       const h = canvas.height;
+
+      if (!this.selectedPrompt) {
+        ctx.clearRect(0, 0, w, h);
+        const idleBg = ctx.createLinearGradient(0, 0, 0, h);
+        idleBg.addColorStop(0, '#22355f');
+        idleBg.addColorStop(1, '#131b30');
+        ctx.fillStyle = idleBg;
+        ctx.fillRect(0, 0, w, h);
+
+        const cardInset = Math.round(w * 0.055);
+        const cardW = w - cardInset * 2;
+        const cardH = h - cardInset * 2;
+        ctx.fillStyle = '#fff8ea';
+        this._roundRect(ctx, cardInset, cardInset, cardW, cardH, 30 * ratio);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(176, 132, 47, 0.2)';
+        ctx.lineWidth = 2 * ratio;
+        ctx.stroke();
+
+        ctx.fillStyle = '#77654a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `600 ${20 * ratio}px "Hanken Grotesk", sans-serif`;
+        ctx.fillText('Scegli un prompt dalla libreria per iniziare', w / 2, h / 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        return;
+      }
+
       const recommended = this.getRecommendedDuration(this.selectedPrompt);
       const elapsed = this.mediaRecorder && this.mediaRecorder.state !== 'inactive'
         ? (performance.now() - this.recordingStartedAt) / 1000

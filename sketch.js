@@ -63,6 +63,8 @@ var settingsModal;
 var settingsOpenBtn;
 var settingsCloseBtn;
 var settingsBackdrop;
+var privacyInfoBtn;
+var privacyInfoPopover;
 var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
@@ -80,11 +82,11 @@ var heroIntroStart = 0;
 const HERO_APPEAR = ['fire', 'water', 'river', 'towers', 'mountains'];
 const HERO_ZORDER = ['mountains', 'towers', 'river', 'water', 'fire'];
 const HERO_LAYOUT = {
-  mountains: { x: 55, y: 18, w: 240 },
-  towers: { x: 0, y: 88, w: 226 },
-  river: { x: 22, y: 185, w: 252 },
-  water: { x: -32, y: 230, w: 248 },
-  fire: { x: 108, y: 268, w: 214 }
+  mountains: { x: 25, y: 136, w: 240 },
+  towers: { x: -30, y: 206, w: 226 },
+  river: { x: -8, y: 303, w: 252 },
+  water: { x: -62, y: 348, w: 248 },
+  fire: { x: 78, y: 386, w: 214 }
 };
 
 function preload() {
@@ -243,6 +245,8 @@ function setup() {
   settingsOpenBtn = select('#settings-open-btn');
   settingsCloseBtn = select('#settings-close-btn');
   settingsBackdrop = select('#settings-backdrop');
+  privacyInfoBtn = select('#privacy-info-btn');
+  privacyInfoPopover = select('#privacy-info-popover');
   debugMode = detectDebugMode();
 
   if (debugMode && debugPanel && debugPanel.elt) {
@@ -272,9 +276,25 @@ function setup() {
     settingsBackdrop.mousePressed(closeSettingsModal);
   }
 
+  if (privacyInfoBtn) {
+    privacyInfoBtn.mousePressed((event) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      togglePrivacyInfoPopover();
+    });
+  }
+
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeSettingsModal();
+      if (event.key === 'Escape') {
+        closeSettingsModal();
+        closePrivacyInfoPopover();
+      }
+    });
+    window.addEventListener('click', (event) => {
+      if (!privacyInfoPopover || !privacyInfoPopover.elt || privacyInfoPopover.elt.hidden) return;
+      const clickedButton = privacyInfoBtn && privacyInfoBtn.elt && privacyInfoBtn.elt.contains(event.target);
+      const clickedPopover = privacyInfoPopover.elt.contains(event.target);
+      if (!clickedButton && !clickedPopover) closePrivacyInfoPopover();
     });
   }
 
@@ -370,6 +390,16 @@ function closeSettingsModal() {
   if (!settingsModal || !settingsModal.elt) return;
   settingsModal.elt.hidden = true;
   document.body.classList.remove('settings-modal-open');
+}
+
+function togglePrivacyInfoPopover() {
+  if (!privacyInfoPopover || !privacyInfoPopover.elt) return;
+  privacyInfoPopover.elt.hidden = !privacyInfoPopover.elt.hidden;
+}
+
+function closePrivacyInfoPopover() {
+  if (!privacyInfoPopover || !privacyInfoPopover.elt) return;
+  privacyInfoPopover.elt.hidden = true;
 }
 
 function isMobile() {
@@ -667,12 +697,12 @@ function drawIdle() {
     const centerX = width / 2;
     const gradW = 105 * scaleFactor;
     const grad = drawingContext.createLinearGradient(centerX - gradW, sy(24), centerX + gradW, sy(24));
-    grad.addColorStop(0, '#DD4B50');
-    grad.addColorStop(0.2, '#498AE2');
-    grad.addColorStop(0.4, '#ECE64E');
-    grad.addColorStop(0.6, '#97B481');
-    grad.addColorStop(0.8, '#498AE2');
-    grad.addColorStop(1, '#8380BC');
+    grad.addColorStop(0, '#DD4B50');   // Fuoco
+    grad.addColorStop(0.2, '#ECBA4E');  // Tuono
+    grad.addColorStop(0.4, '#ECE64E');  // Luce
+    grad.addColorStop(0.6, '#97B481');  // Natura
+    grad.addColorStop(0.8, '#498AE2');  // Acqua
+    grad.addColorStop(1, '#8380BC');    // Ombra
 
     textFont(magicFont || 'Space Grotesk');
     textSize(52 * scaleFactor);
@@ -707,12 +737,12 @@ function drawIdle() {
     const centerX = tx + tw / 2;
     const gradW = sx(135) * scaleFactor;
     const grad = drawingContext.createLinearGradient(centerX - gradW, sy(120), centerX + gradW, sy(120));
-    grad.addColorStop(0, '#DD4B50');
-    grad.addColorStop(0.2, '#498AE2');
-    grad.addColorStop(0.4, '#ECE64E');
-    grad.addColorStop(0.6, '#97B481');
-    grad.addColorStop(0.8, '#498AE2');
-    grad.addColorStop(1, '#8380BC');
+    grad.addColorStop(0, '#DD4B50');   // Fuoco
+    grad.addColorStop(0.2, '#ECBA4E');  // Tuono
+    grad.addColorStop(0.4, '#ECE64E');  // Luce
+    grad.addColorStop(0.6, '#97B481');  // Natura
+    grad.addColorStop(0.8, '#498AE2');  // Acqua
+    grad.addColorStop(1, '#8380BC');    // Ombra
 
     textFont(magicFont || 'Space Grotesk');
     textSize(70 * scaleFactor);
@@ -1229,6 +1259,8 @@ function drawHelpPanel() {
   const padX = sx(14);
   const innerW = pw - padX * 2;
 
+  drawHoloFrame(px, py, pw, ph, sx(12));
+
   noStroke();
   fill('#ffffff');
   stroke('#dce6f2');
@@ -1417,7 +1449,7 @@ function getStoryPromptKey(passageName) {
 }
 
 function drawCanvasBackground() {
-  background('#f1f6fc');
+  clear();
 }
 
 function textColorForBg(hex) {
@@ -1569,6 +1601,60 @@ function colorObj(hex) {
 
 function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
+}
+
+/* =========================================================
+    EFFETTO "HOLO CARD" — bordo/glow a gradiente rotante,
+    stessa idea della carta olografica CSS, coi colori del tema.
+   ========================================================= */
+
+const HOLO_COLORS = ['#DD4B50', '#ECBA4E', '#ECE64E', '#97B481', '#498AE2', '#8380BC'];
+
+function drawRoundRectPath(x, y, w, h, r) {
+  const ctx = drawingContext;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Riempie la forma (arrotondata) con un gradiente lineare che ruota nel
+// tempo, esattamente come "linear-gradient(var(--rotate), ...)" della
+// carta holo CSS di riferimento; blurPx>0 per lo strato di glow sfocato.
+function paintHoloGradient(x, y, w, h, r, angle, blurPx) {
+  const ctx = drawingContext;
+  ctx.save();
+  if (blurPx) ctx.filter = `blur(${blurPx}px)`;
+  drawRoundRectPath(x, y, w, h, r);
+  ctx.clip();
+
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const diag = Math.sqrt(w * w + h * h);
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  const grad = ctx.createLinearGradient(-diag / 2, 0, diag / 2, 0);
+  const n = HOLO_COLORS.length;
+  HOLO_COLORS.forEach((c, i) => grad.addColorStop(i / (n - 1), c));
+  ctx.fillStyle = grad;
+  ctx.fillRect(-diag, -diag, diag * 2, diag * 2);
+
+  ctx.restore();
+}
+
+// Disegna glow sfocato + bordo netto rotante dietro un riquadro (x,y,w,h,r);
+// il contenuto vero del riquadro va disegnato SOPRA, subito dopo questa chiamata.
+function drawHoloFrame(x, y, w, h, r) {
+  const angle = (millis() / 16000) * TWO_PI; // rotazione lenta (16s a giro)
+  const glowPad = sx(4);
+  const borderPad = sx(1.2);
+
+  paintHoloGradient(x - glowPad, y - glowPad, w + glowPad * 2, h + glowPad * 2, r + glowPad, angle, sx(6));
+  paintHoloGradient(x - borderPad, y - borderPad, w + borderPad * 2, h + borderPad * 2, r + borderPad, angle, 0);
 }
 
 /* =========================================================
@@ -1890,6 +1976,8 @@ function speakStoryEnding(victory) {
     });
   }
 }
+
+
 
 if (typeof window !== 'undefined') {
   window.preload = preload;

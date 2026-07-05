@@ -21,7 +21,7 @@
 body {
   margin: 0;
   font-family: 'Hanken Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: radial-gradient(circle at top, rgba(255, 245, 214, 0.95), rgba(244, 251, 255, 0.9) 40%, rgba(232, 242, 248, 1) 100%);
+  background: #f4fbff; /* Colore statico celeste chiaro */
   color: #2b2318;
   overscroll-behavior-y: none;
 }
@@ -62,22 +62,20 @@ main {
 }
 
 #canvas-container {
-  flex: 1 1 700px;
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   background: rgba(244, 251, 255, 0.8);
   border-radius: 18px;
   border: 1px solid #d8e8f2;
-  padding: 10px;
+  padding: 0;
   min-height: 620px;
-  box-shadow: 0 18px 48px rgba(48, 78, 104, 0.12);
+  box-shadow: none;
 }
 
 #canvas-container canvas {
   border-radius: 14px;
-  max-width: 100%;
-  height: auto !important;
 }
 
 #controls {
@@ -116,9 +114,9 @@ main {
 .audio-controls,
 .help,
 .debug-panel {
-  background: rgba(255, 250, 241, 0.95);
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.96) 0%, rgba(247, 250, 255, 0.94) 100%);
   border-radius: 12px;
-  border: 1px solid #eadfcf;
+  border: 1px solid rgba(151, 180, 129, 0.26);
   padding: 15px;
 }
 
@@ -198,6 +196,34 @@ main {
   align-items: center;
   gap: 10px;
   font-weight: bold;
+}
+
+.tts-toggle input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.tts-toggle-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #d9dbe0;
+}
+
+.tts-toggle-check svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tts-toggle input[type="checkbox"]:checked + .tts-toggle-check {
+  color: #4f9d5e;
 }
 
 .family-voice-panel {
@@ -388,7 +414,7 @@ main {
 
 .family-voice-entry h2 {
   margin: 0;
-  color: #2b2318;
+  color: #D9822B;
   font-family: 'Beachday', 'Nunito', sans-serif;
   font-weight: 400;
 }
@@ -632,11 +658,7 @@ body.family-voice-modal-open {
 
 body.family-voice-page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(151, 180, 129, 0.34), transparent 30%),
-    radial-gradient(circle at top right, rgba(73, 138, 226, 0.22), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(236, 186, 78, 0.18), transparent 24%),
-    linear-gradient(180deg, #f4fbff 0%, #eef8f1 100%);
+  background: #f4fbff;
   font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -647,31 +669,44 @@ body.family-voice-page {
 }
 
 .family-voice-page-header {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 18px;
-  align-items: flex-start;
   margin-bottom: 18px;
   padding: 4px 2px 0;
 }
 
+.family-voice-page-header > div {
+  margin: 0 auto;
+}
+
 .family-voice-page-header h1 {
   margin: 0;
-  font-family: 'Magic School', 'Beachday', 'Nunito', sans-serif;
+  font-family: 'Beachday', 'Nunito', sans-serif;
   font-size: 3rem;
   font-weight: normal;
   color: #2b2318;
 }
 
 .family-voice-page-header p:last-child {
-  margin: 8px 0 0;
+  margin: 8px auto 0;
   max-width: 760px;
   color: #5a4a34;
+}
+
+.family-voice-page-header .family-voice-link {
+  position: absolute;
+  top: 4px;
+  right: 2px;
 }
 
 .family-voice-page-badges {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   margin-top: 14px;
 }
@@ -724,8 +759,9 @@ body.family-voice-page {
   color: #23466d;
   border: none;
   border-radius: 999px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-family: 'Beachday', 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -761,9 +797,10 @@ body.family-voice-page {
 .debug-panel summary {
   list-style: none;
   cursor: pointer;
-  color: #3d74be;
-  font-weight: bold;
-  font-family: 'Space Grotesk', sans-serif;
+  color: #D9822B;
+  font-family: 'Beachday', 'Nunito', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 400;
 }
 
 .debug-panel summary::-webkit-details-marker {
@@ -834,57 +871,39 @@ body.family-voice-page {
   gap: 10px;
 }
 
-.privacy-note {
-  margin-bottom: 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(73, 138, 226, 0.22);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(232, 244, 255, 0.92) 100%);
-  color: #35502a;
-  box-shadow: 0 10px 24px rgba(58, 78, 104, 0.06);
-}
-
-.privacy-note strong {
-  display: block;
-  margin-bottom: 4px;
-  color: #2b2318;
-  font-family: 'Beachday', 'Nunito', sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-}
-
-.privacy-note p {
-  margin: 0;
-  color: #38526f;
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
 .camera-btn {
-  padding: 14px 24px;
-  background: linear-gradient(180deg, #eef7ff 0%, #dcecff 100%);
-  color: #23466d;
+  padding: 12px 24px;
   border: none;
   border-radius: 999px;
-  font-size: 16px;
-  font-weight: bold;
+  font-family: 'Beachday', 'Nunito', sans-serif;
+  font-size: 1.35rem; /* Dimensionato per rendere leggibile il font corsivo Beachday */
+  font-weight: 400;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  width: 100%;
+  width: auto;
+  box-shadow: 0 6px 16px rgba(30, 60, 90, 0.15);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.camera-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
 }
 
 .camera-btn:active {
-  background: linear-gradient(180deg, #d7e9ff 0%, #bfd8f4 100%);
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+#camera-btn {
+  background: linear-gradient(135deg, #498AE2 0%, #8380BC 100%); /* Acqua -> Ombra */
+  color: #ffffff;
 }
 
 #switch-camera-btn {
-  background: linear-gradient(180deg, #ecfff4 0%, #d7f2e4 100%);
-  color: #35502a;
-}
-
-#switch-camera-btn:active {
-  background: linear-gradient(180deg, #dff6ea 0%, #c7ead8 100%);
+  background: linear-gradient(135deg, #97B481 0%, #ECBA4E 100%); /* Natura -> Tuono */
+  color: #ffffff;
 }
 
 @media (max-width: 1100px) {
@@ -947,15 +966,6 @@ body.family-voice-page {
   .camera-section {
     margin-bottom: 12px;
     gap: 8px;
-  }
-
-  .privacy-note {
-    margin-bottom: 12px;
-    padding: 10px 12px;
-  }
-
-  .privacy-note p {
-    font-size: 0.8rem;
   }
 
   .camera-btn {
@@ -1133,11 +1143,19 @@ body.family-voice-page {
 html,
 body {
   height: 100%;
-  overflow: hidden;
 }
 
 body {
-  background: #f4fbff;
+  /* Mantieni il gradiente radiale definito all'inizio del file */
+}
+
+body.game-page {
+  overflow: hidden;
+}
+
+body.family-voice-page main {
+  overflow: visible;
+  padding: 0;
 }
 
 #app {
@@ -1158,13 +1176,13 @@ header {
 main {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   flex-wrap: nowrap;
   justify-content: center;
   align-items: stretch;
   gap: 16px;
   width: 100%;
-  padding: 100px 0;
+  padding: 100px 0; /* Padding sopra e sotto di 100px come cornice */
 }
 
 #canvas-container {
@@ -1176,20 +1194,19 @@ main {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(244, 251, 255, 0.8);
-  border: 1px solid #d8e8f2;
-  box-shadow: 0 18px 48px rgba(48, 78, 104, 0.12);
+  background: transparent; /* Trasparente per mostrare il gradiente dello sfondo */
+  border: 1px solid #d8e8f2; /* Bordo ripristinato */
 }
 
 #canvas-container canvas {
-  max-height: 100%;
   border-radius: 14px;
+  display: block;
 }
 
 .canvas-actions {
   position: absolute;
-  top: 18px;
-  right: 18px;
+  top: 20px;
+  right: -52px; /* Posizionati fuori dal canvas container, sulla destra */
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -1197,28 +1214,75 @@ main {
   gap: 10px;
 }
 
-.app-settings-btn {
-  min-height: 38px;
-  padding: 9px 14px;
-  font-size: 0.78rem;
-  line-height: 1.1;
-  border-radius: 999px;
-}
-
-.camera-section {
-  margin-bottom: 0;
+.icon-btn-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 210px;
 }
 
-.camera-btn {
-  padding: 12px 14px;
-  font-size: 13px;
-  width: 100%;
-  box-shadow: 0 8px 20px rgba(73, 138, 226, 0.12);
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2b4a63;
+  box-shadow: 0 6px 16px rgba(30, 60, 90, 0.18);
 }
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.privacy-info-popover {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  z-index: 21;
+  width: 260px;
+  background: #ffffff;
+  border: 1px solid #dce6f2;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 30px rgba(30, 60, 90, 0.22);
+  text-align: left;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #2b2318;
+}
+
+.privacy-info-popover strong {
+  display: block;
+  color: #498AE2;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.privacy-info-popover p {
+  margin: 0;
+  color: #5a4a34;
+}
+
+.camera-section {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  width: auto;
+}
+
+
 
 #log-balloon {
   position: absolute;
@@ -1304,23 +1368,30 @@ main {
   padding: 18px;
   border-radius: 24px;
   border: 1px solid rgba(151, 180, 129, 0.26);
-  background: linear-gradient(180deg, rgba(255, 252, 245, 0.98) 0%, rgba(247, 250, 255, 0.96) 100%);
+  background: #F1F6FC;
   box-shadow: 0 30px 90px rgba(53, 76, 99, 0.22);
 }
 
-.settings-modal-shell .secondary-btn,
-.audio-controls .secondary-btn,
-.family-voice-link,
 .debug-btn {
   background: linear-gradient(180deg, #eef7ff 0%, #dcecff 100%);
   color: #23466d;
 }
 
-.settings-modal-shell .secondary-btn:active,
-.audio-controls .secondary-btn:active,
-.family-voice-link:active,
 .debug-btn:active {
   background: linear-gradient(180deg, #d7e9ff 0%, #bfd8f4 100%);
+}
+
+.settings-modal-shell .secondary-btn,
+.audio-controls .secondary-btn,
+.family-voice-link {
+  background: linear-gradient(180deg, #f6c98a 0%, #e8935b 100%);
+  color: #5a3413;
+}
+
+.settings-modal-shell .secondary-btn:active,
+.audio-controls .secondary-btn:active,
+.family-voice-link:active {
+  background: linear-gradient(180deg, #eab873 0%, #d9822b 100%);
 }
 
 .settings-modal-topbar {
@@ -1332,7 +1403,7 @@ main {
 
 .settings-kicker {
   margin: 0 0 4px;
-  color: #498AE2;
+  color: #000000;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -1341,9 +1412,22 @@ main {
 
 .settings-modal-topbar h2 {
   margin: 0;
-  color: #2b2318;
+  color: #D9822B;
   font-family: 'Beachday', 'Nunito', sans-serif;
   font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.settings-close-btn {
+  background: none;
+  border: none;
+  padding: 0 6px;
+  margin: 0;
+  cursor: pointer;
+  color: #DD4B50;
+  font-family: 'Beachday', 'Nunito', sans-serif;
+  font-size: 2rem;
+  line-height: 1;
   font-weight: 400;
 }
 
@@ -1368,12 +1452,7 @@ body.settings-modal-open {
     padding: 12px;
   }
 
-  .canvas-actions {
-    top: 12px;
-    right: 12px;
-    left: 12px;
-    align-items: stretch;
-  }
+
 
   main {
     gap: 12px;
@@ -1385,13 +1464,20 @@ body.settings-modal-open {
     padding: 0;
   }
 
-  #canvas-container canvas {
-    max-height: 44vh;
-    width: 100% !important;
+  .canvas-actions {
+    position: absolute;
+    left: 15px;
+    right: auto;
+    top: 15px;
+    flex-direction: row;
   }
 
   .camera-section {
-    width: 100%;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    transform: none;
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
