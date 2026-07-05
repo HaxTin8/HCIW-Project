@@ -1954,9 +1954,6 @@ function handleQRDetected(id) {
       lastPlayedCard = null;
       animProgress = 0;
       resetSlots();
-      if (game.currentEnemy) {
-        tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
-      }
       logToStatus(event.action === 'start' ? 'Avventura iniziata.' : 'Nuova avventura.');
 
       if (event.action === 'start' && id && TEMPLATE_MAP[id]) {
@@ -1967,6 +1964,9 @@ function handleQRDetected(id) {
               channel: 'story',
               promptKey: getStoryPromptKey()
             });
+            if (game.currentEnemy) {
+              tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+            }
           }
           if (storyEngine.hasNext()) {
             storyEngine.advance();
