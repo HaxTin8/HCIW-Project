@@ -1097,7 +1097,7 @@ function getCanvasLayout() {
       slotsY: height - 188 / 2 - 40,
       previewW: sx(160),
       previewH: sy(120),
-      previewX: width - sx(160) - sx(20),
+      previewX: width - sx(160) - sx(90),
       previewY: sy(20),
       logX: 20,
       logY: height - 150,
