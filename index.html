@@ -35,12 +35,52 @@
                 <path d="M12 8h.01"/>
               </svg>
             </button>
+            <button id="debug-open-btn" class="icon-btn" type="button" aria-label="Apri debug rapido" title="Debug rapido">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3h6"/>
+                <path d="M10 9h4"/>
+                <path d="M12 17v.01"/>
+                <rect x="7" y="5" width="10" height="14" rx="3"/>
+                <path d="M4 10h3"/>
+                <path d="M17 10h3"/>
+              </svg>
+            </button>
+            <a class="icon-btn" href="print.html" aria-label="Apri pagina di stampa carte" title="Stampa carte">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9V3h12v6"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <path d="M6 14h12v7H6z"/>
+                <path d="M18 12h.01"/>
+              </svg>
+            </a>
           </div>
           <div id="privacy-info-popover" class="privacy-info-popover" hidden>
             <strong>Privacy webcam</strong>
             <p>La fotocamera serve solo al riconoscimento delle carte nel browser. Nessun video viene inviato ai server.</p>
           </div>
         </div>
+        <aside id="debug-panel" class="debug-floating-panel" hidden aria-labelledby="debug-panel-title">
+          <div class="debug-floating-topbar">
+            <div>
+              <p class="settings-kicker">Strumenti</p>
+              <h2 id="debug-panel-title">Debug Rapido</h2>
+            </div>
+            <button id="debug-close-btn" class="settings-close-btn" type="button" aria-label="Chiudi debug">×</button>
+          </div>
+          <div class="debug-grid">
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="ROSSO">ROSSO</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="BLU">BLU</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="VERDE">VERDE</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="GIALLO">GIALLO</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="VIOLA">VIOLA</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="NERO">NERO</button>
+          </div>
+          <div class="debug-grid debug-specials">
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="SEQUENZIALE">SEQUENZIALE</button>
+            <button class="secondary-btn debug-btn" type="button" data-debug-id="RESTART">RESTART</button>
+          </div>
+          <p class="debug-note">Simula i QR code senza usare carte fisiche o webcam. Per aprirlo subito usa anche <code>?debug=1</code>.</p>
+        </aside>
         <div class="camera-section" id="camera-section">
           <button id="camera-btn" class="camera-btn">Attiva la fotocamera</button>
           <button id="switch-camera-btn" class="camera-btn">Cambia fotocamera</button>
@@ -99,22 +139,6 @@
         <a id="family-voice-entry-link" class="secondary-btn family-voice-link" href="family-voice.html">Accedi per usare la voce</a>
       </section>
 
-      <details class="debug-panel" id="debug-panel">
-        <summary>Debug Rapido</summary>
-        <div class="debug-grid">
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="ROSSO">ROSSO</button>
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="BLU">BLU</button>
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="VERDE">VERDE</button>
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="GIALLO">GIALLO</button>
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="VIOLA">VIOLA</button>
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="NERO">NERO</button>
-        </div>
-        <div class="debug-grid debug-specials">
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="SEQUENZIALE">SEQUENZIALE</button>
-          <button class="secondary-btn debug-btn" type="button" data-debug-id="RESTART">RESTART</button>
-        </div>
-        <p class="debug-note">Simula i QR code senza usare carte fisiche o webcam. Per aprirlo subito usa anche <code>?debug=1</code>.</p>
-      </details>
     </section>
   </div>
 

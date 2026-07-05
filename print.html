@@ -89,6 +89,31 @@
       margin-top: 12px;
     }
 
+    .no-print-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .no-print-actions a,
+    .no-print-actions button {
+      padding: 10px 22px;
+      background: #E67E3C;
+      color: #ffffff;
+      border: none;
+      border-radius: 999px;
+      font-family: 'Beachday', 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .card-sheet {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -216,7 +241,12 @@
       <p><strong>Modalita libera:</strong> tutte le 6 carte restano sempre disponibili, quindi il gioco e' piu' immediato e adatto ai bambini piu' piccoli.</p>
       <p><strong>Modalita mazzo:</strong> prepara un mazzo con piu' copie delle 6 carte, pesca 5 carte all'inizio e poi continua a pescare durante la partita. In questo modo il gioco diventa piu' difficile e strategico.</p>
     </div>
-    <button onclick="window.print()">Stampa</button>
+    <div class="no-print-actions">
+      <button>
+        <a href="index.html">Torna al gioco</a>
+      </button>
+      <button onclick="window.print()">Stampa</button>
+    </div>
   </div>
 
   <div id="sheet" class="card-sheet"></div>

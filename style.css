@@ -280,13 +280,6 @@ main {
   color: #9a2740;
 }
 
-.family-voice-profile-note {
-  margin: 0;
-  color: #5f83b2;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
 .family-voice-auth {
   display: grid;
   gap: 10px;
@@ -491,13 +484,6 @@ main {
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-}
-
-.family-voice-studio-session-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 .family-voice-studio-kicker {
@@ -753,14 +739,6 @@ body.family-voice-page {
   flex-direction: column;
   gap: 20px;
   align-items: start;
-}
-
-body.family-voice-page.family-voice-auth-only .family-voice-page-layout {
-  align-items: center;
-}
-
-body.family-voice-page.family-voice-auth-only #family-voice-app {
-  max-width: 900px;
 }
 
 .family-voice-panel-page {
@@ -1421,6 +1399,55 @@ main {
   background: linear-gradient(180deg, #d7e9ff 0%, #bfd8f4 100%);
 }
 
+.debug-floating-panel {
+  position: absolute;
+  top: 18px;
+  left: calc(100% + 18px);
+  z-index: 25;
+  width: min(320px, calc(100vw - 40px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(151, 180, 129, 0.26);
+  background: #F1F6FC;
+  box-shadow: 0 18px 48px rgba(53, 76, 99, 0.2);
+}
+
+.debug-floating-panel[hidden] {
+  display: none;
+}
+
+.debug-floating-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: grab;
+  user-select: none;
+}
+
+body.debug-dragging .debug-floating-topbar {
+  cursor: grabbing;
+}
+
+.debug-floating-topbar h2 {
+  margin: 0;
+  color: #D9822B;
+  font-family: 'Beachday', 'Nunito', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.debug-floating-panel .debug-grid {
+  margin-top: 0;
+}
+
+.debug-floating-panel .debug-note {
+  margin: 0;
+}
+
 .settings-modal-shell .secondary-btn,
 .audio-controls .secondary-btn,
 .family-voice-link {
@@ -1525,6 +1552,14 @@ body.settings-modal-open {
     right: auto;
     top: 15px;
     flex-direction: row;
+  }
+
+  .debug-floating-panel {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 84px;
+    width: auto;
   }
 
   .camera-section {

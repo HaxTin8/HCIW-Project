@@ -61,6 +61,8 @@ var settingsCloseBtn;
 var settingsBackdrop;
 var privacyInfoBtn;
 var privacyInfoPopover;
+var debugOpenBtn;
+var debugCloseBtn;
 var familyVoiceEntryLink;
 var familyVoiceEntryStatus;
 var debugMode = false;
@@ -68,6 +70,7 @@ var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
 var magicFont;
 var kiddosFont;
+var debugDragState = null;
 var elementImages = {};
 var heartImage = null;
 var webcamFrameImg = null;
@@ -258,12 +261,14 @@ function setup() {
   settingsBackdrop = select('#settings-backdrop');
   privacyInfoBtn = select('#privacy-info-btn');
   privacyInfoPopover = select('#privacy-info-popover');
+  debugOpenBtn = select('#debug-open-btn');
+  debugCloseBtn = select('#debug-close-btn');
   familyVoiceEntryLink = select('#family-voice-entry-link');
   familyVoiceEntryStatus = select('#family-voice-entry-status');
   debugMode = detectDebugMode();
 
   if (debugMode && debugPanel && debugPanel.elt) {
-    debugPanel.elt.open = true;
+    debugPanel.elt.hidden = false;
   }
 
   const debugButtons = selectAll('.debug-btn');
@@ -296,11 +301,27 @@ function setup() {
     });
   }
 
+  if (debugOpenBtn) {
+    debugOpenBtn.mousePressed((event) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      toggleDebugPanel();
+    });
+  }
+
+  if (debugCloseBtn) {
+    debugCloseBtn.mousePressed(() => {
+      closeDebugPanel();
+    });
+  }
+
+  setupDebugDragging();
+
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         closeSettingsModal();
         closePrivacyInfoPopover();
+        closeDebugPanel();
       }
     });
     window.addEventListener('family-voice-session-changed', updateFamilyVoiceSettingsState);
@@ -413,6 +434,58 @@ function closeSettingsModal() {
   if (!settingsModal || !settingsModal.elt) return;
   settingsModal.elt.hidden = true;
   document.body.classList.remove('settings-modal-open');
+}
+
+function toggleDebugPanel() {
+  if (!debugPanel || !debugPanel.elt) return;
+  debugPanel.elt.hidden = !debugPanel.elt.hidden;
+}
+
+function closeDebugPanel() {
+  if (!debugPanel || !debugPanel.elt) return;
+  debugPanel.elt.hidden = true;
+}
+
+function setupDebugDragging() {
+  if (!debugPanel || !debugPanel.elt) return;
+  const handle = debugPanel.elt.querySelector('.debug-floating-topbar');
+  if (!handle) return;
+
+  const onPointerMove = (event) => {
+    if (!debugDragState || !debugPanel || !debugPanel.elt) return;
+    const nextLeft = event.clientX - debugDragState.offsetX;
+    const nextTop = event.clientY - debugDragState.offsetY;
+    const maxLeft = Math.max(8, window.innerWidth - debugPanel.elt.offsetWidth - 8);
+    const maxTop = Math.max(8, window.innerHeight - debugPanel.elt.offsetHeight - 8);
+    debugPanel.elt.style.left = `${Math.min(Math.max(8, nextLeft), maxLeft)}px`;
+    debugPanel.elt.style.top = `${Math.min(Math.max(8, nextTop), maxTop)}px`;
+    debugPanel.elt.style.right = 'auto';
+    debugPanel.elt.style.bottom = 'auto';
+  };
+
+  const stopDragging = () => {
+    debugDragState = null;
+    document.body.classList.remove('debug-dragging');
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', stopDragging);
+  };
+
+  handle.addEventListener('pointerdown', (event) => {
+    if (event.target && event.target.closest('button')) return;
+    if (window.innerWidth <= 767) return;
+    const rect = debugPanel.elt.getBoundingClientRect();
+    debugDragState = {
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top
+    };
+    debugPanel.elt.style.left = `${rect.left}px`;
+    debugPanel.elt.style.top = `${rect.top}px`;
+    debugPanel.elt.style.right = 'auto';
+    debugPanel.elt.style.bottom = 'auto';
+    document.body.classList.add('debug-dragging');
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', stopDragging);
+  });
 }
 
 function updateFamilyVoiceSettingsState() {
