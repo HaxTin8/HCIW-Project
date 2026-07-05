@@ -1,11 +1,11 @@
 /**
- * Database dei TEMPLATE di carte.
- * L'"id" e il testo che deve contenere il QR code stampato sulla carta.
+ * Database of card templates.
+ * The "id" is the text to be encoded in the QR code printed on the card.
  *
- * Per "nascondere" il QR nel design:
- * - usa un QR artistico con logo/immagine al centro
- * - stampa il QR in basso a destra come "sigillo" della carta
- * - usa i colori della carta per i moduli del QR (mantieni buon contrasto)
+ * To "hide" the QR code within the design:
+ * - use an artistic QR code with a logo or image in the center
+ * - print the QR code in the bottom-right corner as a card "seal"
+ * - use the card's color scheme for the QR code modules (while maintaining good contrast)
  */
 const ELEMENTS = {
   FIRE: { id: 'FIRE', name: 'Braci', emoji: '🔥', color: '#DD4B50', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
@@ -30,9 +30,7 @@ const SPECIAL_IDS = ['RESTART'];
 
 let _uidCounter = 0;
 
-  /**
-   * Crea una carta "istanza" a partire da un template.
-   */
+//Create instances from template
 function createCard(templateId, bonusPower = 0) {
     const template = TEMPLATE_MAP[templateId];
     if (!template) return null;
@@ -51,11 +49,7 @@ function createCard(templateId, bonusPower = 0) {
     };
   }
 
-  /**
-   * Determina il risultato di uno scontro.
-   * Ritorna: 'win', 'lose', 'draw'
-   * Opzioni: halfElementBonus (boolean), ignoreWeakness (boolean)
-   */
+  //Return win, lose, draw
 function resolveCombat(playerCard, enemyCard, options = {}) {
     const pElem = ELEMENTS[playerCard.element];
     const eElem = ELEMENTS[enemyCard.element];
@@ -81,10 +75,7 @@ function resolveCombat(playerCard, enemyCard, options = {}) {
     return 'draw';
   }
 
-  /**
-   * Restituisce il moltiplicatore di vantaggio elemento.
-   * 1 = vantaggio, -1 = svantaggio, 0 = neutrale
-   */
+//moltiplicators
 function elementAdvantage(attackerElement, defenderElement) {
     const elem = ELEMENTS[attackerElement];
     if (elem.strongVs.includes(defenderElement)) return 1;

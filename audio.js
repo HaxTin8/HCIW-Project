@@ -1,8 +1,7 @@
 /**
- * Audio manager con Web Audio API.
- * Genera suoni procedurali: nessun file esterno necessario.
+ * Audio manager using the Web Audio API.
+ * Generates procedural sounds: no external files required.
  */
-
 class AudioManager {
     constructor() {
       this.ctx = null;
