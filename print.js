@@ -35,7 +35,7 @@ function createCardElement(template) {
   card.innerHTML = `
     <div class="card-name" style="color: ${elem.color}">${template.name}</div>
     <div class="card-medallion-wrap">
-      <div class="card-medallion" style="background-color: ${elem.color}1a">${elementIcon(template.element)}</div>
+      <div class="card-medallion">${elementIcon(template.element)}</div>
     </div>
     <div class="card-desc">${beatsDescription(template.element)}</div>
     <div class="card-qr">${qrImg}</div>
@@ -63,7 +63,7 @@ for (const special of specialCards) {
   card.innerHTML = `
     <div class="card-name" style="color: ${special.color}">${special.name}</div>
     <div class="card-medallion-wrap">
-      <div class="card-medallion circle" style="background-color: ${special.color}1a">${medallionContent}</div>
+      <div class="card-medallion circle">${medallionContent}</div>
     </div>
     <div class="card-desc">${special.desc}</div>
     <div class="card-qr">${generateQR(special.id)}</div>
