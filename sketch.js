@@ -1022,7 +1022,7 @@ function drawEndScreen(title, color, subtitle) {
 
   textStyle(NORMAL);
   textSize(18);
-  fill(255);
+  fill(0);
   const finalSubtitle = webcamState === 'active' ? subtitle : webcamMessage;
   text(finalSubtitle, width / 2, height / 2 + 30);
 
@@ -1030,10 +1030,6 @@ function drawEndScreen(title, color, subtitle) {
     readQR();
   }
 }
-
-/* =========================================================
-    GRAFICA DI SUPPORTO
-   ========================================================= */
 
 function drawDecorations() {
   stroke(152, 126, 76, 18);
