@@ -10,7 +10,7 @@ function getStrongAgainstText(elementId) {
 
 function getCardLearningLine(template) {
   const strongChoices = getStrongAgainstText(template.element);
-  return `${template.name}: ${ELEMENTS[template.element].name}. Utile contro ${strongChoices}.`;
+  return `${ELEMENTS[template.element].name}`;
 }
 
 function buildGameplayPrompts() {

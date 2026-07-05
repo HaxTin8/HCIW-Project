@@ -64,7 +64,7 @@ for (const template of CARD_TEMPLATES) {
 }
 
 const specialCards = [
-  { id: 'RESTART', name: 'Ricomincia', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#1C0A0A' }
+  { id: 'RESTART', name: 'Ricomincia', desc: 'Ricomincia la partita.', color: '#1C0A0A' }
 ];
 
 for (const special of specialCards) {

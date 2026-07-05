@@ -1546,11 +1546,11 @@ function getEnemyHint(enemy) {
 
 function getCardLearningLine(card) {
   const strongChoices = getStrongAgainstText(card.element);
-  return `${card.name}: ${ELEMENTS[card.element].name}. Utile contro ${strongChoices}.`;
+  return `${ELEMENTS[card.element].name}.`;
 }
 
 function getEnemyAnnouncement(enemy) {
-  return `${enemy.name}, forza ${enemy.power}. ${getEnemyHint(enemy)}`;
+  return `${enemy.name}.`;
 }
 
 function getCardPromptKey(card, requiresRemoval = false) {

@@ -9,15 +9,15 @@ Le Acque del Tempo
 }
 
 :: prologo [opening]
-La Goccia cade nelle tue mani e ti ricorda che l'acqua e' paziente. Scorre piano, aggira gli ostacoli e aiuta ogni pianta a vivere.
+Una Goccia cade nelle tue mani. L'acqua è paziente, scorre piano piano, gira intorno alle pietre e fa crescere ogni pianta.
 
 [[Inizia->inizio-avventura]]
 
 :: inizio-avventura
-L'acqua non urla, ma trova sempre una strada. Gioca con pazienza e scoprirai che la dolcezza puo' essere fortissima.
+L'acqua trova sempre la sua strada. Gioca con calma: vedrai che essere gentili è una grande forza.
 
 :: evento-round-3 [mid-story]
-Una piccola marea attraversa il campo. I nemici si confondono e tu impari una lezione preziosa: a volte restare in equilibrio vale quanto vincere.
+Arriva una piccola onda e attraversa il campo. I nemici si confondono un po'. A volte restare in equilibrio vale come vincere.
 
 ```gameEffects
 {
@@ -27,7 +27,7 @@ Una piccola marea attraversa il campo. I nemici si confondono e tu impari una le
 ```
 
 :: epilogo-vittoria [ending victory]
-Hai seguito tutte le correnti con calma e attenzione. Ora sai che l'acqua insegna ad ascoltare, ad aspettare e a dare vita.
+Hai seguito ogni corrente con calma. Ora sai che l'acqua ci insegna ad ascoltare, ad aspettare e a far nascere la vita.
 
 :: epilogo-sconfitta [ending defeat]
-Anche i fiumi incontrano rocce e cascate. Ma l'acqua non si ferma mai: tornerai a scorrere con piu' pazienza e piu' fiducia.
+Anche i fiumi trovano sassi e cascate sulla loro strada. Ma l'acqua non si ferma mai: tornerai a scorrere, con più pazienza e più fiducia.

@@ -1,5 +1,5 @@
 :: StoryTitle
-Le Ombre del Passato
+Il Potere dell'Ombra
 
 :: StoryData
 {
@@ -9,25 +9,24 @@ Le Ombre del Passato
 }
 
 :: prologo [opening]
-L'Eclissi copre il cielo senza far paura. Nel buio impari a rallentare, ascoltare e notare cose che la fretta spesso nasconde.
+Il cielo diventa scuro e tutto rallenta. Nel buio puoi sentire rumori che di giorno non si sentono e vedere cose che prima erano nascoste.
 
 [[Entra nell'ombra->inizio-avventura]]
 
 :: inizio-avventura
-L'ombra non e' qualcosa di cattivo: e' il momento in cui gli occhi imparano a cercare meglio. Usa la calma del buio per scegliere con intelligenza.
+L'oscurità spegne le luci e ti aiuta a concentrarti. Guarda lo schermo con attenzione e scegli la carta giusta senza fretta.
 
 :: evento-round-5 [mid-story]
-Le ombre ti avvolgono come un mantello tranquillo. Per un round resti protetto, e impari che a volte fermarsi e nascondersi un poco e' una scelta saggia.
+Un grande mantello d'ombra ti copre e ti protegge dagli attacchi nemici. Usa questo momento per riposare e preparare la tua mossa.
 
 ```gameEffects
 {
   "ignoreWeakness": true,
   "roundSpecific": 5
 }
-```
 
 :: epilogo-vittoria [ending victory]
-Hai attraversato il buio senza smarrirti. Adesso sai che l'ombra puo' insegnare attenzione, pazienza e ascolto.
+La tua scelta è stata precisa. Hai usato il buio per osservare il nemico e hai trovato la strada giusta per vincere.
 
 :: epilogo-sconfitta [ending defeat]
-L'ombra ti ha rallentato solo per un momento. La prossima volta entrerai nel buio con piu' calma e ne uscirai ancora piu' attento.
+Questa volta l'oscurità ha rallentato i tuoi passi. Fai un respiro profondo, guarda bene le carte e prova di nuovo.

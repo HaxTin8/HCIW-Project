@@ -9,12 +9,12 @@ Il Fuoco del Destino
 }
 
 :: prologo [opening]
-Le Braci scaldano le tue mani come un piccolo falò buono. Il fuoco puo' dare luce, calore e aiuto, ma solo se impari a usarlo con attenzione e rispetto.
+Le Braci scaldano le tue mani, come un piccolo falò buono. Il fuoco può dare luce e calore, ma devi stare attento quando lo usi.
 
 [[Continua->nemici-modificati]]
 
 :: nemici-modificati [game-effect]
-Nel primo round il calore delle Braci tiene lontana la paura. Il tuo avversario si indebolisce, e tu impari che il fuoco e' forte quando protegge senza esagerare.
+Le Braci ti scaldano e ti danno coraggio. Il nemico diventa più debole. Il fuoco è forte quando aiuta, non quando fa male.
 
 [[Inizia l'avventura->inizio-avventura]]
 
@@ -26,10 +26,10 @@ Nel primo round il calore delle Braci tiene lontana la paura. Il tuo avversario 
 ```
 
 :: inizio-avventura
-Il cammino e' lungo. Ogni vittoria rende il tuo fuoco piu' saggio, e ogni sconfitta ti ricorda che la forza migliore e' quella guidata dalla calma.
+Il cammino è lungo, ma ogni passo conta. Che tu vinca o perda, stai crescendo un po' di più.
 
 :: evento-round-3 [mid-story]
-A meta' strada arriva un vento freddo dalle montagne. I nemici diventano piu' resistenti, ma il tuo calore interiore ti regala un cuore in piu': il coraggio serve ancora di piu' quando l'aria cambia.
+A metà strada arriva un vento freddo dalle montagne. I nemici diventano più forti, ma tu senti più coraggio dentro di te.
 
 ```gameEffects
 {
@@ -40,7 +40,7 @@ A meta' strada arriva un vento freddo dalle montagne. I nemici diventano piu' re
 ```
 
 :: epilogo-vittoria [ending victory]
-Le Braci sono diventate una luce accogliente per tutti. Hai imparato che il fuoco non serve a distruggere, ma a proteggere, illuminare e radunare gli amici.
+Le Braci sono diventate una luce calda per tutti. Hai imparato che il fuoco serve a proteggere gli amici, non a distruggere.
 
 :: epilogo-sconfitta [ending defeat]
-Le Braci si sono affievolite, ma una scintilla resta sempre viva. Anche il fuoco piu' attento a volte sbaglia: la prossima volta saprai scaldare il mondo con ancora piu' cura.
+Le Braci si spengono un po', ma una piccola scintilla resta accesa. La prossima volta saprai usare il fuoco con ancora più cura.

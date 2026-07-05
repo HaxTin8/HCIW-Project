@@ -9,15 +9,15 @@ La Luce Prima dell'Alba
 }
 
 :: prologo [opening]
-Il Raggio illumina il sentiero davanti a te. La luce non serve solo a vincere: serve a vedere meglio, capire e aiutare chi si sente perso.
+Il Raggio si accende piano e illumina il sentiero davanti a te. Con la sua luce vedi meglio, capisci dove andare e puoi aiutare chi ha perso la strada.
 
 [[Illumina->inizio-avventura]]
 
 :: inizio-avventura
-Anche la luce piu' brillante parte da una scintilla. Gioca con fiducia e ricorda che capire bene una situazione e' gia' un superpotere.
+Anche la luce piu' brillante inizia con una scintilla. Gioca con coraggio. Guardare bene le cose, prima di agire, è già un potere speciale.
 
 :: evento-round-4 [mid-story]
-L'alba e' vicina. La luce ti fa notare meglio i dettagli del nemico: quando osservi con attenzione, anche la forza piu' grande sembra meno spaventosa.
+L'alba e' vicina. Con la sua luce anche la forza piu' grande sembra meno spaventosa.
 
 ```gameEffects
 {
@@ -30,4 +30,4 @@ L'alba e' vicina. La luce ti fa notare meglio i dettagli del nemico: quando osse
 Hai portato un'alba gentile nel mondo intorno a te. Ora sai che la luce migliore e' quella che guida senza accecare.
 
 :: epilogo-sconfitta [ending defeat]
-La notte puo' sembrare lunga, ma non resta per sempre. Il tuo raggio tornera' presto a indicare la strada.
+La notte puo' sembrare lunga, ma non dura per sempre. Il tuo raggio tornera' presto ad illuminare la strada.

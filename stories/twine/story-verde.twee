@@ -1,5 +1,5 @@
 :: StoryTitle
-Le Radici Dimenticate
+La Forza della Terra
 
 :: StoryData
 {
@@ -9,25 +9,24 @@ Le Radici Dimenticate
 }
 
 :: prologo [opening]
-Il Germoglio spunta dalla terra e ti saluta piano. La natura ti affida una missione semplice e grande: osservare, prenderti cura e crescere con lei.
+Una piccola pianta spunta dal terreno. La natura cresce intorno a te: guardala trasformarsi e impara a conoscerla passo dopo passo.
 
-[[Cresci->inizio-avventura]]
+[[Segui la crescita->inizio-avventura]]
 
 :: inizio-avventura
-La natura non ha fretta, ma non si ferma mai. Ogni round e' una stagione nuova, e ogni stagione insegna qualcosa a chi guarda bene.
+La terra si muove con calma e costanza. Ogni turno del gioco cambia come una stagione dell'anno: osserva bene prima di giocare la tua carta.
 
 :: evento-round-2 [mid-story]
-Una radice antica emerge dal terreno e ti sostiene. Capisci che chi si prende cura della natura riceve forza in cambio: la tua prossima carta sara' piu' potente.
+Una radice forte esce dal terreno per aiutarti. La terra ti regala la sua energia: la prossima carta che giocherai sarà ancora più forte.
 
 ```gameEffects
 {
   "nextCardPowerBonus": 1,
   "roundSpecific": 2
 }
-```
 
 :: epilogo-vittoria [ending victory]
-Hai raggiunto il cuore della foresta. Le radici che hai protetto oggi diventeranno alberi, ombra fresca e casa per molti esseri viventi.
+La tua strategia ha funzionato. Le piante che hai curato sono cresciute forti e sicure, e la foresta ora è al sicuro grazie a te.
 
 :: epilogo-sconfitta [ending defeat]
-La natura non conosce la sconfitta definitiva. Anche quando un seme dorme sotto terra, sta gia' preparando la sua prossima crescita.
+Un seme ha bisogno di tempo sotto terra prima di diventare un grande albero. Guarda le tue carte, riprendi le forze e gioca un'altra partita.

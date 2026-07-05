@@ -9,15 +9,15 @@ Il Tuono delle Origini
 }
 
 :: prologo [opening]
-La Saetta attraversa il cielo e il tuono ti fa drizzare le orecchie. Questo elemento ti insegna che l'energia e' bellissima, ma va guidata con attenzione.
+La Saetta attraversa il cielo e il tuono ti fa sobbalzare. Un potere bellissimo che va usato con attenzione.
 
 [[Colpisci->inizio-avventura]]
 
 :: inizio-avventura
-Il fulmine non arriva mai nello stesso modo. Ogni round e' diverso, e tu impari che essere pronti e flessibili e' meglio che essere impulsivi.
+Il fulmine non arriva mai allo stesso modo: a volte veloce, a volte lento. Per questo devi guardare bene, prima di muoverti.
 
 :: evento-round-2 [mid-story]
-Una tempesta si avvicina. Il tuono ti da' una grande spinta, ma ti ricorda anche una regola importante: tanta energia e tanta forza chiedono anche prudenza.
+Arriva una tempesta. Il tuono ti dà tanta forza in più. Ma quando sei molto forte, devi stare anche più attento a non sbagliare.
 
 ```gameEffects
 {
@@ -28,7 +28,7 @@ Una tempesta si avvicina. Il tuono ti da' una grande spinta, ma ti ricorda anche
 ```
 
 :: epilogo-vittoria [ending victory]
-Hai imparato a usare il tuono con intelligenza. Il cielo sembra applaudire chi sa essere forte senza perdere il controllo.
+Hai imparato a usare il tuono con attenzione. Il cielo sembra contento di te.
 
 :: epilogo-sconfitta [ending defeat]
-Il fulmine e' tornato tra le nuvole, ma non e' una fine. Le tempeste insegnano sempre qualcosa a chi e' pronto ad ascoltarle.
+Il fulmine torna tra le nuvole, ma non è finita. Le tempeste tornano sempre, e tu puoi riprovare.
