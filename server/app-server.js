@@ -173,20 +173,22 @@ async function proxyToPiper(req, res, requestUrl, piperBaseUrl) {
   Readable.fromWeb(upstreamRes.body).pipe(res);
 }
 
-function createAppServer(options = {}) {
-  const configuredStaticRoot = options.staticRoot || process.env.APP_STATIC_ROOT || ROOT;
-  const staticRoot = path.resolve(configuredStaticRoot);
-  const dataDir = options.dataDir || process.env.APP_DATA_DIR || path.join(ROOT, '.local-data');
-  const port = Number(options.port || process.env.APP_PORT || process.env.PORT || 3000);
+function createAppHandler(options = {}) {
+  const rootDir = path.resolve(options.rootDir || ROOT);
+  const dataDir = options.dataDir || process.env.APP_DATA_DIR || path.join(rootDir, '.local-data');
   const piperBaseUrl = options.piperBaseUrl || process.env.PIPER_BASE_URL || 'http://specula-piper:5000';
   const store = options.store || new AuthStore({ dataDir });
 
-  const server = http.createServer(async (req, res) => {
+  return async function handleAppRequest(req, res) {
     const requestUrl = new URL(req.url || '/', 'http://localhost');
     try {
+      if (!requestUrl.pathname.startsWith('/api/')) {
+        return false;
+      }
+
       if (requestUrl.pathname.startsWith('/api/tts/')) {
         await proxyToPiper(req, res, requestUrl, piperBaseUrl);
-        return;
+        return true;
       }
 
       if (requestUrl.pathname === '/api/family-voice/auth/register' && req.method === 'POST') {
@@ -200,7 +202,7 @@ function createAppServer(options = {}) {
             username: user.username
           }
         });
-        return;
+        return true;
       }
 
       if (requestUrl.pathname === '/api/family-voice/auth/login' && req.method === 'POST') {
@@ -208,14 +210,14 @@ function createAppServer(options = {}) {
         const user = store.authenticateUser(body.username, body.password);
         if (!user) {
           unauthorized(res);
-          return;
+          return true;
         }
         const session = store.createToken(user.id);
         json(res, 200, {
           token: session.token,
           user
         });
-        return;
+        return true;
       }
 
       if (requestUrl.pathname === '/api/family-voice/auth/logout' && req.method === 'POST') {
@@ -224,7 +226,7 @@ function createAppServer(options = {}) {
           store.revokeToken(token);
         }
         noContent(res);
-        return;
+        return true;
       }
 
       if (requestUrl.pathname.startsWith('/api/family-voice/')) {
@@ -232,27 +234,27 @@ function createAppServer(options = {}) {
         const user = store.getUserByToken(token);
         if (!user) {
           unauthorized(res);
-          return;
+          return true;
         }
 
         if (requestUrl.pathname === '/api/family-voice/auth/me' && req.method === 'GET') {
           json(res, 200, { user });
-          return;
+          return true;
         }
 
         if (requestUrl.pathname === '/api/family-voice/library' && req.method === 'GET') {
-          const catalog = buildPromptCatalog(ROOT);
+          const catalog = buildPromptCatalog(rootDir);
           const statusMap = store.listRecordingStatus(user.id);
           json(res, 200, annotateCatalog(catalog, statusMap));
-          return;
+          return true;
         }
 
         if (requestUrl.pathname.startsWith('/api/family-voice/recordings/')) {
           const promptId = decodeURIComponent(requestUrl.pathname.replace('/api/family-voice/recordings/', ''));
-          const catalog = buildPromptCatalog(ROOT);
+          const catalog = buildPromptCatalog(rootDir);
           if (!catalog.promptMap[promptId]) {
             badRequest(res, 'invalid_prompt_id');
-            return;
+            return true;
           }
 
           if (req.method === 'PUT') {
@@ -260,7 +262,7 @@ function createAppServer(options = {}) {
             const audioBuffer = await readBody(req, 20 * 1024 * 1024);
             if (!audioBuffer.length) {
               badRequest(res, 'empty_audio');
-              return;
+              return true;
             }
             const saved = store.saveRecording(user.id, promptId, audioBuffer, mimeType);
             json(res, 200, {
@@ -268,36 +270,73 @@ function createAppServer(options = {}) {
               hasRecording: true,
               updatedAt: saved.updated_at
             });
-            return;
+            return true;
           }
 
           if (req.method === 'GET') {
             const recording = store.getRecording(user.id, promptId);
             if (!recording) {
               notFound(res);
-              return;
+              return true;
             }
             const absolutePath = path.join(store.recordingsDir, recording.file_path);
             if (!fs.existsSync(absolutePath)) {
               notFound(res);
-              return;
+              return true;
             }
             res.writeHead(200, {
               'Content-Type': recording.mime_type,
               'Cache-Control': 'no-store'
             });
             fs.createReadStream(absolutePath).pipe(res);
-            return;
+            return true;
           }
 
           if (req.method === 'DELETE') {
             const deleted = store.deleteRecording(user.id, promptId);
             json(res, 200, { promptId, deleted });
-            return;
+            return true;
           }
         }
 
         notFound(res);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      if (error && error.message === 'payload_too_large') {
+        json(res, 413, { error: 'payload_too_large' });
+        return true;
+      }
+      if (error instanceof SyntaxError) {
+        badRequest(res, 'invalid_json');
+        return true;
+      }
+      if (error && error.message === 'username_password_required') {
+        badRequest(res, 'username_password_required');
+        return true;
+      }
+      if (error && /UNIQUE constraint failed: users\.username/i.test(error.message)) {
+        badRequest(res, 'username_taken');
+        return true;
+      }
+      serverError(res, error);
+      return true;
+    }
+  };
+}
+
+function createAppServer(options = {}) {
+  const configuredStaticRoot = options.staticRoot || process.env.APP_STATIC_ROOT || ROOT;
+  const staticRoot = path.resolve(configuredStaticRoot);
+  const port = Number(options.port || process.env.APP_PORT || process.env.PORT || 3000);
+  const handleAppRequest = createAppHandler(options);
+
+  const server = http.createServer(async (req, res) => {
+    const requestUrl = new URL(req.url || '/', 'http://localhost');
+    try {
+      const handled = await handleAppRequest(req, res);
+      if (handled) {
         return;
       }
 
@@ -376,5 +415,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
 }
 
 export {
+  createAppHandler,
   createAppServer
 };

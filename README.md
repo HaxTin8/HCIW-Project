@@ -28,7 +28,7 @@ Il client ora e' in **ESM nativo**: Vite gestisce HMR per il frontend e build mu
 npm run debug
 ```
 
-Avvia il gioco con il percorso di debug pronto su `http://localhost:5173/?debug=1`, cosi' puoi simulare le carte dai pulsanti senza QR e senza webcam.
+Avvia il gioco con il debug frontend gia' attivo tramite `VITE_ENABLE_DEBUG=1`, cosi' puoi simulare le carte dai pulsanti senza QR e senza webcam.
 
 Se vuoi cambiare porte:
 
@@ -58,6 +58,7 @@ PORT=3000
 VITE_PORT=5173
 VITE_API_TARGET=http://127.0.0.1:3000
 VITE_API_BASE_URL=
+VITE_ENABLE_DEBUG=0
 PIPER_BASE_URL=http://127.0.0.1:5000
 APP_STATIC_ROOT=/app/dist
 ```
@@ -66,6 +67,7 @@ Note:
 
 - `VITE_API_TARGET` serve al proxy dev di Vite.
 - `VITE_API_BASE_URL` e' utile se vuoi puntare il frontend a un backend esterno senza usare il proxy.
+- `VITE_ENABLE_DEBUG` abilita i controlli di debug nel frontend senza usare query string.
 - `APP_STATIC_ROOT` in deploy fa servire al backend la build Vite in `dist/`.
 
 ## Voci di famiglia

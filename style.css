@@ -1251,6 +1251,10 @@ main {
   box-shadow: 0 6px 16px rgba(30, 60, 90, 0.18);
 }
 
+.icon-btn[hidden] {
+  display: none !important;
+}
+
 .icon-btn svg {
   width: 20px;
   height: 20px;

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+import { createAppHandler } from './server/app-server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,19 +68,40 @@ function copyLegacyRuntimePlugin() {
   };
 }
 
-export default defineConfig(() => {
-  const apiTarget = process.env.VITE_API_TARGET || `http://127.0.0.1:${process.env.PORT || 3000}`;
+function devApiPlugin() {
+  return {
+    name: 'specula-dev-api',
+    configureServer(server) {
+      const handleAppRequest = createAppHandler({
+        rootDir: ROOT,
+        dataDir: path.join(ROOT, '.local-data'),
+        piperBaseUrl: process.env.PIPER_BASE_URL || 'http://127.0.0.1:5000'
+      });
 
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url || !req.url.startsWith('/api/')) {
+          next();
+          return;
+        }
+
+        try {
+          const handled = await handleAppRequest(req, res);
+          if (!handled && !res.writableEnded) {
+            next();
+          }
+        } catch (error) {
+          next(error);
+        }
+      });
+    }
+  };
+}
+
+export default defineConfig(() => {
   return {
     server: {
       host: '0.0.0.0',
-      port: Number(process.env.VITE_PORT || 5173),
-      proxy: {
-        '/api': {
-          target: apiTarget,
-          changeOrigin: true
-        }
-      }
+      port: Number(process.env.VITE_PORT || 5173)
     },
     preview: {
       host: '0.0.0.0',
@@ -96,6 +118,6 @@ export default defineConfig(() => {
         }
       }
     },
-    plugins: [legacyFullReloadPlugin(), copyLegacyRuntimePlugin()]
+    plugins: [legacyFullReloadPlugin(), devApiPlugin(), copyLegacyRuntimePlugin()]
   };
 });

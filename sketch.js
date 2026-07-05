@@ -1,6 +1,7 @@
 import { ELEMENTS, TEMPLATE_MAP, createCard } from './cards.js';
 import { Game, GAME_STATE } from './game.js';
 import { audio } from './audio.js';
+import { speculaEnv } from './app-env.js';
 import { familyVoice } from './family-voice.js';
 import { tts } from './tts.js';
 import { StoryEngine } from './stories/story-engine.js';
@@ -178,9 +179,7 @@ function sy(v) {
 }
 
 function detectDebugMode() {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search || '');
-  return params.get('debug') === '1';
+  return Boolean(speculaEnv.enableDebug);
 }
 
 function populateProviderSelect(selectEl, providerState) {

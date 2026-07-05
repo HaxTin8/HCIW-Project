@@ -42,10 +42,10 @@ app.server.on('error', (error) => {
 app.start().then(() => {
   const baseUrl = `http://localhost:${PORT}`;
   console.log(`Specula Elementae pronta su ${baseUrl}`);
-  console.log(`Gioco: ${DEBUG_MODE ? `${baseUrl}/?debug=1` : baseUrl}`);
+  console.log(`Gioco: ${baseUrl}`);
   console.log(`Carte da stampare: ${baseUrl}/print.html`);
   console.log(`Voci di famiglia: ${baseUrl}`);
-  if (!DEBUG_MODE) {
-    console.log(`Debug rapido senza QR: ${baseUrl}/?debug=1`);
+  if (DEBUG_MODE) {
+    console.log('Debug rapido richiesto per il frontend. Avvia Vite con VITE_ENABLE_DEBUG=1 oppure usa npm run debug.');
   }
 });

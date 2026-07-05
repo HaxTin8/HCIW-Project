@@ -1,6 +1,7 @@
 const rawConfig = {
   appName: import.meta.env.VITE_APP_NAME || 'Specula Elementae',
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || ''
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '',
+  enableDebug: import.meta.env.VITE_ENABLE_DEBUG === '1' || import.meta.env.VITE_ENABLE_DEBUG === 'true'
 };
 
 function normalizeBaseUrl(value) {
@@ -10,6 +11,7 @@ function normalizeBaseUrl(value) {
 const speculaEnv = {
   appName: rawConfig.appName,
   apiBaseUrl: normalizeBaseUrl(rawConfig.apiBaseUrl),
+  enableDebug: rawConfig.enableDebug,
   api(pathname = '') {
     return `${this.apiBaseUrl}${pathname}`;
   }
