@@ -267,6 +267,10 @@ function setup() {
   familyVoiceEntryStatus = select('#family-voice-entry-status');
   debugMode = detectDebugMode();
 
+  if (debugOpenBtn && debugOpenBtn.elt) {
+    debugOpenBtn.elt.hidden = !debugMode;
+  }
+
   if (debugMode && debugPanel && debugPanel.elt) {
     debugPanel.elt.hidden = false;
   }
