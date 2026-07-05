@@ -22,7 +22,23 @@ function generateQR(text) {
   const qr = qrcode(0, 'M');
   qr.addData(text);
   qr.make();
-  return qr.createImgTag(4);
+  const moduleCount = qr.getModuleCount();
+  const cellSize = 4;
+  const size = moduleCount * cellSize;
+  let rects = '';
+
+  for (let row = 0; row < moduleCount; row += 1) {
+    for (let col = 0; col < moduleCount; col += 1) {
+      if (!qr.isDark(row, col)) continue;
+      rects += `<rect x="${col * cellSize}" y="${row * cellSize}" width="${cellSize}" height="${cellSize}" fill="#111111"/>`;
+    }
+  }
+
+  return `
+    <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-label="QR code ${text}" role="img" xmlns="http://www.w3.org/2000/svg">
+      ${rects}
+    </svg>
+  `;
 }
 
 function createCardElement(template) {
