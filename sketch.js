@@ -1235,7 +1235,7 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
   noStroke();
   fill(color);
   textAlign(CENTER, CENTER);
-  textSize(compact ? 13 : 17);
+  textSize(compact ? 13 : 19);
   textStyle(BOLD);
   text(name, 0, -h / 2 + 18);
   textStyle(NORMAL);
@@ -1455,7 +1455,7 @@ function drawMapOverlay() {
   const isPlayingState = game.state === GAME_STATE.PLAYING || game.state === GAME_STATE.ROUND_RESULT;
   if (!isPlayingState || isCompactMobileLayout()) return;
 
-  const mw = 250;
+  const mw = sx(190);
   const mh = mapImage && mapImage.width > 0 ? mw * (mapImage.height / mapImage.width) : mw * 1.333;
   const cx = width * 0.14;
   const cy = height * 0.45;
@@ -1487,7 +1487,7 @@ function drawMapOverlay() {
     const [px, py] = points[r - 1];
     let dotColor;
     let dotTextColor;
-    let dotR = 10;
+    let dotR = sx(8);
 
     if (r < game.round) {
       dotColor = '#97B481';
@@ -1495,7 +1495,7 @@ function drawMapOverlay() {
     } else if (r === game.round) {
       dotColor = '#498AE2';
       dotTextColor = '#ffffff';
-      dotR = 12;
+      dotR = sx(9.5);
       const pulse = sin(millis() / 250) * 0.5 + 0.5;
       noStroke();
       fill(73, 138, 226, 90 * pulse);
@@ -1513,7 +1513,7 @@ function drawMapOverlay() {
     noStroke();
     fill(dotTextColor);
     textAlign(CENTER, CENTER);
-    textSize(9);
+    textSize(sx(7.5));
     textStyle(BOLD);
     text(r, px, py);
     textStyle(NORMAL);
@@ -1537,7 +1537,7 @@ function getWeakAgainstText(elementId) {
 function getEnemyHint(enemy) {
   const strongChoices = getWeakAgainstText(enemy.element);
   const elementName = ELEMENTS[enemy.element].name;
-  return `Suggerimento: contro ${enemy.name} di ${elementName}, prova ${strongChoices}.`;
+  return `Suggerimento: contro ${enemy.name}, prova ${strongChoices}.`;
 }
 
 function getCardLearningLine(card) {

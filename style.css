@@ -1312,16 +1312,16 @@ main {
   bottom: 80px;
   display: none;
   z-index: 10;
-  width: min(320px, calc(100% - 44px));
-  min-height: 92px;
-  padding: 18px 22px;
-  border-radius: 30px;
+  width: min(260px, calc(100% - 44px));
+  min-height: 72px;
+  padding: 14px 18px;
+  border-radius: 24px;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(3, 105, 161, 0.1);
   color: #0f2d59;
   font-family: 'Nunito', 'Hanken Grotesk', sans-serif;
-  font-size: 0.84rem;
-  line-height: 1.5;
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 #log-balloon.active {
@@ -1340,19 +1340,19 @@ main {
 }
 
 #log-balloon::before {
-  top: -12px;
-  left: 28px;
-  width: 44px;
-  height: 44px;
-  box-shadow: -50px 30px 0 -12px #ffffff;
+  top: -10px;
+  left: 22px;
+  width: 34px;
+  height: 34px;
+  box-shadow: -40px 24px 0 -10px #ffffff;
 }
 
 #log-balloon::after {
-  right: 26px;
-  bottom: -10px;
-  width: 30px;
-  height: 30px;
-  box-shadow: 40px -34px 0 0 #ffffff, -28px -6px 0 -2px #ffffff, -24px 17px 0 -6px #ffffff, -5px 25px 0 -10px #ffffff;
+  right: 20px;
+  bottom: -8px;
+  width: 24px;
+  height: 24px;
+  box-shadow: 32px -27px 0 0 #ffffff, -22px -5px 0 -2px #ffffff, -19px 14px 0 -5px #ffffff, -4px 20px 0 -8px #ffffff;
 }
 
 .settings-modal {
