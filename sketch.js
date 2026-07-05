@@ -1462,7 +1462,7 @@ function drawMapOverlay() {
 
   const mw = 250;
   const mh = mapImage && mapImage.width > 0 ? mw * (mapImage.height / mapImage.width) : mw * 1.333;
-  const cx = width * 0.09;
+  const cx = width * 0.14;
   const cy = height * 0.45;
 
   push();
