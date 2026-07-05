@@ -1243,9 +1243,6 @@ function drawCardFrame(x, y, w, h, color, emoji, name, power, element) {
 
   const medY = 8;
   const medR = min(w, h) * 0.36;
-  const c = colorObj(color);
-  fill(c.r, c.g, c.b, 26);
-  ellipse(0, medY, medR * 2, medR * 2);
 
   push();
   translate(0, medY);
