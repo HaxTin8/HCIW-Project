@@ -14,6 +14,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Kiddos';
+  src: url('fonts/kiddos.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -21,7 +29,7 @@
 body {
   margin: 0;
   font-family: 'Hanken Grotesk', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4fbff; /* Colore statico celeste chiaro */
+  background: #f4fbff;
   color: #2b2318;
   overscroll-behavior-y: none;
 }
@@ -62,15 +70,17 @@ main {
 }
 
 #canvas-container {
-  flex: 1;
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(244, 251, 255, 0.8);
+  background: transparent;
   border-radius: 18px;
   border: 1px solid #d8e8f2;
   padding: 0;
-  min-height: 620px;
+  width: fit-content;
+  height: fit-content;
+  margin: 0 auto;
   box-shadow: none;
 }
 
@@ -876,7 +886,7 @@ body.family-voice-page {
   border: none;
   border-radius: 999px;
   font-family: 'Beachday', 'Nunito', sans-serif;
-  font-size: 1.35rem; /* Dimensionato per rendere leggibile il font corsivo Beachday */
+  font-size: 1.35rem;
   font-weight: 400;
   cursor: pointer;
   touch-action: manipulation;
@@ -897,12 +907,12 @@ body.family-voice-page {
 }
 
 #camera-btn {
-  background: linear-gradient(135deg, #498AE2 0%, #8380BC 100%); /* Acqua -> Ombra */
+  background: linear-gradient(135deg, #498AE2 0%, #8380BC 100%);
   color: #ffffff;
 }
 
 #switch-camera-btn {
-  background: linear-gradient(135deg, #97B481 0%, #ECBA4E 100%); /* Natura -> Tuono */
+  background: linear-gradient(135deg, #97B481 0%, #ECBA4E 100%);
   color: #ffffff;
 }
 
@@ -1146,7 +1156,6 @@ body {
 }
 
 body {
-  /* Mantieni il gradiente radiale definito all'inizio del file */
 }
 
 body.game-page {
@@ -1165,7 +1174,6 @@ body.family-voice-page main {
   height: 100vh;
   height: 100dvh;
   max-width: 1500px;
-  padding: 12px 20px 14px;
 }
 
 header {
@@ -1179,23 +1187,24 @@ main {
   overflow: visible;
   flex-wrap: nowrap;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
   gap: 16px;
   width: 100%;
-  padding: 100px 0; /* Padding sopra e sotto di 100px come cornice */
+  padding: 50px 0;
 }
 
 #canvas-container {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 0;
-  border-radius: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: transparent; /* Trasparente per mostrare il gradiente dello sfondo */
-  border: 1px solid #d8e8f2; /* Bordo ripristinato */
+  background: transparent;
+  border: 1px solid #d8e8f2;
+  padding: 0;
+  border-radius: 16px;
+  width: fit-content;
+  height: fit-content;
+  margin: 0 auto;
 }
 
 #canvas-container canvas {
@@ -1206,7 +1215,7 @@ main {
 .canvas-actions {
   position: absolute;
   top: 20px;
-  right: -52px; /* Posizionati fuori dal canvas container, sulla destra */
+  right: -52px;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -1287,15 +1296,15 @@ main {
 #log-balloon {
   position: absolute;
   left: 22px;
-  bottom: 22px;
+  bottom: 80px; /* Spostato leggermente più in basso (era 120px) */
   display: none;
   z-index: 10;
   width: min(320px, calc(100% - 44px));
   min-height: 92px;
   padding: 18px 22px;
   border-radius: 30px;
-  background: #e0f2fe;
-  box-shadow: 0 8px 24px rgba(3, 105, 161, 0.15);
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(3, 105, 161, 0.1);
   color: #0f2d59;
   font-family: 'Nunito', 'Hanken Grotesk', sans-serif;
   font-size: 0.84rem;
@@ -1314,7 +1323,7 @@ main {
   z-index: -1;
   display: block;
   border-radius: 50%;
-  background: #e0f2fe;
+  background: #ffffff;
 }
 
 #log-balloon::before {
@@ -1322,7 +1331,7 @@ main {
   left: 28px;
   width: 44px;
   height: 44px;
-  box-shadow: -50px 30px 0 -12px #e0f2fe;
+  box-shadow: -50px 30px 0 -12px #ffffff;
 }
 
 #log-balloon::after {
@@ -1330,7 +1339,7 @@ main {
   bottom: -10px;
   width: 30px;
   height: 30px;
-  box-shadow: 40px -34px 0 0 #e0f2fe, -28px -6px 0 -2px #e0f2fe, -24px 17px 0 -6px #e0f2fe, -5px 25px 0 -10px #e0f2fe;
+  box-shadow: 40px -34px 0 0 #ffffff, -28px -6px 0 -2px #ffffff, -24px 17px 0 -6px #ffffff, -5px 25px 0 -10px #ffffff;
 }
 
 .settings-modal {
