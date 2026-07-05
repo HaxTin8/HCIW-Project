@@ -1,124 +1,98 @@
 # Specula Elementae
 
-Solitario a carte in **p5.js** con riconoscimento **QR code** tramite webcam.  
-**No click, no tastiera:** l'interazione avviene solo mostrando carte fisiche alla webcam.
+A tangible card game for children, conceived as a hybrid playful system in which physical cards remain central to the experience while the computer operates as a supporting game master. It adopts a no-WIMP interaction paradigm with card-based, webcam input via QR codes.
 
-## Come testare in locale
+Built with **p5.js** and **Vite**.
 
-La webcam richiede un server HTTP locale. Ora il flusso consigliato di sviluppo usa **Vite** per il frontend e il server Node leggero per API e storage.
+## How to test locally
 
-Comandi utili:
+The webcam requires a local HTTP server. The recommended development flow uses **Vite** for the frontend and a lightweight Node server for APIs and storage.
+
+Use the following commands:
 
 ```bash
 npm install
-```
-
-```bash
 npm run dev
 ```
 
-Avvia:
+This starts:
 
-- frontend Vite su `http://localhost:5173`
-- backend API su `http://localhost:3000`
+* the Vite frontend at `http://localhost:5173`
+* the backend API at `http://localhost:3000`
 
-Il client ora e' in **ESM nativo**: Vite gestisce HMR per il frontend e build multi-page per `index.html`, `family-voice.html` e `print.html`.
+The client uses **native ESM**: Vite handles HMR for the frontend and multi-page builds for `index.html`, `family-voice.html`, and `print.html`.
 
 ```bash
 npm run debug
 ```
 
-Avvia il gioco con il debug frontend gia' attivo tramite `VITE_ENABLE_DEBUG=1`, cosi' puoi simulare le carte dai pulsanti senza QR e senza webcam.
+This starts the game with frontend debug already enabled via `VITE_ENABLE_DEBUG=1`, so you can simulate cards from buttons without QR codes and without the webcam.
 
-Se vuoi cambiare porte:
+## How to play
 
-```bash
-PORT=3001 VITE_PORT=5174 npm run debug
-```
+1. **Your cards are physical only**: print them from `print.html` and keep them in front of you. The computer never shows the cards you have.
+2. **Start**: show a physical card with a QR code to the webcam.
+3. The computer announces the enemies for the round.
+4. **Card slot**: show the card you want to play to the webcam.
+5. **Play**: remove the card or wait a moment to start the clash.
+6. **Round victory**: if your card beats the enemy, you pass the challenge.
+7. **Round defeat**: if your card loses against the enemy, you lose 1 HP.
+8. **Win** after 8 rounds. At Game Over, show a card to restart.
 
-Per mantenere il server Node da solo, senza Vite:
+You can also use the special `RESTART` QR code to restart.
 
-```bash
-npm run serve
-```
+## Preparing the physical cards
 
-Il backend locale continua a fare da:
+Open the integrated print page:
 
-- host statico del gioco
-- API per login semplice e token bearer
-- archivio SQLite + file audio privati per le registrazioni familiari
-- proxy verso Piper su `/api/tts/`
+`http://localhost:3000/print.html`
 
-## Variabili ambiente
+The page automatically generates:
 
-Con Vite, backend separato e moduli ESM ora puoi configurare piu' facilmente:
+* 2 copies of each base card
+* 1 special `RESTART` card
 
-```env
-PORT=3000
-VITE_PORT=5173
-VITE_API_TARGET=http://127.0.0.1:3000
-VITE_API_BASE_URL=
-VITE_ENABLE_DEBUG=0
-PIPER_BASE_URL=http://127.0.0.1:5000
-APP_STATIC_ROOT=/app/dist
-```
+Each card includes its own QR code.
 
-Note:
+## Family Voices
 
-- `VITE_API_TARGET` serve al proxy dev di Vite.
-- `VITE_API_BASE_URL` e' utile se vuoi puntare il frontend a un backend esterno senza usare il proxy.
-- `VITE_ENABLE_DEBUG` abilita i controlli di debug nel frontend senza usare query string.
-- `APP_STATIC_ROOT` in deploy fa servire al backend la build Vite in `dist/`.
+The game includes a **Family Voices** section in the main interface.
 
-## Voci di famiglia
+Flow:
 
-Il gioco include una sezione **Voci di Famiglia** nell'interfaccia principale.
+1. A parent creates a simple profile with `username` and `password`.
+2. The server generates a `bearer token` and saves the data in SQLite.
+3. The teleprompter shows gameplay prompts and Twine story passages.
+4. Each prompt can be recorded, played back, or deleted.
+5. Recordings remain private to that user and cannot be accessed by other profiles.
 
-Flusso:
+When a recording exists for a prompt, the game uses it first. If there is no clip, it continues to use Piper or browser voices as a fallback.
 
-1. Un genitore crea un profilo semplice con `username` e `password`.
-2. Il server genera un `bearer token` e salva i dati in SQLite.
-3. Il teleprompter mostra i prompt del gameplay e i passaggi delle storie Twine.
-4. Ogni prompt puo' essere registrato, riascoltato o eliminato.
-5. Le registrazioni restano private per quell'utente e non sono accessibili dagli altri profili.
+## Twine Stories
 
-Quando esiste una registrazione per un prompt, il gioco usa prima quella; in assenza della clip continua a usare Piper o le voci del browser come fallback.
+Stories are written in the `stories/twine/` directory, which contains versioned source files in **Twee** format.
+This directory is the source of truth for writing narrative content.
 
-## Storie Twine
+The game includes a script that generates the runtime files read by the game. This script runs every time the game starts.
 
-Le storie ora hanno una distinzione chiara tra:
+### Workflow
 
-- `stories/twine/`: sorgenti versionati in formato **Twee**. Questa e' la fonte di verita' per chi scrive la narrativa.
-- `stories/generated/`: JSON runtime generati automaticamente e non versionati.
-
-Il gioco legge solo i file generati, ma chi sviluppa modifica i file `.twee`.
-
-### Flusso di lavoro
-
-1. Modifica una storia in `stories/twine/*.twee`.
-2. Rigenera i JSON con:
+1. Edit a story in `stories/twine/*.twee`.
+2. Regenerate the JSON files with:
 
 ```bash
 npm run build:stories
 ```
 
-3. Avvia il progetto con:
+### Structure of a `.twee` story
 
-```bash
-npm run serve
-```
+Each file contains at least:
 
-`npm run serve` esegue gia' la build delle storie prima di servire i file.
+* `:: StoryTitle` with the readable title.
+* `:: StoryData` with JSON metadata: `id`, `author`, `startPassage`.
+* normal narrative passages, with Twine links such as `[[Continue->next-passage]]`.
 
-### Struttura di una storia `.twee`
-
-Ogni file contiene almeno:
-
-- `:: StoryTitle` con il titolo leggibile.
-- `:: StoryData` con metadata JSON (`id`, `author`, `startPassage`).
-- i passaggi narrativi normali, con link Twine come `[[Continua->prossimo-passaggio]]`.
-
-Per gli effetti di gioco puoi aggiungere un blocco:
+For gameplay effects, you can add a block:
 
 ```text
 <blocco gameEffects>
@@ -129,169 +103,83 @@ Per gli effetti di gioco puoi aggiungere un blocco:
 </blocco gameEffects>
 ```
 
-Nel file reale il blocco usa fence Markdown, ad esempio:
+In the real file, the block uses Markdown fences, for example:
 
-    ```gameEffects
-    {
-      "roundSpecific": 3,
-      "drawCountsAsWin": true
-    }
-    ```
+````text
+```gameEffects
+{
+  "roundSpecific": 3,
+  "drawCountsAsWin": true
+}
+```
+````
 
-Durante il deploy Docker, la build delle storie viene eseguita automaticamente dentro l'immagine. In repository restano quindi come sorgente autorevole i file Twine/Twee.
+During Docker deployment, the story build is executed automatically inside the image. The Twine/Twee files therefore remain the authoritative source in the repository.
 
-## TTS con Piper
+## TTS with Piper
 
-Piper viene eseguito come **servizio separato nello stesso `docker-compose`**.
+Piper runs as a **separate service inside the same `docker-compose`**.
 
-Questo approccio e' preferibile rispetto a metterlo dentro il server applicativo, perche':
-
-- il gioco e l'API restano un solo servizio leggero
-- il TTS ha il suo ciclo di vita, cache e log
-- Dokploy puo' riavviare o aggiornare Piper senza toccare il frontend
-
-L'app pubblica espone Piper tramite reverse proxy su:
+The public app exposes Piper through a reverse proxy at:
 
 ```text
 /api/tts/
 ```
 
-Il container Piper usa l'HTTP server ufficiale del progetto.
+The Piper container uses the project’s official HTTP server.
 
-Nel frontend puoi scegliere:
+In the frontend, you can choose:
 
-- `Automatico`: prova prima Piper, poi ricade sulle voci del browser
-- `Piper server`: forza il backend TTS, con fallback browser se il servizio non risponde
-- `Browser`: usa direttamente la Web Speech API locale
+* `Automatic`: tries Piper first, then falls back to browser voices
+* `Piper server`: forces backend TTS, with browser fallback if the service does not respond
+* `Browser`: directly uses the local Web Speech API
 
-Le voci di `gameplay` e `story` restano separate anche con Piper.
+The `gameplay` and `story` voices remain separate even with Piper.
 
-### Configurazione voci
+### Voice configuration
 
-Nel `docker-compose.yml` puoi impostare:
+In `docker-compose.yml`, you can set:
 
 ```env
 PIPER_VOICES=it_IT-riccardo-x_low,it_IT-paola-medium
 PIPER_DEFAULT_VOICE=it_IT-paola-medium
 ```
 
-Per il primo bootstrap puoi anche lasciare la voce di default `en_US-lessac-medium`, che e' l'esempio documentato ufficialmente da Piper.
+For the first bootstrap, you can also leave the default voice as `en_US-lessac-medium`, which is the example officially documented by Piper.
 
-Se vuoi che il gioco parta subito in italiano, conviene impostare almeno una o due voci `it_IT`.
+If you want the game to start immediately in Italian, it is best to set at least one or two `it_IT` voices.
 
-### Endpoint utili
+## Unit tests
 
-- `GET /api/tts/voices`
-- `GET /api/tts/info`
-- `POST /api/tts/synthesize`
-
-Esempio:
-
-```bash
-curl -X POST http://localhost/api/tts/synthesize \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Ciao! Questa e una prova."}' \
-  --output prova.wav
-```
-
-### Con Node.js
-
-```bash
-npm run dev
-# Apri l'indirizzo mostrato (di solito http://localhost:5173)
-```
-
-### Con Docker Compose
-
-Se hai Docker e Docker Compose installati:
-
-```bash
-docker compose up --build
-# Apri il dominio o la porta esposta dal servizio applicativo
-```
-
-Per fermare:
-
-```bash
-docker compose down
-```
-
-## Unit test
-
-La logica di gioco è separata dal rendering e testabile in Node.js:
+The game logic is separated from rendering and can be tested in Node.js:
 
 ```bash
 npm test
 ```
 
-## Come si gioca
+## Structure
 
-1. **Le tue carte sono solo fisiche**: stampale da `print.html` e tienile davanti a te. Il computer non mostra mai le carte che hai.
-2. **Inizia**: mostra una carta fisica con QR code alla webcam.
-3. Il computer annuncia i nemici del round.
-4. **Slot carta**: mostra alla webcam la carta che vuoi giocare.
-5. **Gioca**: togli la carta oppure aspetta un attimo per far partire lo scontro.
-6. **Vittoria del round**: se la tua carta batte il nemico, superi la prova.
-7. **Sconfitta del round**: se la tua carta perde contro il nemico, perdi 1 HP.
-8. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
-
-Puoi anche usare il QR speciale `RESTART` per riavviare.
-
-## Preparare le carte fisiche
-
-Apri la pagina di stampa integrata:
-
-```bash
-npm run serve
-# poi apri http://localhost:3000/print.html
-```
-
-La pagina genera automaticamente:
-- 2 copie di ogni carta base
-- 1 carta speciale `RESTART`
-
-Ogni carta include il proprio QR code. Suggerimenti per integrare il QR nel disegno:
-- inseriscilo come "sigillo" decorativo in un angolo
-- usa colori della carta per i moduli del QR (mantieni contrasto sufficiente)
-- usa un QR artistico con immagine al centro
-
-## Audio
-
-I suoni sono generati proceduralmente con la **Web Audio API** (`audio.js`).  
-Nessun file audio esterno è richiesto. L'audio si attiva automaticamente al primo QR riconosciuto.
-
-## Animazioni
-
-Durante il combattimento:
-- la carta giocata **vola** dal basso verso il nemico
-- **particelle** ed esplosione all'impatto
-- il nemico **tremà** se colpito
-- **flash** di schermo verde/rosso/giallo in base al risultato
-- floaters "+ NEMICO" / "-1 HP"
-
-## Struttura
-
-```
+```text
 /
-├── index.html          # UI di gioco
-├── print.html          # Generatore carte/QR stampabili
-├── style.css           # Stili
-├── cards.js            # Database carte + logica combattimento
-├── game.js             # Stato del gioco, testabile
-├── audio.js            # Suoni procedurali Web Audio API
-├── family-voice.js     # UI registrazioni familiari + auth client
-├── tts.js              # Sintesi vocale con fallback su registrazioni familiari
-├── sketch.js           # Rendering p5.js + webcam + animazioni
+├── index.html          # Game UI
+├── print.html          # Printable card/QR generator
+├── style.css           # Styles
+├── cards.js            # Card database + combat logic
+├── game.js             # Game state, testable
+├── audio.js            # Procedural Web Audio API sounds
+├── family-voice.js     # Family recording UI + auth client
+├── tts.js              # Voice synthesis with fallback to family recordings
+├── sketch.js           # p5.js rendering + webcam + animations
 ├── scripts/
 │   ├── build-stories.js
 │   └── dev-server.js
 ├── server/
-│   ├── app-server.js   # Server leggero: statici, auth, upload audio, proxy Piper
-│   ├── auth-store.js   # SQLite + token + metadata registrazioni
+│   ├── app-server.js   # Lightweight server: static files, auth, audio upload, Piper proxy
+│   ├── auth-store.js   # SQLite + token + recording metadata
 │   └── prompt-catalog.js
 ├── stories/
-│   ├── twine/          # Sorgenti Twee versionati
-│   └── generated/      # JSON runtime generati
+│   ├── twine/          # Versioned Twee sources
+│   └── generated/      # Generated runtime JSON files
 ├── test/
 │   ├── test-auth-store.js
 │   ├── test-cards.js
@@ -303,47 +191,3 @@ Durante il combattimento:
 ├── docker-compose.yml
 └── README.md
 ```
-
-## Personalizzare
-
-### Deploy con Dokploy
-
-Per Dokploy non serve una seconda app separata: basta fare deploy di questo stesso repository con il suo `docker-compose.yml`.
-
-Controlli consigliati:
-
-1. Assicurati che Dokploy usi `docker compose up --build` sul repository aggiornato.
-2. Imposta, se vuoi l'italiano subito disponibile:
-
-```env
-PIPER_VOICES=it_IT-riccardo-x_low,it_IT-paola-medium
-PIPER_DEFAULT_VOICE=it_IT-paola-medium
-```
-
-3. Verifica che il servizio esponga la porta HTTP dell'app, cioe' `80`.
-4. Al primo avvio Piper scarichera' i modelli vocali: il bootstrap iniziale puo' durare un po' piu' del solito.
-5. Il server deve poter uscire su Internet al primo avvio del container `specula-piper`, cosi' i modelli vocali possono essere scaricati.
-6. Le registrazioni familiari vengono salvate nel volume Docker `specula_app_data`, quindi non si perdono ai riavvii normali del servizio.
-
-Se non imposti variabili, il deploy parte comunque, ma con la voce di esempio `en_US-lessac-medium`.
-
-- `cards.js`: modifica elementi, relazioni, template delle carte.
-- `game.js`: regole di gioco, HP iniziali, round per vincere, dimensione mano.
-- `audio.js`: suoni, frequenze, durate.
-- `sketch.js`: solo rendering e animazioni; la logica non va qui.
-
-## Webcam non parte?
-
-1. **Apri la console del browser** (F12 → tab Console) e guarda il messaggio esatto.
-2. **Devi usare un server locale**: la webcam non funziona aprendo `index.html` direttamente dal disco.
-3. **Concedi il permesso** quando il browser te lo chiede. Se l'hai bloccato, clicca sull'icona 🔒 vicino all'URL e riattiva la fotocamera, poi ricarica con F5.
-4. **Browser supportati**: Chrome, Edge, Firefox aggiornati. Safari può richiedere permessi aggiuntivi.
-5. **Assicurati che nessun altro programma** (Zoom, Teams, OBS) stia usando la webcam.
-6. **localhost o HTTPS**: su HTTP remoto la webcam è bloccata. In locale (`localhost`/`127.0.0.1`) funziona.
-
-## Prossimi passi
-
-- Sottofondo musicale generativo.
-- Modalità "hardcore" con nemici più forti.
-- Effetti speciali sulle carte (combo, abilità).
-- Salvataggio best run in `localStorage`.
