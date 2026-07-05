@@ -10,107 +10,94 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <!-- jsQR per la lettura dei QR code -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
   <div id="app">
-    <header>
-      <h1>✨ <span data-app-name>Specula Elementae</span></h1>
-      <p>Un gioco di carte pensato per bambini: impara gli elementi della natura giocando con carte fisiche, voce e piccole storie educative.</p>
-    </header>
+    <header></header>
 
     <main>
-      <div id="canvas-container"></div>
-
-      <aside id="controls">
-        <h2>Guida di Gioco</h2>
-
-        <div class="mode-toggle">
-          <label>
-            <input type="checkbox" id="qr-toggle" checked>
-            Lettura carte attiva
-          </label>
-        </div>
-
-        <div class="camera-section" id="camera-section">
+      <div id="canvas-container">
+        <div id="log-balloon" class="desktop-only" aria-live="polite"></div>
+        <div class="canvas-actions">
+          <button id="settings-open-btn" class="secondary-btn app-settings-btn" type="button">⚙️ Impostazioni</button>
+          <div class="camera-section" id="camera-section">
           <button id="camera-btn" class="camera-btn">📷 Attiva la fotocamera</button>
           <button id="switch-camera-btn" class="camera-btn">🔄 Cambia fotocamera</button>
         </div>
-
-        <div class="privacy-note">
-          <strong>Privacy webcam</strong>
-          <p>La fotocamera serve solo al riconoscimento delle carte nel browser. Nessun video viene inviato ai server.</p>
         </div>
-
-        <div class="audio-controls">
-          <label class="tts-toggle">
-            <input type="checkbox" id="tts-toggle" checked>
-            Voce guida attiva
-          </label>
-          <label class="voice-field" for="tts-provider">
-            <span>Motore voce</span>
-            <select id="tts-provider">
-              <option value="auto">Automatico</option>
-              <option value="piper">Piper server</option>
-              <option value="browser">Browser</option>
-            </select>
-          </label>
-          <div id="tts-provider-status" class="provider-status">Controllo del motore voce in corso...</div>
-          <div class="voice-selects">
-            <label class="voice-field" for="tts-gameplay-voice">
-              <span>Voce guida</span>
-              <select id="tts-gameplay-voice"></select>
-            </label>
-            <label class="voice-field" for="tts-story-voice">
-              <span>Voce narratore</span>
-              <select id="tts-story-voice"></select>
-            </label>
-          </div>
-          <button id="tts-repeat-btn" class="secondary-btn" type="button">🔊 Ripeti ultimo messaggio</button>
-        </div>
-
-        <section class="family-voice-entry">
-          <h2>Studio Voci di Famiglia</h2>
-          <p>Apri la pagina dedicata per registrare i testi con una voce familiare usando il teleprompter su canvas.</p>
-          <a class="secondary-btn family-voice-link" href="family-voice.html">Apri lo studio</a>
-        </section>
-
-        <details class="help" id="help-panel" open>
-          <summary>Come si gioca</summary>
-          <ul>
-            <li>Usa le tue carte <strong>fisiche</strong> davanti alla webcam.</li>
-            <li>Mostra una carta per <strong>iniziare</strong> o per <strong>giocare</strong>.</li>
-            <li>Ascolta la voce: ti aiuta a capire quale elemento e' piu' adatto.</li>
-            <li>Ogni partita insegna qualcosa su <strong>natura, equilibrio e rispetto</strong>.</li>
-            <li>Se vinci il round, conquisti il nemico. Se perdi, perdi 1 cuore.</li>
-            <li>Completa 8 round per finire la tua avventura elementale.</li>
-          </ul>
-        </details>
-
-        <details class="debug-panel" id="debug-panel">
-          <summary>Debug Rapido</summary>
-          <div class="debug-grid">
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="ROSSO">ROSSO</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="BLU">BLU</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="VERDE">VERDE</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="GIALLO">GIALLO</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="VIOLA">VIOLA</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="NERO">NERO</button>
-          </div>
-          <div class="debug-grid debug-specials">
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="SEQUENZIALE">SEQUENZIALE</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="SIMULTANEO">SIMULTANEO</button>
-            <button class="secondary-btn debug-btn" type="button" data-debug-id="RESTART">RESTART</button>
-          </div>
-          <p class="debug-note">Simula i QR code senza usare carte fisiche o webcam. Per aprirlo subito usa anche <code>?debug=1</code>.</p>
-        </details>
-
-        <div id="status" class="status">Mostra una carta alla webcam per iniziare la tua avventura.</div>
-      </aside>
+      </div>
     </main>
+  </div>
+
+  <div id="settings-modal" class="settings-modal" hidden>
+    <button id="settings-backdrop" class="settings-modal-backdrop" type="button" aria-label="Chiudi impostazioni"></button>
+    <section class="settings-modal-shell" aria-labelledby="settings-title" role="dialog" aria-modal="true">
+      <div class="settings-modal-topbar">
+        <div>
+          <p class="settings-kicker">Opzioni avanzate</p>
+          <h2 id="settings-title">Impostazioni</h2>
+        </div>
+        <button id="settings-close-btn" class="secondary-btn subtle" type="button">Chiudi</button>
+      </div>
+
+      <div class="privacy-note">
+        <strong>Privacy webcam</strong>
+        <p>La fotocamera serve solo al riconoscimento delle carte nel browser. Nessun video viene inviato ai server.</p>
+      </div>
+
+      <div class="audio-controls">
+        <label class="tts-toggle">
+          <input type="checkbox" id="tts-toggle" checked>
+          Voce guida attiva
+        </label>
+        <label class="voice-field" for="tts-provider">
+          <span>Motore voce</span>
+          <select id="tts-provider">
+            <option value="auto">Automatico</option>
+            <option value="piper">Piper server</option>
+            <option value="browser">Browser</option>
+          </select>
+        </label>
+        <div id="tts-provider-status" class="provider-status">Controllo del motore voce in corso...</div>
+        <div class="voice-selects">
+          <label class="voice-field" for="tts-gameplay-voice">
+            <span>Voce guida</span>
+            <select id="tts-gameplay-voice"></select>
+          </label>
+          <label class="voice-field" for="tts-story-voice">
+            <span>Voce narratore</span>
+            <select id="tts-story-voice"></select>
+          </label>
+        </div>
+        <button id="tts-repeat-btn" class="secondary-btn" type="button">🔊 Ripeti ultimo messaggio</button>
+      </div>
+
+      <section class="family-voice-entry">
+        <h2>Studio Voci di Famiglia</h2>
+        <p>Apri la pagina dedicata per registrare i testi con una voce familiare usando il teleprompter su canvas.</p>
+        <a class="secondary-btn family-voice-link" href="family-voice.html">Apri lo studio</a>
+      </section>
+
+      <details class="debug-panel" id="debug-panel">
+        <summary>Debug Rapido</summary>
+        <div class="debug-grid">
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="ROSSO">ROSSO</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="BLU">BLU</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="VERDE">VERDE</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="GIALLO">GIALLO</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="VIOLA">VIOLA</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="NERO">NERO</button>
+        </div>
+        <div class="debug-grid debug-specials">
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="SEQUENZIALE">SEQUENZIALE</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="SIMULTANEO">SIMULTANEO</button>
+          <button class="secondary-btn debug-btn" type="button" data-debug-id="RESTART">RESTART</button>
+        </div>
+        <p class="debug-note">Simula i QR code senza usare carte fisiche o webcam. Per aprirlo subito usa anche <code>?debug=1</code>.</p>
+      </details>
+    </section>
   </div>
 
   <script type="module" src="sketch.js"></script>

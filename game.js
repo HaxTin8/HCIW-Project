@@ -1,8 +1,6 @@
 /**
  * Logica di gioco pura, testabile in Node.js.
- * Versione no-WIMP con due modalita:
- * - sequenziale: 1 nemico, 1 carta per round
- * - simultanea: N nemici, N carte caricate una alla volta, scontro simultaneo
+ * Versione no-WIMP semplificata: 1 nemico, 1 carta per round.
  */
 
 import { CARD_TEMPLATES, TEMPLATE_MAP, createCard, resolveCombat } from './cards.js';
@@ -18,14 +16,12 @@ const GAME_STATE = {
 class Game {
     constructor(options = {}) {
       this.roundsToWin = options.roundsToWin ?? 8;
-      this.simultaneousCards = options.simultaneousCards ?? 3;
       this.startingHp = options.startingHp ?? 3;
-      this.playMode = options.playMode ?? 'sequential'; // 'sequential' | 'simultaneous'
       this.reset();
     }
 
     get cardsPerRound() {
-      return this.playMode === 'simultaneous' ? this.simultaneousCards : 1;
+      return 1;
     }
 
     reset() {
@@ -141,63 +137,7 @@ class Game {
       return { card, result };
     }
 
-    /**
-     * Modalita simultanea: gioca tutte le carte contro tutti i nemici.
-     */
-    playAllCards(templateIds) {
-      if (this.state !== GAME_STATE.PLAYING) return null;
-      if (templateIds.length !== this.cardsPerRound) return null;
-
-      this.lastPlayedCards = [];
-      this.lastRoundResults = [];
-      for (let i = 0; i < this.cardsPerRound; i++) {
-        let bonusPower = 0;
-        if (i === 0 && this._storyNextCardBonus) {
-          bonusPower += this._storyNextCardBonus;
-        }
-        if (this._storyAllCardsBonus) {
-          bonusPower += this._storyAllCardsBonus;
-        }
-        const card = createCard(templateIds[i], bonusPower);
-        const combatOptions = {
-          halfElementBonus: this._storyHalfElement,
-          ignoreWeakness: this._storyIgnoreWeakness
-        };
-        let result = resolveCombat(card, this.enemies[i], combatOptions);
-        if (result === 'draw' && this._storyDrawAsWin) result = 'win';
-        this.lastPlayedCards.push(card);
-        this.lastRoundResults.push(result);
-      }
-      delete this._storyNextCardBonus;
-
-      const wins = this.lastRoundResults.filter(r => r === 'win').length;
-      const losses = this.lastRoundResults.filter(r => r === 'lose').length;
-
-      if (wins > losses) {
-        this.lastResult = 'win';
-        this.log(`Round vinto: ${wins}-${losses}.`);
-      } else if (losses > wins) {
-        this.lastResult = 'lose';
-        this.hp--;
-        if (this._storyHpPenaltyOnLoss) {
-          this.hp -= this._storyHpPenaltyOnLoss;
-        }
-        this.log(`Round perso: ${wins}-${losses}.`);
-      } else {
-        this.lastResult = 'draw';
-        this.log(`Pareggio: ${wins}-${losses}.`);
-      }
-
-      this.state = GAME_STATE.ROUND_RESULT;
-      return { results: this.lastRoundResults, lastResult: this.lastResult };
-    }
-
     playCard(templateId) {
-      if (this.playMode === 'simultaneous') {
-        // Nella modalita simultanea, playCard gioca una singola carta
-        // solo se e l'ultima mancante; altrimenti viene gestito dallo sketch.
-        return null;
-      }
       return this.playCardSequential(templateId);
     }
 
@@ -236,26 +176,6 @@ class Game {
         return { action: 'restart', state: this.state };
       }
 
-      if (id === 'SEQUENZIALE') {
-        this.playMode = 'sequential';
-        this.resetStoryEffects();
-        if (this.state === GAME_STATE.PLAYING) {
-          this.regenerateEnemiesForCurrentRound();
-        }
-        this.log('Modalita\' tranquilla: una carta alla volta.');
-        return { action: 'mode', mode: 'sequential', state: this.state };
-      }
-
-      if (id === 'SIMULTANEO') {
-        this.playMode = 'simultaneous';
-        this.resetStoryEffects();
-        if (this.state === GAME_STATE.PLAYING) {
-          this.regenerateEnemiesForCurrentRound();
-        }
-        this.log('Modalita\' sfida: piu\' carte nello stesso round.');
-        return { action: 'mode', mode: 'simultaneous', state: this.state };
-      }
-
       if (this.state === GAME_STATE.IDLE ||
           this.state === GAME_STATE.GAME_OVER ||
           this.state === GAME_STATE.VICTORY) {
@@ -268,11 +188,12 @@ class Game {
       }
 
       if (this.state === GAME_STATE.PLAYING) {
-        if (this.playMode === 'sequential') {
-          const res = this.playCardSequential(id);
-          return { action: 'play', ...res, state: this.state };
+        if (!TEMPLATE_MAP[id]) {
+          this.log(`Carta non riconosciuta: ${id}.`);
+          return { action: 'unknown', state: this.state };
         }
-        return { action: 'card', templateId: id, state: this.state };
+        const res = this.playCardSequential(id);
+        return { action: 'play', ...res, state: this.state };
       }
 
       return { action: 'none', state: this.state };
@@ -287,7 +208,6 @@ class Game {
         state: this.state,
         hp: this.hp,
         round: this.round,
-        playMode: this.playMode,
         enemiesCount: this.enemies.length,
         currentEnemyIndex: this.currentEnemyIndex,
         enemy: this.currentEnemy ? { name: this.currentEnemy.name, element: this.currentEnemy.element, power: this.currentEnemy.power } : null

@@ -51,6 +51,31 @@
       color: #35502a;
     }
 
+    .play-modes {
+      margin: 14px auto 0;
+      max-width: 820px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(220, 230, 242, 0.95);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .play-modes h2 {
+      margin: 0 0 8px;
+      font-family: 'Beachday', 'Space Grotesk', sans-serif;
+      font-size: 1.2rem;
+      color: #21361a;
+    }
+
+    .play-modes p {
+      margin: 0 0 8px;
+    }
+
+    .play-modes p:last-child {
+      margin-bottom: 0;
+    }
+
     .no-print button {
       padding: 10px 22px;
       background: #E67E3C;
@@ -183,9 +208,14 @@
 </head>
 <body>
   <div class="no-print">
-    <h1>🖨️ Carte da stampare</h1>
+    <h1>Carte da stampare</h1>
     <p>Ogni carta include il proprio QR code. Usale con <span data-app-name>Specula Elementae</span>.</p>
     <p>Suggerimento: stampa su carta rigida o plastifica le carte.</p>
+    <div class="play-modes">
+      <h2>Due modi per giocare</h2>
+      <p><strong>Modalita libera:</strong> tutte le 6 carte restano sempre disponibili, quindi il gioco e' piu' immediato e adatto ai bambini piu' piccoli.</p>
+      <p><strong>Modalita mazzo:</strong> prepara un mazzo con piu' copie delle 6 carte, pesca 5 carte all'inizio e poi continua a pescare durante la partita. In questo modo il gioco diventa piu' difficile e strategico.</p>
+    </div>
     <button onclick="window.print()">Stampa</button>
   </div>
 

@@ -4,25 +4,18 @@ import { CARD_TEMPLATES, resolveCombat, createCard } from '../cards.js';
 
 console.log('Running test-game.js...');
 
-// Test: stato iniziale (default sequenziale)
+// Test: stato iniziale
 const g1 = new Game();
 assert.strictEqual(g1.state, GAME_STATE.IDLE);
 assert.strictEqual(g1.hp, 3);
 assert.strictEqual(g1.round, 0);
-assert.strictEqual(g1.playMode, 'sequential');
 assert.strictEqual(g1.cardsPerRound, 1);
 
-// Test: start sequenziale
+// Test: start
 const state = g1.start();
 assert.strictEqual(state, GAME_STATE.PLAYING);
 assert.strictEqual(g1.enemies.length, 1);
 assert(g1.currentEnemy, 'dovrebbe esserci un nemico');
-
-// Test: start simultaneo
-const gSim = new Game({ playMode: 'simultaneous' });
-gSim.start();
-assert.strictEqual(gSim.enemies.length, 3);
-assert.strictEqual(gSim.cardsPerRound, 3);
 
 // Test: handleQR in idle avvia la partita
 const g2 = new Game();
@@ -55,23 +48,6 @@ g5.start();
 const invalid = g5.playCardSequential('INESISTENTE');
 assert.strictEqual(invalid, null);
 assert.strictEqual(g5.state, GAME_STATE.PLAYING);
-
-// Test: modalità simultanea con 3 carte
-const g6 = new Game({ playMode: 'simultaneous' });
-g6.start();
-const ids = g6.enemies.map(enemy => {
-  for (const template of CARD_TEMPLATES) {
-    const card = createCard(template.id);
-    if (resolveCombat(card, enemy) === 'win') {
-      return template.id;
-    }
-  }
-  return CARD_TEMPLATES[0].id;
-});
-const allEvent = g6.playAllCards(ids);
-assert(allEvent, 'playAllCards dovrebbe restituire un risultato');
-assert.strictEqual(allEvent.results.length, 3);
-assert.strictEqual(g6.state, GAME_STATE.ROUND_RESULT);
 
 // Test: simulazione vittoria in sequenziale
 const g7 = new Game({ roundsToWin: 1 });
@@ -106,26 +82,12 @@ g8.endRound();
 assert.strictEqual(g8.state, GAME_STATE.GAME_OVER);
 assert.strictEqual(g8.hp, 0);
 
-// Test: cambio modalità
+// Test: i QR di modalità non fanno nulla di speciale
 const g9 = new Game();
 g9.start();
-assert.strictEqual(g9.cardsPerRound, 1);
-g9.handleQR('SIMULTANEO');
-assert.strictEqual(g9.playMode, 'simultaneous');
-assert.strictEqual(g9.cardsPerRound, 3);
-
-// Test: cambio modalità durante PLAYING rigenera i nemici correttamente
-const g10 = new Game({ playMode: 'sequential' });
-g10.start();
-assert.strictEqual(g10.enemies.length, 1);
-g10.handleQR('SIMULTANEO');
-assert.strictEqual(g10.playMode, 'simultaneous');
-assert.strictEqual(g10.enemies.length, 3);
-assert.strictEqual(g10.currentEnemyIndex, 0);
-g10.handleQR('SEQUENZIALE');
-assert.strictEqual(g10.playMode, 'sequential');
-assert.strictEqual(g10.enemies.length, 1);
-assert.strictEqual(g10.currentEnemyIndex, 0);
+const modeEvent = g9.handleQR('SIMULTANEO');
+assert.strictEqual(modeEvent.action, 'unknown');
+assert.strictEqual(g9.enemies.length, 1);
 
 // Test: snapshot
 const snap = g1.snapshot();

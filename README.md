@@ -227,18 +227,11 @@ npm test
 1. **Le tue carte sono solo fisiche**: stampale da `print.html` e tienile davanti a te. Il computer non mostra mai le carte che hai.
 2. **Inizia**: mostra una carta fisica con QR code alla webcam.
 3. Il computer annuncia i nemici del round.
-4. **Slot carte**: mostra alla webcam le carte che vuoi giocare. Ogni carta va nel primo slot libero.
-5. **Gioca**: quando tutti gli slot sono pieni, il computer risolve tutti gli scontri insieme.
-6. **Vittoria del round**: se vinci più scontri di quanti ne perdi, prendi i nemici.
-7. **Sconfitta del round**: se perdi più scontri di quanti ne vinci, perdi 1 HP.
+4. **Slot carta**: mostra alla webcam la carta che vuoi giocare.
+5. **Gioca**: togli la carta oppure aspetta un attimo per far partire lo scontro.
+6. **Vittoria del round**: se la tua carta batte il nemico, superi la prova.
+7. **Sconfitta del round**: se la tua carta perde contro il nemico, perdi 1 HP.
 8. **Vinci** dopo 8 round. A Game Over, mostra una carta per ricominciare.
-
-### Modalità di gioco
-
-Puoi cambiare modalità in qualsiasi momento mostrando alla webcam i QR speciali (stampati in `print.html`):
-
-- **`SEQUENZIALE`** (default): 1 nemico e 1 slot per round.
-- **`SIMULTANEO`**: 3 nemici e 3 slot per round. Carichi 3 carte una alla volta, poi lo scontro avviene tutto insieme.
 
 Puoi anche usare il QR speciale `RESTART` per riavviare.
 

@@ -31,21 +31,20 @@ var screenFlash = 0;
 
 var webcamState = 'loading';
 var webcamMessage = 'Sto preparando la fotocamera...';
+var statusMessage = 'Mostra una carta alla webcam per iniziare la tua avventura.';
 
-// Slot fisici virtuali: il giocatore carica una carta per slot.
-// In sequenziale c'e 1 slot; in simultaneo ci sono N slot.
+// Slot fisico virtuale: il giocatore carica una carta alla volta.
 var playerSlots = [];
 var slotFrames = [];     // frame con la stessa carta in ogni slot
 var slotEmptyFrames = 0; // frame senza QR rilevato
 var slotLocked = false;
 var slotLockFrames = 0;
-var slotsFilled = 0;
 const SLOT_EMPTY_THRESHOLD = 8;      // frame senza QR prima di giocare la carta rimossa
 const SLOT_AUTOPLAY_THRESHOLD = 120; // frame con la stessa carta ferma -> gioca automaticamente
 const SLOT_LOCK_TIMEOUT = 300;
+var scaleFactor = 1;
+var isCompact = false;
 
-// Animazione multi-slot
-var multiSlotAnim = [];  // { card, targetEnemyIndex, progress }
 var waitingForTTS = false;
 
 var cameraSection;
@@ -59,6 +58,11 @@ var ttsGameplayVoiceSelect;
 var ttsStoryVoiceSelect;
 var helpPanel;
 var debugPanel;
+var logBalloonEl;
+var settingsModal;
+var settingsOpenBtn;
+var settingsCloseBtn;
+var settingsBackdrop;
 var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
@@ -130,17 +134,31 @@ function makeBgTransparent(img) {
 }
 
 function getCanvasSize() {
-  const container = select('#canvas-container');
-  const availableWidth = (container && container.elt ? container.elt.clientWidth : windowWidth - 40);
-  const cw = min(availableWidth, 900);
+  const container = document.getElementById('canvas-container');
 
-  if (isMobile()) {
-    const viewportH = windowHeight || window.innerHeight || 740;
-    const desiredH = min(max(cw * 1.18, 460), viewportH * 0.72);
-    return { width: cw, height: desiredH };
+  let w = container ? container.clientWidth : 0;
+  let h = container ? container.clientHeight : 0;
+
+  if (w <= 0) {
+    w = windowWidth < 720 ? windowWidth - 40 : 900;
   }
 
-  return { width: cw, height: cw * (600 / 900) };
+  if (h <= 0) {
+    h = windowHeight < 600 ? windowHeight - 160 : 600;
+  }
+
+  isCompact = w < 720;
+  scaleFactor = !isCompact ? min(w / 900, h / 600) : min(w / 380, h / 520);
+
+  return { width: w, height: h };
+}
+
+function sx(v) {
+  return v * scaleFactor;
+}
+
+function sy(v) {
+  return v * scaleFactor;
 }
 
 function detectDebugMode() {
@@ -210,14 +228,6 @@ function setup() {
   storyEngine = new StoryEngine();
   storyEngine.loadIndex().catch(() => {});
 
-  const qrToggle = select('#qr-toggle');
-  if (qrToggle) {
-    qrToggle.changed(() => {
-      qrEnabled = qrToggle.checked();
-      logToStatus(qrEnabled ? 'Lettura delle carte attivata.' : 'Lettura delle carte disattivata.');
-    });
-  }
-
   cameraBtn = select('#camera-btn');
   switchCameraBtn = select('#switch-camera-btn');
   ttsToggle = select('#tts-toggle');
@@ -228,6 +238,11 @@ function setup() {
   ttsStoryVoiceSelect = select('#tts-story-voice');
   helpPanel = select('#help-panel');
   debugPanel = select('#debug-panel');
+  logBalloonEl = select('#log-balloon');
+  settingsModal = select('#settings-modal');
+  settingsOpenBtn = select('#settings-open-btn');
+  settingsCloseBtn = select('#settings-close-btn');
+  settingsBackdrop = select('#settings-backdrop');
   debugMode = detectDebugMode();
 
   if (debugMode && debugPanel && debugPanel.elt) {
@@ -242,6 +257,24 @@ function setup() {
         if (!debugId) return;
         handleQRDetected(debugId);
       });
+    });
+  }
+
+  if (settingsOpenBtn) {
+    settingsOpenBtn.mousePressed(openSettingsModal);
+  }
+
+  if (settingsCloseBtn) {
+    settingsCloseBtn.mousePressed(closeSettingsModal);
+  }
+
+  if (settingsBackdrop) {
+    settingsBackdrop.mousePressed(closeSettingsModal);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeSettingsModal();
     });
   }
 
@@ -325,6 +358,18 @@ function setup() {
 function windowResized() {
   const size = getCanvasSize();
   resizeCanvas(size.width, size.height);
+}
+
+function openSettingsModal() {
+  if (!settingsModal || !settingsModal.elt) return;
+  settingsModal.elt.hidden = false;
+  document.body.classList.add('settings-modal-open');
+}
+
+function closeSettingsModal() {
+  if (!settingsModal || !settingsModal.elt) return;
+  settingsModal.elt.hidden = true;
+  document.body.classList.remove('settings-modal-open');
 }
 
 function isMobile() {
@@ -602,6 +647,8 @@ function draw() {
       drawEndScreen('BRAVISSIMO!', '#2ecc71', 'Mostra una carta per una nuova avventura.');
       break;
   }
+
+  updateLogBalloon();
 }
 
 /* =========================================================
@@ -610,32 +657,87 @@ function draw() {
 
 function drawIdle() {
   drawHeroArt();
-  drawDecorations();
   drawWebcamPreview();
   drawWebcamOverlay();
+  drawHelpPanel();
 
-  fill('#2b2318');
-  textAlign(CENTER, CENTER);
-  textFont(magicFont || 'Space Grotesk');
-  textSize(isCompactMobileLayout() ? 38 : 46);
-  textStyle(NORMAL);
-  text('Specula Elementae', width / 2, height / 2 - 86);
+  if (isCompact) {
+    const tx = sx(20);
+    const tw = width - sx(40);
+    const centerX = width / 2;
+    const gradW = 105 * scaleFactor;
+    const grad = drawingContext.createLinearGradient(centerX - gradW, sy(24), centerX + gradW, sy(24));
+    grad.addColorStop(0, '#DD4B50');
+    grad.addColorStop(0.2, '#498AE2');
+    grad.addColorStop(0.4, '#ECE64E');
+    grad.addColorStop(0.6, '#97B481');
+    grad.addColorStop(0.8, '#498AE2');
+    grad.addColorStop(1, '#8380BC');
 
-  textFont('Nunito');
-  textSize(isCompactMobileLayout() ? 16 : 18);
-  fill('#5a4a34');
-  text('Un solitario alchemico guidato dalla magia della tua webcam.', width / 2, height / 2 - 20);
+    textFont(magicFont || 'Space Grotesk');
+    textSize(52 * scaleFactor);
+    drawingContext.fillStyle = grad;
+    textAlign(CENTER, TOP);
+    text('Specula Elementae', width / 2, sy(24));
 
-  if (webcamState === 'active') {
-    const t = millis() / 1000;
-    const pulse = sin(t * 3) * 5;
-    fill('#498AE2');
-    textFont('Beachday');
-    textSize(isCompactMobileLayout() ? 22 : 26);
-    text('Mostra una carta alla webcam per iniziare', width / 2, height / 2 + 42 + pulse);
+    textSize(13 * scaleFactor);
+    fill('#5a4a34');
+    textFont('Nunito');
+    text('Un solitario alchemico guidato dalla magia della tua webcam.', tx, sy(95), tw);
+
+    if (webcamState === 'active') {
+      const t = millis() / 1000;
+      const pulse = sin(t * 3) * sx(4);
+      fill('#498AE2');
+      textFont('Beachday');
+      textSize(24 * scaleFactor);
+      textLeading(30 * scaleFactor);
+      textAlign(CENTER, TOP);
+      text('Mostra una carta alla webcam per iniziare', tx, sy(145) + pulse, tw);
+    }
+
+    fill('#2b2318');
+    textAlign(CENTER, TOP);
+    textSize(11 * scaleFactor);
+    textFont('Nunito');
+    text(statusMessage, tx, height - sy(55), tw);
+  } else {
+    const tx = sx(380);
+    const tw = sx(380);
+    const centerX = tx + tw / 2;
+    const gradW = sx(135) * scaleFactor;
+    const grad = drawingContext.createLinearGradient(centerX - gradW, sy(120), centerX + gradW, sy(120));
+    grad.addColorStop(0, '#DD4B50');
+    grad.addColorStop(0.2, '#498AE2');
+    grad.addColorStop(0.4, '#ECE64E');
+    grad.addColorStop(0.6, '#97B481');
+    grad.addColorStop(0.8, '#498AE2');
+    grad.addColorStop(1, '#8380BC');
+
+    textFont(magicFont || 'Space Grotesk');
+    textSize(70 * scaleFactor);
+    drawingContext.fillStyle = grad;
+    textAlign(CENTER, TOP);
+    text('Specula Elementae', tx, sy(120), tw);
+
+    textSize(14 * scaleFactor);
+    fill('#5a4a34');
+    textFont('Nunito');
+    text('Un solitario alchemico guidato dalla magia della tua webcam.', tx, sy(225), tw);
+
+    if (webcamState === 'active') {
+      const t = millis() / 1000;
+      const pulse = sin(t * 3) * sx(4);
+      fill('#498AE2');
+      textFont('Beachday');
+      textSize(26 * scaleFactor);
+      textLeading(36 * scaleFactor);
+      textAlign(CENTER, TOP);
+      text('Mostra una carta alla webcam per iniziare', tx, sy(295) + pulse, tw);
+    }
   }
 
-  textFont('Space Grotesk');
+  textFont('Beachday');
 
   idleHintTimer++;
 
@@ -645,14 +747,23 @@ function drawIdle() {
 }
 
 function drawPlaying() {
-  drawDecorations();
   drawHUD();
-  drawMapOverlay();
   drawEnemies();
   drawSlots();
   drawWebcamPreview();
   drawWebcamOverlay();
   drawLog();
+  drawMapOverlay();
+  drawHelpPanel();
+
+  if (isCompact) {
+    fill('#2b2318');
+    textAlign(CENTER, CENTER);
+    textSize(13 * scaleFactor);
+    textFont('Nunito');
+    text(statusMessage, sx(20), sy(300), width - sx(40));
+    textFont('Beachday');
+  }
 
   if (!waitingForTTS && qrEnabled && webcamState === 'active' && video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0 && frameCount % 10 === 0) {
     readQR();
@@ -661,8 +772,6 @@ function drawPlaying() {
   if (!waitingForTTS) {
     updateSlots();
   }
-  updateMultiSlotAnim();
-
   if (waitingForTTS) {
     drawTTSPause();
   }
@@ -672,7 +781,7 @@ function drawRoundResult() {
   drawPlaying();
 
   // Animazione sequenziale della carta verso il nemico
-  if (lastPlayedCard && game.playMode === 'sequential') {
+  if (lastPlayedCard) {
     animProgress += 0.04;
     const cx = lerp(width / 2, width / 2, animProgress);
     const cy = lerp(height - 50, 120, easeOutCubic(animProgress));
@@ -706,7 +815,7 @@ function drawRoundResult() {
     fill('#e74c3c');
     text('ROUND PERSO', width / 2, height / 2 - 30);
   } else {
-    fill('#f1c40f');
+    fill('#8380BC');
     text('PAREGGIO', width / 2, height / 2 - 30);
   }
 
@@ -720,7 +829,6 @@ function drawRoundResult() {
     resultTimer = 0;
     lastPlayedCard = null;
     animProgress = 0;
-    multiSlotAnim = [];
     slotLocked = false;
     const oldRound = game.round;
     game.endRound();
@@ -738,9 +846,9 @@ function drawRoundResult() {
 }
 
 function drawEndScreen(title, color, subtitle) {
-  drawDecorations();
   drawWebcamPreview();
   drawWebcamOverlay();
+  drawHelpPanel();
 
   fill(255);
   textAlign(CENTER, CENTER);
@@ -773,19 +881,28 @@ function drawDecorations() {
 
 function drawHeroArt() {
   if (heroIntroStart === 0) heroIntroStart = millis();
-  if (isCompactMobileLayout()) return;
 
   push();
+  const xOffset = isCompact ? (width / 2 - sx(130)) : 0;
+  const yOffset = isCompact ? (height - sy(420)) : 0;
+  const opacityMultiplier = isCompact ? 0.25 : 1.0;
+
   for (const key of HERO_ZORDER) {
     const img = heroImages[key];
     if (!img || !img.width) continue;
     const idx = HERO_APPEAR.indexOf(key);
-    const progress = constrain((millis() - heroIntroStart - idx * 450) / 850, 0, 1);
+    const progress = constrain((millis() - heroIntroStart - idx * 550) / 900, 0, 1);
     if (progress <= 0) continue;
     const eased = easeOutCubic(progress);
     const layer = HERO_LAYOUT[key];
-    tint(255, 210 * eased);
-    image(img, layer.x, layer.y + (1 - eased) * 60, layer.w, layer.w);
+    tint(255, 255 * eased * opacityMultiplier);
+    image(
+      img,
+      sx(layer.x) + xOffset,
+      sy(layer.y) + yOffset + sy((1 - eased) * 70),
+      sx(layer.w),
+      sx(layer.w)
+    );
   }
   pop();
 }
@@ -815,10 +932,10 @@ function getCanvasLayout() {
       slotCardH: 145,
       slotGap: 20,
       slotsY: height - 145 / 2 - 40,
-      previewW: 160,
-      previewH: 120,
-      previewX: width - 160 - 20,
-      previewY: 20,
+      previewW: sx(160),
+      previewH: sy(120),
+      previewX: width - sx(160) - sx(20),
+      previewY: sy(20),
       logX: 20,
       logY: height - 150,
       logW: 320,
@@ -832,16 +949,17 @@ function getCanvasLayout() {
     };
   }
 
-  const previewW = min(118, width * 0.31);
-  const previewH = round(previewW * 0.75);
+  const previewW = game && game.state === GAME_STATE.IDLE ? sx(160) : sx(100);
+  const previewH = game && game.state === GAME_STATE.IDLE ? sy(120) : sy(75);
   const hudX = 14;
   const hudY = 16;
-  const previewX = width - previewW - 14;
+  const previewX = game && game.state === GAME_STATE.IDLE ? width / 2 - previewW / 2 : width - previewW - sx(15);
+  const previewY = game && game.state === GAME_STATE.IDLE ? sy(240) : sy(15);
   const topReserved = max(previewH + 34, 112);
-  const enemyCardW = game && game.playMode === 'simultaneous' ? 82 : 112;
-  const enemyCardH = game && game.playMode === 'simultaneous' ? 118 : 154;
-  const slotCardW = game && game.playMode === 'simultaneous' ? 72 : 84;
-  const slotCardH = game && game.playMode === 'simultaneous' ? 102 : 118;
+  const enemyCardW = 112;
+  const enemyCardH = 154;
+  const slotCardW = 84;
+  const slotCardH = 118;
   const logH = 72;
   const bottomSafe = 18;
   const slotsY = height - slotCardH / 2 - logH - bottomSafe - 14;
@@ -856,17 +974,17 @@ function getCanvasLayout() {
     modeFont: 11,
     enemyCardW,
     enemyCardH,
-    enemyGap: game && game.playMode === 'simultaneous' ? 10 : 18,
+    enemyGap: 18,
     enemyY: topReserved + enemyCardH / 2 + 16,
     enemyBadgeOffsetY: 16,
     slotCardW,
     slotCardH,
-    slotGap: game && game.playMode === 'simultaneous' ? 8 : 12,
+    slotGap: 12,
     slotsY,
     previewW,
     previewH,
     previewX,
-    previewY: 14,
+    previewY,
     logX: 14,
     logY: height - logH - bottomSafe,
     logW: width - 28,
@@ -911,16 +1029,6 @@ function drawHUD() {
     textSize(layout.hudSmallFont);
     text(getEnemyHint(enemy), layout.hudX, layout.hudY + (layout.compact ? 72 : 84), layout.hudHintWidth, layout.compact ? 32 : 48);
   }
-
-  // Indicatore modalità
-  const modeLabel = game.playMode === 'simultaneous' ? 'SFIDA MULTIPLA' : 'UNA CARTA ALLA VOLTA';
-  fill(game.playMode === 'simultaneous' ? '#d19725' : '#498AE2');
-  textAlign(RIGHT, TOP);
-  textSize(layout.modeFont);
-  textStyle(BOLD);
-  if (!layout.compact) {
-    text(modeLabel, width - 20, layout.hudY);
-  }
   textStyle(NORMAL);
 }
 
@@ -940,12 +1048,9 @@ function drawEnemies() {
     const enemy = game.enemies[i];
     let x = startX + i * (cardW + gap);
 
-    if (enemyShake > 0 && i === game.currentEnemyIndex && game.playMode === 'sequential') {
+    if (enemyShake > 0 && i === game.currentEnemyIndex) {
       x += random(-enemyShake, enemyShake);
     }
-
-    // In modalita simultanea, evidenzia il nemico corrispondente allo slot attivo
-    const isActive = game.playMode === 'sequential' ? i === game.currentEnemyIndex : true;
 
     push();
     translate(x, y);
@@ -955,12 +1060,6 @@ function drawEnemies() {
     fill(255);
     textAlign(CENTER, TOP);
     text(`NEMICO ${i + 1}`, 0, -cardH / 2 + 8);
-
-    if (!isActive) {
-      fill(0, 0, 0, 100);
-      noStroke();
-      rect(-cardW / 2, -cardH / 2, cardW, cardH, 10);
-    }
     pop();
   }
 }
@@ -1019,12 +1118,8 @@ function drawWebcamPreview() {
   const py = layout.previewY;
 
   push();
-  if (currentFacingMode === 'user') {
-    translate(px + pw, py);
-    scale(-1, 1);
-  } else {
-    translate(px, py);
-  }
+  translate(px + pw, py);
+  scale(-1, 1);
   if (video && video.elt && video.elt.readyState >= 2 && video.elt.videoWidth > 0) {
     image(video, 0, 0, pw, ph);
   } else {
@@ -1037,79 +1132,179 @@ function drawWebcamPreview() {
 
   if (webcamFrameImg && webcamFrameImg.width > 0) {
     push();
-    drawingContext.shadowColor = isReady ? (qrEnabled ? '#97B481' : '#DD4B50') : '#ECBA4E';
-    drawingContext.shadowBlur = 10;
-    image(webcamFrameImg, px - 4, py - 4, pw + 8, ph + 8);
+    drawingContext.shadowColor = isReady ? '#97B481' : '#498AE2';
+    drawingContext.shadowBlur = sx(10);
+    image(webcamFrameImg, px - sx(4), py - sx(4), pw + sx(8), ph + sx(8));
     pop();
   } else {
-    stroke(isReady ? (qrEnabled ? '#7ca35e' : '#b77b52') : '#d3a03e');
-    strokeWeight(2);
+    stroke(isReady ? '#97B481' : '#498AE2');
+    strokeWeight(sx(2));
     noFill();
-    rect(px, py, pw, ph, 8);
+    rect(px, py, pw, ph, sx(8));
   }
 
-  fill('#5a4a34');
-  noStroke();
-  textAlign(CENTER, TOP);
-  textSize(layout.compact ? 10 : 11);
-  if (isReady) {
-    text(qrEnabled ? 'Carte: lettura attiva' : 'Carte: lettura in pausa', px + pw / 2, py + ph + 6);
-  } else {
+  if (!isReady) {
+    fill('#5a4a34');
+    noStroke();
+    textFont('Nunito');
+    textAlign(CENTER, TOP);
+    textSize(11 * scaleFactor);
     text(webcamMessage, px + pw / 2, py + ph + 6);
   }
+
+  textFont('Beachday');
 }
 
 function drawWebcamOverlay() {
   if (webcamState === 'active') return;
 
-  const layout = getCanvasLayout();
-  const overlayW = layout.overlayW;
-  const overlayH = layout.overlayH;
-  const x = width / 2 - overlayW / 2;
-  const y = layout.overlayY;
+  const isProblem = webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported';
+  const accent = isProblem ? '#DD4B50' : '#498AE2';
+  const hint = isProblem ? 'Concedi il permesso e premi F5 per ricaricare.' : null;
+  const alertW = isCompact ? width - sx(30) : sx(440);
+  const alertH = hint ? sy(88) : sy(64);
+  const x = width / 2 - alertW / 2;
+  const y = height - alertH - sy(24);
+  const r = sx(6);
 
-  fill(255, 252, 245, 240);
-  stroke('#d9ccb3');
-  strokeWeight(1);
-  rect(x, y, overlayW, overlayH, 14);
+  noStroke();
+  fill('#ffffff');
+  rect(x, y, alertW, alertH, r);
+  fill(accent);
+  rect(x, y, sx(6), alertH, r, 0, 0, r);
 
-  fill('#7c5a1f');
+  const icoX = x + sx(34);
+  const icoY = y + alertH / 2;
+  fill(accent);
+  ellipse(icoX, icoY, sx(28), sx(28));
+  fill('#ffffff');
   textAlign(CENTER, CENTER);
-  textSize(layout.compact ? 16 : 18);
+  textSize(15 * scaleFactor);
+  text(isProblem ? '!' : '📷', icoX, icoY);
+
+  const tx = x + sx(58);
+  const tw = alertW - sx(70);
+  textAlign(LEFT, CENTER);
+
+  textFont('Beachday');
   textStyle(BOLD);
-  text('📷 Webcam', width / 2, y + 30);
+  fill('#2b2318');
+  textSize(13 * scaleFactor);
+  text('Webcam', tx, hint ? y + sy(22) : icoY - sy(8));
   textStyle(NORMAL);
 
+  textFont('Nunito');
   fill('#5a4a34');
-  textSize(layout.compact ? 12 : 14);
-  text(webcamMessage, width / 2, y + 75);
+  textSize(12 * scaleFactor);
+  text(webcamMessage, tx, hint ? y + sy(40) : icoY + sy(9), tw);
 
-  if (webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
-    textSize(12);
-    fill('#c56b57');
-    text('Concedi il permesso e premi F5 per ricaricare.', width / 2, y + 105);
+  if (hint) {
+    fill(accent);
+    textSize(11 * scaleFactor);
+    text(hint, tx, y + sy(62), tw);
   }
+
+  textFont('Beachday');
 }
 
 function drawLog() {
-  const layout = getCanvasLayout();
-  const x = layout.logX;
-  const y = layout.logY;
-  const w = layout.logW;
-  const h = layout.logH;
+  if (isCompact) {
+    fill('#5a4a34');
+    textFont('Nunito');
+    textAlign(CENTER, BOTTOM);
+    textSize(11 * scaleFactor);
+    const lastLog = game.logs[game.logs.length - 1] || '';
+    text(lastLog ? '• ' + lastLog : '', width / 2, height - sy(10));
+    textFont('Beachday');
+  }
+}
 
-  fill(255, 252, 245, 232);
-  stroke('#d9ccb3');
-  strokeWeight(1);
-  rect(x, y, w, h, 8);
+function drawHelpPanel() {
+  if (isCompact) return;
+
+  const pw = sx(180);
+  const px = width - pw - sx(20);
+  const ph = sy(360);
+  const py = height - ph - sy(20);
+  const padX = sx(14);
+  const innerW = pw - padX * 2;
 
   noStroke();
-  fill('#5a4a34');
+  fill('#ffffff');
+  stroke('#dce6f2');
+  strokeWeight(sx(1));
+  rect(px, py, pw, ph, sx(12));
+
+  noStroke();
+  textFont('Beachday');
+  textStyle(BOLD);
+  fill('#498AE2');
   textAlign(LEFT, TOP);
-  textSize(layout.logFont);
-  const visible = game.logs.slice(-layout.logItems);
-  for (let i = 0; i < visible.length; i++) {
-    text('• ' + visible[i], x + 10, y + 10 + i * (layout.compact ? 18 : 20), w - 20, layout.compact ? 16 : 18);
+  textSize(16 * scaleFactor);
+  text('COME SI GIOCA', px + padX, py + sy(12));
+  textStyle(NORMAL);
+
+  const lines = [
+    'Le tue carte sono fisiche.',
+    'Mostrale alla webcam per giocarle.',
+    'Il computer legge e parla.',
+    'Se vinci avanzi nella mappa.',
+    'Se perdi, -1 HP.',
+    'Vinci dopo 8 round.'
+  ];
+
+  textFont('Nunito');
+  textSize(11 * scaleFactor);
+  textLeading(15 * scaleFactor);
+  const bulletIndent = sx(16);
+  let cursorY = py + sy(44);
+  const lineBoxH = sy(32);
+  for (const line of lines) {
+    fill('#498AE2');
+    textAlign(LEFT, TOP);
+    text('✤', px + padX, cursorY);
+    fill('#2b2318');
+    text(line, px + padX + bulletIndent, cursorY, innerW - bulletIndent, lineBoxH);
+    cursorY += lineBoxH;
+  }
+
+  cursorY += sy(6);
+  stroke('#dce6f2');
+  strokeWeight(sx(1));
+  line(px + padX, cursorY, px + pw - padX, cursorY);
+  cursorY += sy(12);
+
+  noStroke();
+  textFont('Beachday');
+  textStyle(BOLD);
+  fill('#498AE2');
+  textSize(13 * scaleFactor);
+  text('STATO', px + padX, cursorY);
+  textStyle(NORMAL);
+  cursorY += sy(20);
+
+  textFont('Nunito');
+  fill('#5a4a34');
+  textSize(11 * scaleFactor);
+  textLeading(15 * scaleFactor);
+  text(statusMessage, px + padX, cursorY, innerW, py + ph - cursorY - sy(12));
+
+  textFont('Beachday');
+}
+
+function updateLogBalloon() {
+  if (!logBalloonEl || !logBalloonEl.elt) return;
+
+  const isPlayingState = game.state === GAME_STATE.PLAYING || game.state === GAME_STATE.ROUND_RESULT;
+  const shouldBeActive = isPlayingState && !isCompact;
+
+  if (shouldBeActive) {
+    logBalloonEl.addClass('active');
+    const visible = game.logs.slice(-4);
+    const html = visible.map((log) => `<div style="margin-bottom: 6px;">• ${log}</div>`).join('');
+    logBalloonEl.html(`<div style="width: 100%;">${html}</div>`);
+  } else {
+    logBalloonEl.removeClass('active');
   }
 }
 
@@ -1155,12 +1350,12 @@ function drawMapOverlay() {
       dotColor = '#97B481';
       dotTextColor = '#ffffff';
     } else if (r === game.round) {
-      dotColor = '#ECBA4E';
+      dotColor = '#498AE2';
       dotTextColor = '#ffffff';
       dotR = 12;
       const pulse = sin(millis() / 250) * 0.5 + 0.5;
       noStroke();
-      fill(236, 186, 78, 90 * pulse);
+      fill(73, 138, 226, 90 * pulse);
       ellipse(px, py, dotR * 2 + 12 * pulse, dotR * 2 + 12 * pulse);
     } else {
       dotColor = '#e6dfd1';
@@ -1387,7 +1582,6 @@ function resetSlots() {
     playerSlots.push(null);
     slotFrames.push(0);
   }
-  slotsFilled = 0;
   slotLocked = false;
   slotLockFrames = 0;
   slotEmptyFrames = 0;
@@ -1437,63 +1631,33 @@ function drawSlots() {
 function updateSlots() {
   if (slotLocked) return;
 
-  // Modalità sequenziale: slot singolo, togli per giocare
-  if (game.playMode === 'sequential') {
-    const card = playerSlots[0];
-    if (card) {
-      if (slotEmptyFrames >= SLOT_EMPTY_THRESHOLD) {
-        playSequentialSlot();
-      } else if (slotFrames[0] >= SLOT_AUTOPLAY_THRESHOLD) {
-        playSequentialSlot();
-      }
+  const card = playerSlots[0];
+  if (card) {
+    if (slotEmptyFrames >= SLOT_EMPTY_THRESHOLD) {
+      playSequentialSlot();
+    } else if (slotFrames[0] >= SLOT_AUTOPLAY_THRESHOLD) {
+      playSequentialSlot();
     }
-    return;
-  }
-
-  // Modalità simultanea: quando tutti gli slot sono pieni, gioca tutti insieme
-  if (slotsFilled === game.cardsPerRound) {
-    playAllSlots();
   }
 }
 
 function loadCardIntoSlot(templateId) {
   if (slotLocked) return;
 
-  if (game.playMode === 'sequential') {
-    if (playerSlots[0]) {
-      slotFrames[0]++;
-      return;
-    }
-    playerSlots[0] = createCard(templateId);
-    slotFrames[0] = 0;
-    slotEmptyFrames = 0;
-    audio.playCard();
-    const card = playerSlots[0];
-    tts.speak(`${getCardLearningLine(card)} Togli la carta.`, {
-      channel: 'gameplay',
-      promptKey: getCardPromptKey(card, true)
-    });
-    logToStatus(`${card.name} nello slot. ${getCardLearningLine(card)}`);
+  if (playerSlots[0]) {
+    slotFrames[0]++;
     return;
   }
-
-  // Modalità simultanea: primo slot libero
-  for (let i = 0; i < game.cardsPerRound; i++) {
-    if (!playerSlots[i]) {
-      playerSlots[i] = createCard(templateId);
-      slotFrames[i] = 0;
-      slotEmptyFrames = 0;
-      slotsFilled++;
-      audio.playCard();
-      const card = playerSlots[i];
-      tts.speak(getCardLearningLine(card), {
-        channel: 'gameplay',
-        promptKey: getCardPromptKey(card, false)
-      });
-      logToStatus(`${card.name} nello slot ${i + 1}. ${getCardLearningLine(card)}`);
-      return;
-    }
-  }
+  playerSlots[0] = createCard(templateId);
+  slotFrames[0] = 0;
+  slotEmptyFrames = 0;
+  audio.playCard();
+  const card = playerSlots[0];
+  tts.speak(`${getCardLearningLine(card)} Togli la carta.`, {
+    channel: 'gameplay',
+    promptKey: getCardPromptKey(card, true)
+  });
+  logToStatus(`${card.name} nello slot. ${getCardLearningLine(card)}`);
 }
 
 function playSequentialSlot() {
@@ -1522,7 +1686,7 @@ function playSequentialSlot() {
     spawnFloater('SCONFITTA', width / 2, 120, '#e74c3c');
   } else {
     audio.playDraw();
-    spawnFloater('PAREGGIO', width / 2, 120, '#f1c40f');
+    spawnFloater('PAREGGIO', width / 2, 120, '#8380BC');
   }
 
   tts.onIdle(() => {
@@ -1534,90 +1698,6 @@ function playSequentialSlot() {
       tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
     }
   });
-}
-
-function playAllSlots() {
-  if (slotLocked) return;
-  slotLocked = true;
-
-  const ids = playerSlots.map(c => c.templateId);
-  const cards = playerSlots.slice();
-
-  // Svuota gli slot
-  for (let i = 0; i < game.cardsPerRound; i++) {
-    playerSlots[i] = null;
-    slotFrames[i] = 0;
-  }
-  slotsFilled = 0;
-  slotEmptyFrames = 0;
-
-  const event = game.playAllCards(ids);
-  if (!event) {
-    slotLocked = false;
-    return;
-  }
-
-  // Avvia animazioni di tutte le carte verso i rispettivi nemici
-  multiSlotAnim = [];
-  for (let i = 0; i < cards.length; i++) {
-    multiSlotAnim.push({
-      card: cards[i],
-      enemyIndex: i,
-      progress: 0
-    });
-  }
-
-  // Feedback sonoro unico
-  if (event.lastResult === 'win') audio.playWin();
-  else if (event.lastResult === 'lose') audio.playLose();
-  else audio.playDraw();
-
-  // TTS breve con risultato
-  const wins = event.results.filter(r => r === 'win').length;
-  const losses = event.results.filter(r => r === 'lose').length;
-  tts.speak(`Hai fatto ${wins} vittorie e ${losses} sconfitte in questo round.`, { channel: 'gameplay' });
-
-  tts.onIdle(() => {
-    multiSlotAnim = [];
-    if (event.lastResult === 'win') {
-      screenFlash = { color: [46, 204, 113], alpha: 120 };
-      spawnFloater('+ NEMICI', width / 2, 120, '#2ecc71');
-    } else if (event.lastResult === 'lose') {
-      screenFlash = { color: [231, 76, 60], alpha: 120 };
-      spawnFloater('-1 HP', width / 2, 120, '#e74c3c');
-    } else {
-      screenFlash = { color: [241, 196, 15], alpha: 100 };
-    }
-    resultTimer = 0;
-    slotLocked = false;
-  });
-}
-
-function updateMultiSlotAnim() {
-  for (const anim of multiSlotAnim) {
-    anim.progress += 0.04;
-  }
-
-  if (multiSlotAnim.length === 0) return;
-
-  const n = game.cardsPerRound;
-  const enemyCardW = 140;
-  const gap = 30;
-  const totalW = n * enemyCardW + (n - 1) * gap;
-  const startX = (width - totalW) / 2 + enemyCardW / 2;
-  const enemyY = 160;
-  const startY = height - 40;
-
-  for (const anim of multiSlotAnim) {
-    const cx = lerp(startX + anim.enemyIndex * (enemyCardW + gap), startX + anim.enemyIndex * (enemyCardW + gap), anim.progress);
-    const cy = lerp(startY, enemyY, easeOutCubic(anim.progress));
-
-    push();
-    translate(cx, cy);
-    rotate(anim.progress * TWO_PI);
-    drawCardFrame(0, 0, 80, 115, anim.card.color, anim.card.emoji, anim.card.name, anim.card.power, anim.card.element);
-    pop();
-  }
 }
 
 function drawTTSPause() {
@@ -1666,8 +1746,8 @@ function handleQRDetected(id) {
   audio.init();
   tts.prime();
 
-  // Gestione start/restart/mode: questi non passano dallo slot
-  if (id === 'RESTART' || id === 'SEQUENZIALE' || id === 'SIMULTANEO' ||
+  // Gestione start/restart: questi non passano dallo slot
+  if (id === 'RESTART' ||
       game.state === GAME_STATE.IDLE ||
       game.state === GAME_STATE.GAME_OVER ||
       game.state === GAME_STATE.VICTORY) {
@@ -1682,7 +1762,6 @@ function handleQRDetected(id) {
       });
       lastPlayedCard = null;
       animProgress = 0;
-      multiSlotAnim = [];
       resetSlots();
       if (game.currentEnemy) {
         tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
@@ -1717,24 +1796,6 @@ function handleQRDetected(id) {
         storyEngine.reset();
       }
       return;
-    } else if (event.action === 'mode') {
-      tts.speak(event.mode === 'simultaneous' ? 'Modalita sfida multipla.' : 'Modalita una carta alla volta.', {
-        priority: true,
-        channel: 'gameplay',
-        promptKey: event.mode === 'simultaneous' ? 'game.mode.simultaneous' : 'game.mode.sequential'
-      });
-      logToStatus(event.mode === 'simultaneous' ? 'Modalita\' sfida multipla.' : 'Modalita\' una carta alla volta.');
-      if (game.state === GAME_STATE.PLAYING) {
-        resetSlots();
-        multiSlotAnim = [];
-        lastPlayedCard = null;
-        animProgress = 0;
-        if (game.currentEnemy) {
-          const enemyNames = game.enemies.map(e => `${e.name} forza ${e.power}`).join(', ');
-          tts.speak(enemyNames, { channel: 'gameplay' });
-          logToStatus(`Carte avversarie: ${enemyNames}`);
-        }
-      }
     } else if (event.action === 'unknown') {
       logToStatus(`Non riconosco questa carta: ${id}.`);
     }
@@ -1766,7 +1827,16 @@ function handleQRDetected(id) {
    ========================================================= */
 
 function logToStatus(message) {
+  statusMessage = message;
   if (statusEl) statusEl.html(message);
+  if (logBalloonEl) {
+    logBalloonEl.html(message);
+    if (message) {
+      logBalloonEl.addClass('active');
+    } else {
+      logBalloonEl.removeClass('active');
+    }
+  }
 }
 
 /* =========================================================

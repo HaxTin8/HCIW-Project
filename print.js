@@ -42,16 +42,12 @@ function createCardElement(template) {
   return card;
 }
 
-for (let i = 0; i < 2; i++) {
-  for (const template of CARD_TEMPLATES) {
-    sheet.appendChild(createCardElement(template));
-  }
+for (const template of CARD_TEMPLATES) {
+  sheet.appendChild(createCardElement(template));
 }
 
 const specialCards = [
-  { id: 'RESTART', name: 'Ricomincia', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#1C0A0A' },
-  { id: 'SEQUENZIALE', name: 'Sequenziale', emoji: '1️⃣', desc: 'Un nemico per round.', color: '#498AE2' },
-  { id: 'SIMULTANEO', name: 'Simultaneo', emoji: '3️⃣', desc: 'Tre nemici per round.', color: '#ECBA4E' }
+  { id: 'RESTART', name: 'Ricomincia', emoji: '🔄', desc: 'Ricomincia la partita.', color: '#1C0A0A' }
 ];
 
 for (const special of specialCards) {
