@@ -1893,9 +1893,9 @@ function playSequentialSlot() {
     lastPlayedCard = null;
     animProgress = 0;
 
-    if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
-      tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
-    }
+    // if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
+    //   tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+    // }
   });
 }
 
