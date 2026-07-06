@@ -141,7 +141,7 @@ function makeBgTransparent(img) {
 
 function getCanvasSize() {
   const parent = document.querySelector('main');
-  
+
   // Read the available space in the <main> tag
   let availableW = parent ? parent.clientWidth : windowWidth;
   let availableH = parent ? parent.clientHeight : windowHeight;
@@ -153,7 +153,7 @@ function getCanvasSize() {
     const paddingBottom = parseFloat(style.paddingBottom) || 0;
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const paddingRight = parseFloat(style.paddingRight) || 0;
-    
+
     availableW = availableW - paddingLeft - paddingRight;
     availableH = availableH - paddingTop - paddingBottom;
   }
@@ -241,7 +241,7 @@ function setup() {
   statusEl = select('#status');
   game = new Game();
   storyEngine = new StoryEngine();
-  storyEngine.loadIndex().catch(() => {});
+  storyEngine.loadIndex().catch(() => { });
 
   cameraBtn = select('#camera-btn');
   switchCameraBtn = select('#switch-camera-btn');
@@ -1944,9 +1944,9 @@ function handleQRDetected(id) {
   tts.prime();
 
   if (id === 'RESTART' ||
-      game.state === GAME_STATE.IDLE ||
-      game.state === GAME_STATE.GAME_OVER ||
-      game.state === GAME_STATE.VICTORY) {
+    game.state === GAME_STATE.IDLE ||
+    game.state === GAME_STATE.GAME_OVER ||
+    game.state === GAME_STATE.VICTORY) {
     const event = game.handleQR(id);
 
     if (event.action === 'start' || event.action === 'restart') {
@@ -1969,10 +1969,8 @@ function handleQRDetected(id) {
               channel: 'story',
               promptKey: getStoryPromptKey()
             });
-            if (game.currentEnemy) {
-              tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
-            }
           }
+
           if (storyEngine.hasNext()) {
             storyEngine.advance();
             const effectsLog = storyEngine.applyGameEffects(game);
@@ -1987,6 +1985,11 @@ function handleQRDetected(id) {
               game.regenerateEnemiesForCurrentRound();
             }
           }
+          setTimeout(() => {
+            if (game.currentEnemy) {
+              tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+            }
+          }, 500)
         });
       } else {
         storyEngine.reset();
