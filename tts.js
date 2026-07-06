@@ -66,7 +66,12 @@ function resolveApiUrl(pathname) {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         this._loadBrowserVoices();
         if ('onvoiceschanged' in window.speechSynthesis) {
-          window.speechSynthesis.onvoiceschanged = () => this._loadBrowserVoices();
+          window.speechSynthesis.onvoiceschanged = () => {
+            this._loadBrowserVoices();
+            this._resolveActiveProvider();
+            this._notifyProviderChanged();
+            this._notifyVoicesChanged();
+          };
         }
       }
 

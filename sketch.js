@@ -220,6 +220,10 @@ function populateVoiceSelect(selectEl, catalog, channel) {
   }
 
   selectEl.html(options.join(''));
+  const resolvedValue = voices.some((voice) => voice.voiceURI === currentVoiceURI)
+    ? currentVoiceURI
+    : '';
+  selectEl.elt.value = resolvedValue;
 }
 
 function setup() {
@@ -402,6 +406,9 @@ function setup() {
   tts.onProviderChanged((providerState) => {
     populateProviderSelect(ttsProviderSelect, providerState);
     updateProviderStatus(providerState);
+    const catalog = tts.getVoiceCatalog();
+    populateVoiceSelect(ttsGameplayVoiceSelect, catalog, 'gameplay');
+    populateVoiceSelect(ttsStoryVoiceSelect, catalog, 'story');
   });
 
   updateFamilyVoiceSettingsState();
@@ -1007,7 +1014,10 @@ function drawRoundResult() {
       resetSlots();
       checkStoryEvents();
       if (game.round !== oldRound) {
-        tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+        tts.speak(getEnemyAnnouncement(game.currentEnemy), {
+          channel: 'gameplay',
+          promptKey: getEnemyPromptKey(game.currentEnemy)
+        });
       }
     }
   }
@@ -1898,9 +1908,12 @@ function playSequentialSlot() {
     lastPlayedCard = null;
     animProgress = 0;
 
-    // if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
-    //   tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
-    // }
+    if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
+      tts.speak(getEnemyAnnouncement(game.currentEnemy), {
+        channel: 'gameplay',
+        promptKey: getEnemyPromptKey(game.currentEnemy)
+      });
+    }
   });
 }
 
