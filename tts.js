@@ -66,7 +66,12 @@ function resolveApiUrl(pathname) {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         this._loadBrowserVoices();
         if ('onvoiceschanged' in window.speechSynthesis) {
-          window.speechSynthesis.onvoiceschanged = () => this._loadBrowserVoices();
+          window.speechSynthesis.onvoiceschanged = () => {
+            this._loadBrowserVoices();
+            this._resolveActiveProvider();
+            this._notifyProviderChanged();
+            this._notifyVoicesChanged();
+          };
         }
       }
 
@@ -557,6 +562,29 @@ function resolveApiUrl(pathname) {
         : channelConfig.rateDesktop;
     }
 
+    _estimateSpeechTimeout(item, provider) {
+      if (item && item.promptKey) {
+        return 60000;
+      }
+
+      const text = item && item.text ? String(item.text) : '';
+      const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+      const rate = Math.max(0.6, this._getChannelRate(item && item.channel ? item.channel : 'gameplay'));
+      const wordsPerSecond = provider === 'browser' ? 2.2 * rate : 2.5 * rate;
+      const estimatedMs = Math.ceil((words / wordsPerSecond) * 1000) + 5000;
+      return Math.max(12000, Math.min(45000, estimatedMs));
+    }
+
+    _getFamilyPromptFallbacks(promptKey) {
+      if (!promptKey) return [];
+
+      const keys = [promptKey];
+      if (/^game\.card\.[^.]+\.remove$/i.test(promptKey)) {
+        keys.push(promptKey.replace(/\.remove$/i, ''));
+      }
+      return keys;
+    }
+
     _processQueue() {
       if (this.speaking || this.queue.length === 0) {
         this._checkIdle();
@@ -577,7 +605,7 @@ function resolveApiUrl(pathname) {
 
       const token = ++this.currentSpeechToken;
       this.currentSpeechStartedAt = Date.now();
-      this._armSpeechSafetyTimer(token);
+      this._armSpeechSafetyTimer(token, item, provider);
 
       this._speakItem(item, provider)
         .then(() => {
@@ -629,14 +657,15 @@ function resolveApiUrl(pathname) {
       this._checkIdle();
     }
 
-    _armSpeechSafetyTimer(token) {
+    _armSpeechSafetyTimer(token, item, provider) {
       this._clearSpeechSafetyTimer();
+      const timeoutMs = this._estimateSpeechTimeout(item, provider);
       this.currentSpeechSafetyTimer = window.setTimeout(() => {
         if (token !== this.currentSpeechToken || !this.speaking) {
           return;
         }
         this._forceSpeechRecovery('safety_timeout');
-      }, 8000);
+      }, timeoutMs);
     }
 
     _clearSpeechSafetyTimer() {
@@ -697,17 +726,25 @@ function resolveApiUrl(pathname) {
         return false;
       }
 
-      if (!window.familyVoice.isEnabled() || !window.familyVoice.hasRecording(promptKey)) {
+      if (!window.familyVoice.isEnabled()) {
         return false;
       }
 
-      const objectUrl = await window.familyVoice.fetchRecordingObjectUrl(promptKey);
-      if (!objectUrl) {
-        return false;
+      for (const candidateKey of this._getFamilyPromptFallbacks(promptKey)) {
+        if (!window.familyVoice.hasRecording(candidateKey)) {
+          continue;
+        }
+
+        const objectUrl = await window.familyVoice.fetchRecordingObjectUrl(candidateKey);
+        if (!objectUrl) {
+          continue;
+        }
+
+        await this._playAudioUrl(objectUrl, false);
+        return true;
       }
 
-      await this._playAudioUrl(objectUrl, false);
-      return true;
+      return false;
     }
 
     _speakWithBrowser(text, channel) {

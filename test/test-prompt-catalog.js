@@ -13,6 +13,7 @@ function run() {
   assert.ok(catalog.groups.length >= 2, 'Il catalogo deve includere gameplay e storie');
   assert.ok(catalog.promptMap['game.start'], 'Il prompt di inizio partita deve esistere');
   assert.ok(catalog.promptMap['game.card.ROSSO'], 'Il prompt della carta rossa deve esistere');
+  assert.ok(catalog.promptMap['game.enemy.ROSSO'], 'Il prompt del nemico rosso deve esistere');
 
   const storyPrompt = Object.keys(catalog.promptMap).find((key) => key.startsWith('story.'));
   assert.ok(storyPrompt, 'Deve esistere almeno un prompt narrativo');

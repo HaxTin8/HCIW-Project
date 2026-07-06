@@ -141,7 +141,7 @@ function makeBgTransparent(img) {
 
 function getCanvasSize() {
   const parent = document.querySelector('main');
-  
+
   // Read the available space in the <main> tag
   let availableW = parent ? parent.clientWidth : windowWidth;
   let availableH = parent ? parent.clientHeight : windowHeight;
@@ -153,7 +153,7 @@ function getCanvasSize() {
     const paddingBottom = parseFloat(style.paddingBottom) || 0;
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const paddingRight = parseFloat(style.paddingRight) || 0;
-    
+
     availableW = availableW - paddingLeft - paddingRight;
     availableH = availableH - paddingTop - paddingBottom;
   }
@@ -220,6 +220,10 @@ function populateVoiceSelect(selectEl, catalog, channel) {
   }
 
   selectEl.html(options.join(''));
+  const resolvedValue = voices.some((voice) => voice.voiceURI === currentVoiceURI)
+    ? currentVoiceURI
+    : '';
+  selectEl.elt.value = resolvedValue;
 }
 
 function setup() {
@@ -241,7 +245,7 @@ function setup() {
   statusEl = select('#status');
   game = new Game();
   storyEngine = new StoryEngine();
-  storyEngine.loadIndex().catch(() => {});
+  storyEngine.loadIndex().catch(() => { });
 
   cameraBtn = select('#camera-btn');
   switchCameraBtn = select('#switch-camera-btn');
@@ -402,6 +406,9 @@ function setup() {
   tts.onProviderChanged((providerState) => {
     populateProviderSelect(ttsProviderSelect, providerState);
     updateProviderStatus(providerState);
+    const catalog = tts.getVoiceCatalog();
+    populateVoiceSelect(ttsGameplayVoiceSelect, catalog, 'gameplay');
+    populateVoiceSelect(ttsStoryVoiceSelect, catalog, 'story');
   });
 
   updateFamilyVoiceSettingsState();
@@ -1007,7 +1014,10 @@ function drawRoundResult() {
       resetSlots();
       checkStoryEvents();
       if (game.round !== oldRound) {
-        tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+        tts.speak(getEnemyAnnouncement(game.currentEnemy), {
+          channel: 'gameplay',
+          promptKey: getEnemyPromptKey(game.currentEnemy)
+        });
       }
     }
   }
@@ -1554,6 +1564,11 @@ function getEnemyAnnouncement(enemy) {
   return `${enemy.name}.`;
 }
 
+function getEnemyPromptKey(enemy) {
+  if (!enemy || !enemy.templateId) return '';
+  return `game.enemy.${enemy.templateId}`;
+}
+
 function getCardPromptKey(card, requiresRemoval = false) {
   if (!card || !card.templateId) return '';
   return requiresRemoval ? `game.card.${card.templateId}.remove` : `game.card.${card.templateId}`;
@@ -1894,7 +1909,10 @@ function playSequentialSlot() {
     animProgress = 0;
 
     if (game.state === GAME_STATE.PLAYING && game.currentEnemy) {
-      tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+      tts.speak(getEnemyAnnouncement(game.currentEnemy), {
+        channel: 'gameplay',
+        promptKey: getEnemyPromptKey(game.currentEnemy)
+      });
     }
   });
 }
@@ -1944,9 +1962,9 @@ function handleQRDetected(id) {
   tts.prime();
 
   if (id === 'RESTART' ||
-      game.state === GAME_STATE.IDLE ||
-      game.state === GAME_STATE.GAME_OVER ||
-      game.state === GAME_STATE.VICTORY) {
+    game.state === GAME_STATE.IDLE ||
+    game.state === GAME_STATE.GAME_OVER ||
+    game.state === GAME_STATE.VICTORY) {
     const event = game.handleQR(id);
 
     if (event.action === 'start' || event.action === 'restart') {
@@ -1969,10 +1987,8 @@ function handleQRDetected(id) {
               channel: 'story',
               promptKey: getStoryPromptKey()
             });
-            if (game.currentEnemy) {
-              tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
-            }
           }
+
           if (storyEngine.hasNext()) {
             storyEngine.advance();
             const effectsLog = storyEngine.applyGameEffects(game);
@@ -1987,6 +2003,14 @@ function handleQRDetected(id) {
               game.regenerateEnemiesForCurrentRound();
             }
           }
+          setTimeout(() => {
+            if (game.currentEnemy) {
+              tts.speak(getEnemyAnnouncement(game.currentEnemy), {
+                channel: 'gameplay',
+                promptKey: getEnemyPromptKey(game.currentEnemy)
+              });
+            }
+          }, 500)
         });
       } else {
         storyEngine.reset();
