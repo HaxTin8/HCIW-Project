@@ -1554,6 +1554,11 @@ function getEnemyAnnouncement(enemy) {
   return `${enemy.name}.`;
 }
 
+function getEnemyPromptKey(enemy) {
+  if (!enemy || !enemy.templateId) return '';
+  return `game.enemy.${enemy.templateId}`;
+}
+
 function getCardPromptKey(card, requiresRemoval = false) {
   if (!card || !card.templateId) return '';
   return requiresRemoval ? `game.card.${card.templateId}.remove` : `game.card.${card.templateId}`;
@@ -1987,7 +1992,10 @@ function handleQRDetected(id) {
           }
           setTimeout(() => {
             if (game.currentEnemy) {
-              tts.speak(getEnemyAnnouncement(game.currentEnemy), { channel: 'gameplay' });
+              tts.speak(getEnemyAnnouncement(game.currentEnemy), {
+                channel: 'gameplay',
+                promptKey: getEnemyPromptKey(game.currentEnemy)
+              });
             }
           }, 500)
         });

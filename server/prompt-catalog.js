@@ -54,6 +54,13 @@ function buildGameplayPrompts() {
       title: `${template.name} nello slot singolo`,
       script: `${learningLine} Togli la carta.`
     });
+    prompts.push({
+      id: `game.enemy.${template.id}`,
+      groupId: 'gameplay',
+      channel: 'gameplay',
+      title: `${template.name} nemico`,
+      script: template.name
+    });
   }
 
   return prompts;
