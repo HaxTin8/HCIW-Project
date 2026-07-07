@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { createAppHandler } from './server/app-server.js';
@@ -19,6 +20,8 @@ const WATCH_TARGETS = [
   'cards.js',
   'family-voice.js',
   'game.js',
+  'i18n.js',
+  'locales',
   'sketch.js',
   'stories',
   'tts.js',
@@ -46,6 +49,39 @@ function legacyFullReloadPlugin() {
         if (isWatchedFile(file)) {
           server.ws.send({ type: 'full-reload', path: '*' });
         }
+      });
+    }
+  };
+}
+
+function rebuildLocales() {
+  const build = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-locales.js')], {
+    cwd: ROOT,
+    stdio: 'inherit'
+  });
+
+  if (build.status !== 0) {
+    throw new Error('Locale build failed');
+  }
+}
+
+function localeBuildPlugin() {
+  const localesDir = path.resolve(ROOT, 'locales');
+
+  return {
+    name: 'specula-build-locales',
+    buildStart() {
+      rebuildLocales();
+    },
+    configureServer(server) {
+      server.watcher.add(localesDir);
+      server.watcher.on('change', (file) => {
+        const resolvedFile = path.resolve(file);
+        if (!resolvedFile.startsWith(`${localesDir}${path.sep}`) || !resolvedFile.endsWith('.json')) {
+          return;
+        }
+        rebuildLocales();
+        server.ws.send({ type: 'full-reload', path: '*' });
       });
     }
   };
@@ -119,6 +155,6 @@ export default defineConfig(() => {
         }
       }
     },
-    plugins: [legacyFullReloadPlugin(), devApiPlugin(), copyLegacyRuntimePlugin()]
+    plugins: [localeBuildPlugin(), legacyFullReloadPlugin(), devApiPlugin(), copyLegacyRuntimePlugin()]
   };
 });

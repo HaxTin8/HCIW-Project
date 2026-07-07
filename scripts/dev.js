@@ -10,6 +10,17 @@ const DEBUG_MODE = process.argv.includes('--debug');
 const VITE_PORT = Number(process.env.VITE_PORT || 5173);
 const viteBin = path.join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
 
+function buildLocales() {
+  const build = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-locales.js')], {
+    cwd: ROOT,
+    stdio: 'inherit'
+  });
+
+  if (build.status !== 0) {
+    process.exit(build.status || 1);
+  }
+}
+
 function buildStories() {
   const build = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-stories.js')], {
     cwd: ROOT,
@@ -26,6 +37,7 @@ if (!fs.existsSync(viteBin)) {
   process.exit(1);
 }
 
+buildLocales();
 buildStories();
 
 const viteEnv = {

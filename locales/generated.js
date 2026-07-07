@@ -1,11 +1,22 @@
 export const DEFAULT_LOCALE = "it";
-export const SUPPORTED_LOCALES = ["en", "it"];
+export const SUPPORTED_LOCALES = ["en","it"];
 export const LOCALES = {
   "en": {
-    "meta": { "locale": "en", "label": "English" },
-    "languages": { "it": "Italian", "en": "English" },
-    "app": { "title": "Specula Elementae" },
-    "ui": { "languageLabel": "Language", "languageOption": "{label}" },
+    "meta": {
+      "locale": "en",
+      "label": "English"
+    },
+    "languages": {
+      "it": "Italian",
+      "en": "English"
+    },
+    "app": {
+      "title": "Specula Elementae"
+    },
+    "ui": {
+      "languageLabel": "Language",
+      "languageOption": "{label}"
+    },
     "gamePage": {
       "title": "Specula Elementae",
       "settingsAria": "Settings",
@@ -130,20 +141,50 @@ export const LOCALES = {
     },
     "cards": {
       "elements": {
-        "FIRE": { "name": "Ember" },
-        "WATER": { "name": "Droplet" },
-        "NATURE": { "name": "Sprout" },
-        "LIGHT": { "name": "Ray" },
-        "SHADOW": { "name": "Eclipse" },
-        "THUNDER": { "name": "Bolt" }
+        "FIRE": {
+          "name": "Ember"
+        },
+        "WATER": {
+          "name": "Droplet"
+        },
+        "NATURE": {
+          "name": "Sprout"
+        },
+        "LIGHT": {
+          "name": "Ray"
+        },
+        "SHADOW": {
+          "name": "Eclipse"
+        },
+        "THUNDER": {
+          "name": "Bolt"
+        }
       },
       "templates": {
-        "ROSSO": { "name": "Ember", "description": "Ember warms and brings light, but it must be used carefully." },
-        "BLU": { "name": "Droplet", "description": "Droplet helps plants grow, but it works best when used calmly." },
-        "VERDE": { "name": "Sprout", "description": "Sprout grows strong, but only with plenty of patience." },
-        "GIALLO": { "name": "Ray", "description": "Ray lights the path, but it dazzles anyone who stares too long." },
-        "VIOLA": { "name": "Eclipse", "description": "Eclipse makes you pause and observe, but staying too long in the shadows can make you lose your way." },
-        "NERO": { "name": "Bolt", "description": "Bolt arrives fast and strong, but using it without thinking can lead to losing control." }
+        "ROSSO": {
+          "name": "Ember",
+          "description": "Ember warms and brings light, but it must be used carefully."
+        },
+        "BLU": {
+          "name": "Droplet",
+          "description": "Droplet helps plants grow, but it works best when used calmly."
+        },
+        "VERDE": {
+          "name": "Sprout",
+          "description": "Sprout grows strong, but only with plenty of patience."
+        },
+        "GIALLO": {
+          "name": "Ray",
+          "description": "Ray lights the path, but it dazzles anyone who stares too long."
+        },
+        "VIOLA": {
+          "name": "Eclipse",
+          "description": "Eclipse makes you pause and observe, but staying too long in the shadows can make you lose your way."
+        },
+        "NERO": {
+          "name": "Bolt",
+          "description": "Bolt arrives fast and strong, but using it without thinking can lead to losing control."
+        }
       }
     },
     "game": {
@@ -157,21 +198,21 @@ export const LOCALES = {
       "resume": "Here we go again.",
       "unknownCard": "Unknown card: {id}."
     },
-      "sketch": {
-        "webcamPreparing": "Preparing the camera...",
-        "webcamChanging": "Switching camera...",
-        "webcamUnsupported": "This browser does not support the camera well. Try Chrome, Edge, or Safari.",
-        "webcamRequestingPermission": "Requesting permission to use the camera...",
-        "webcamActive": "Camera active.",
-        "webcamActiveStatus": "Camera active. Show a card to start your adventure.",
-        "webcamAttempt": "Camera attempt {attempt}/3...",
-        "webcamRetry": "I can't enable the camera. Tap the button to try again.",
-        "webcamNotFound": "I can't find a camera. Connect one and reload.",
-        "webcamNotWorking": "I couldn't find a working camera.",
-        "webcamSearchError": "There was a problem while searching for cameras.",
-        "showCard": "Show a card to the webcam to start your adventure.",
-        "introSubtitle": "An elemental solitaire guided by the magic of your webcam.",
-        "introPrompt": "Show a card to the webcam to begin",
+    "sketch": {
+      "webcamPreparing": "Preparing the camera...",
+      "webcamChanging": "Switching camera...",
+      "webcamUnsupported": "This browser does not support the camera well. Try Chrome, Edge, or Safari.",
+      "webcamRequestingPermission": "Requesting permission to use the camera...",
+      "webcamActive": "Camera active.",
+      "webcamActiveStatus": "Camera active. Show a card to start your adventure.",
+      "webcamAttempt": "Camera attempt {attempt}/3...",
+      "webcamRetry": "I can't enable the camera. Tap the button to try again.",
+      "webcamNotFound": "I can't find a camera. Connect one and reload.",
+      "webcamNotWorking": "I couldn't find a working camera.",
+      "webcamSearchError": "There was a problem while searching for cameras.",
+      "showCard": "Show a card to the webcam to start your adventure.",
+      "introSubtitle": "An elemental solitaire guided by the magic of your webcam.",
+      "introPrompt": "Show a card to the webcam to begin",
       "providerAuto": "Automatic",
       "providerPiper": "Piper server",
       "providerBrowser": "Browser",
@@ -187,35 +228,42 @@ export const LOCALES = {
       "modeSimultaneous": "Multi-challenge mode.",
       "modeSequential": "One card at a time mode.",
       "unrecognizedCard": "I don't recognize this card: {id}.",
-        "listening": "Listening...",
-        "roundWon": "ROUND WON!",
-        "roundLost": "ROUND LOST",
-        "roundDraw": "DRAW",
-        "roundWonBody": "You passed the challenge.",
-        "roundLostBody": "You lose one heart, but you can learn from this round.",
-        "roundDrawBody": "Look more carefully at the elements for the next turn.",
-        "gameOverTitle": "ADVENTURE OVER",
-        "gameOverSubtitle": "Show a card to restart.",
-        "victoryTitle": "WELL DONE!",
-        "victorySubtitle": "Show a card for a new adventure.",
-        "hearts": "Hearts:",
-        "roundCounter": "Round: {current}/{total}",
-        "enemyCounter": "Enemy card: {current}/{total}",
-        "enemyHint": "Hint: against {enemy}, try {choices}.",
-        "webcamLabel": "Webcam",
-        "webcamPermissionHint": "Grant permission and press F5 to reload.",
-        "howToPlay": "HOW TO PLAY",
-        "howToPlayLines": ["Your cards are physical.", "Show them to the webcam to play them.", "The computer reads and speaks.", "If you win, you advance on the map.", "If you lose, -1 HP.", "Win after 8 rounds."],
-        "statusLabel": "STATUS",
-        "guideVoiceEnabled": "Guide voice enabled.",
-        "guideVoiceDisabled": "Guide voice disabled.",
-        "guideVoiceUpdated": "Guide voice updated.",
-        "storyVoiceUpdated": "Narrator voice updated.",
-        "debugEnabled": "Debug mode active: use the quick buttons to simulate QR codes.",
-        "familyVoiceAccessActive": "Access active. Family recordings can be used by the game when available.",
-        "openStudio": "Open studio",
-        "playerCardSlot": "Your\ncard"
-      },
+      "listening": "Listening...",
+      "roundWon": "ROUND WON!",
+      "roundLost": "ROUND LOST",
+      "roundDraw": "DRAW",
+      "roundWonBody": "You passed the challenge.",
+      "roundLostBody": "You lose one heart, but you can learn from this round.",
+      "roundDrawBody": "Look more carefully at the elements for the next turn.",
+      "gameOverTitle": "ADVENTURE OVER",
+      "gameOverSubtitle": "Show a card to restart.",
+      "victoryTitle": "WELL DONE!",
+      "victorySubtitle": "Show a card for a new adventure.",
+      "hearts": "Hearts:",
+      "roundCounter": "Round: {current}/{total}",
+      "enemyCounter": "Enemy card: {current}/{total}",
+      "enemyHint": "Hint: against {enemy}, try {choices}.",
+      "webcamLabel": "Webcam",
+      "webcamPermissionHint": "Grant permission and press F5 to reload.",
+      "howToPlay": "HOW TO PLAY",
+      "howToPlayLines": [
+        "Your cards are physical.",
+        "Show them to the webcam to play them.",
+        "The computer reads and speaks.",
+        "If you win, you advance on the map.",
+        "If you lose, -1 HP.",
+        "Win after 8 rounds."
+      ],
+      "statusLabel": "STATUS",
+      "guideVoiceEnabled": "Guide voice enabled.",
+      "guideVoiceDisabled": "Guide voice disabled.",
+      "guideVoiceUpdated": "Guide voice updated.",
+      "storyVoiceUpdated": "Narrator voice updated.",
+      "debugEnabled": "Debug mode active: use the quick buttons to simulate QR codes.",
+      "familyVoiceAccessActive": "Access active. Family recordings can be used by the game when available.",
+      "openStudio": "Open studio",
+      "playerCardSlot": "Your\ncard"
+    },
     "promptCatalog": {
       "groupGameplayTitle": "Gameplay lines",
       "groupGameplayDescription": "Core gameplay prompts that can use family voices.",
@@ -246,10 +294,21 @@ export const LOCALES = {
     }
   },
   "it": {
-    "meta": { "locale": "it", "label": "Italiano" },
-    "languages": { "it": "Italiano", "en": "English" },
-    "app": { "title": "Specula Elementae" },
-    "ui": { "languageLabel": "Lingua", "languageOption": "{label}" },
+    "meta": {
+      "locale": "it",
+      "label": "Italiano"
+    },
+    "languages": {
+      "it": "Italiano",
+      "en": "English"
+    },
+    "app": {
+      "title": "Specula Elementae"
+    },
+    "ui": {
+      "languageLabel": "Lingua",
+      "languageOption": "{label}"
+    },
     "gamePage": {
       "title": "Specula Elementae",
       "settingsAria": "Impostazioni",
@@ -374,20 +433,50 @@ export const LOCALES = {
     },
     "cards": {
       "elements": {
-        "FIRE": { "name": "Braci" },
-        "WATER": { "name": "Goccia" },
-        "NATURE": { "name": "Germoglio" },
-        "LIGHT": { "name": "Raggio" },
-        "SHADOW": { "name": "Eclissi" },
-        "THUNDER": { "name": "Saetta" }
+        "FIRE": {
+          "name": "Braci"
+        },
+        "WATER": {
+          "name": "Goccia"
+        },
+        "NATURE": {
+          "name": "Germoglio"
+        },
+        "LIGHT": {
+          "name": "Raggio"
+        },
+        "SHADOW": {
+          "name": "Eclissi"
+        },
+        "THUNDER": {
+          "name": "Saetta"
+        }
       },
       "templates": {
-        "ROSSO": { "name": "Braci", "description": "Le Braci scaldano e danno luce, ma vanno usate con attenzione." },
-        "BLU": { "name": "Goccia", "description": "La Goccia aiuta le piante a crescere, ma va usata con calma." },
-        "VERDE": { "name": "Germoglio", "description": "Il Germoglio cresce forte, ma solo con tanta pazienza." },
-        "GIALLO": { "name": "Raggio", "description": "Il Raggio illumina la strada, ma acceca chi lo guarda troppo da vicino." },
-        "VIOLA": { "name": "Eclissi", "description": "L'Eclissi ti fa fermare e osservare, ma chi resta troppo nell'ombra rischia di perdersi." },
-        "NERO": { "name": "Saetta", "description": "La Saetta arriva veloce e forte, ma chi la usa senza pensare rischia di perdere il controllo." }
+        "ROSSO": {
+          "name": "Braci",
+          "description": "Le Braci scaldano e danno luce, ma vanno usate con attenzione."
+        },
+        "BLU": {
+          "name": "Goccia",
+          "description": "La Goccia aiuta le piante a crescere, ma va usata con calma."
+        },
+        "VERDE": {
+          "name": "Germoglio",
+          "description": "Il Germoglio cresce forte, ma solo con tanta pazienza."
+        },
+        "GIALLO": {
+          "name": "Raggio",
+          "description": "Il Raggio illumina la strada, ma acceca chi lo guarda troppo da vicino."
+        },
+        "VIOLA": {
+          "name": "Eclissi",
+          "description": "L'Eclissi ti fa fermare e osservare, ma chi resta troppo nell'ombra rischia di perdersi."
+        },
+        "NERO": {
+          "name": "Saetta",
+          "description": "La Saetta arriva veloce e forte, ma chi la usa senza pensare rischia di perdere il controllo."
+        }
       }
     },
     "game": {
@@ -401,21 +490,21 @@ export const LOCALES = {
       "resume": "Si riparte.",
       "unknownCard": "Carta non riconosciuta: {id}."
     },
-      "sketch": {
-        "webcamPreparing": "Sto preparando la fotocamera...",
-        "webcamChanging": "Sto cambiando fotocamera...",
-        "webcamUnsupported": "Questo browser non supporta bene la fotocamera. Prova Chrome, Edge o Safari.",
-        "webcamRequestingPermission": "Sto chiedendo il permesso per usare la fotocamera...",
-        "webcamActive": "Fotocamera attiva.",
-        "webcamActiveStatus": "Fotocamera attiva. Mostra una carta per iniziare la tua avventura.",
-        "webcamAttempt": "Tentativo fotocamera {attempt}/3...",
-        "webcamRetry": "Non riesco ad attivare la fotocamera. Tocca il pulsante per riprovare.",
-        "webcamNotFound": "Non trovo una fotocamera. Collegane una e ricarica.",
-        "webcamNotWorking": "Non ho trovato una fotocamera funzionante.",
-        "webcamSearchError": "C'e stato un problema mentre cercavo le fotocamere.",
-        "showCard": "Mostra una carta alla webcam per iniziare la tua avventura.",
-        "introSubtitle": "Un solitario elementale guidato dalla magia della tua webcam.",
-        "introPrompt": "Mostra una carta alla webcam per iniziare",
+    "sketch": {
+      "webcamPreparing": "Sto preparando la fotocamera...",
+      "webcamChanging": "Sto cambiando fotocamera...",
+      "webcamUnsupported": "Questo browser non supporta bene la fotocamera. Prova Chrome, Edge o Safari.",
+      "webcamRequestingPermission": "Sto chiedendo il permesso per usare la fotocamera...",
+      "webcamActive": "Fotocamera attiva.",
+      "webcamActiveStatus": "Fotocamera attiva. Mostra una carta per iniziare la tua avventura.",
+      "webcamAttempt": "Tentativo fotocamera {attempt}/3...",
+      "webcamRetry": "Non riesco ad attivare la fotocamera. Tocca il pulsante per riprovare.",
+      "webcamNotFound": "Non trovo una fotocamera. Collegane una e ricarica.",
+      "webcamNotWorking": "Non ho trovato una fotocamera funzionante.",
+      "webcamSearchError": "C'e stato un problema mentre cercavo le fotocamere.",
+      "showCard": "Mostra una carta alla webcam per iniziare la tua avventura.",
+      "introSubtitle": "Un solitario elementale guidato dalla magia della tua webcam.",
+      "introPrompt": "Mostra una carta alla webcam per iniziare",
       "providerAuto": "Automatico",
       "providerPiper": "Piper server",
       "providerBrowser": "Browser",
@@ -431,35 +520,42 @@ export const LOCALES = {
       "modeSimultaneous": "Modalita' sfida multipla.",
       "modeSequential": "Modalita' una carta alla volta.",
       "unrecognizedCard": "Non riconosco questa carta: {id}.",
-        "listening": "Ascolta...",
-        "roundWon": "ROUND VINTO!",
-        "roundLost": "ROUND PERSO",
-        "roundDraw": "PAREGGIO",
-        "roundWonBody": "Hai superato la prova.",
-        "roundLostBody": "Perdi un cuore, ma puoi imparare dal round.",
-        "roundDrawBody": "Osserva meglio gli elementi per il prossimo turno.",
-        "gameOverTitle": "AVVENTURA FINITA",
-        "gameOverSubtitle": "Mostra una carta per ricominciare.",
-        "victoryTitle": "BRAVISSIMO!",
-        "victorySubtitle": "Mostra una carta per una nuova avventura.",
-        "hearts": "Cuori:",
-        "roundCounter": "Round: {current}/{total}",
-        "enemyCounter": "Carta avversaria: {current}/{total}",
-        "enemyHint": "Suggerimento: contro {enemy}, prova {choices}.",
-        "webcamLabel": "Webcam",
-        "webcamPermissionHint": "Concedi il permesso e premi F5 per ricaricare.",
-        "howToPlay": "COME SI GIOCA",
-        "howToPlayLines": ["Le tue carte sono fisiche.", "Mostrale alla webcam per giocarle.", "Il computer legge e parla.", "Se vinci avanzi nella mappa.", "Se perdi, -1 HP.", "Vinci dopo 8 round."],
-        "statusLabel": "STATO",
-        "guideVoiceEnabled": "Voce guida attivata.",
-        "guideVoiceDisabled": "Voce guida disattivata.",
-        "guideVoiceUpdated": "Voce guida aggiornata.",
-        "storyVoiceUpdated": "Voce narratore aggiornata.",
-        "debugEnabled": "Modalita debug attiva: usa i pulsanti rapidi per simulare i QR code.",
-        "familyVoiceAccessActive": "Accesso attivo. Le registrazioni di famiglia possono essere usate dal gioco quando disponibili.",
-        "openStudio": "Apri lo studio",
-        "playerCardSlot": "La tua\ncarta"
-      },
+      "listening": "Ascolta...",
+      "roundWon": "ROUND VINTO!",
+      "roundLost": "ROUND PERSO",
+      "roundDraw": "PAREGGIO",
+      "roundWonBody": "Hai superato la prova.",
+      "roundLostBody": "Perdi un cuore, ma puoi imparare dal round.",
+      "roundDrawBody": "Osserva meglio gli elementi per il prossimo turno.",
+      "gameOverTitle": "AVVENTURA FINITA",
+      "gameOverSubtitle": "Mostra una carta per ricominciare.",
+      "victoryTitle": "BRAVISSIMO!",
+      "victorySubtitle": "Mostra una carta per una nuova avventura.",
+      "hearts": "Cuori:",
+      "roundCounter": "Round: {current}/{total}",
+      "enemyCounter": "Carta avversaria: {current}/{total}",
+      "enemyHint": "Suggerimento: contro {enemy}, prova {choices}.",
+      "webcamLabel": "Webcam",
+      "webcamPermissionHint": "Concedi il permesso e premi F5 per ricaricare.",
+      "howToPlay": "COME SI GIOCA",
+      "howToPlayLines": [
+        "Le tue carte sono fisiche.",
+        "Mostrale alla webcam per giocarle.",
+        "Il computer legge e parla.",
+        "Se vinci avanzi nella mappa.",
+        "Se perdi, -1 HP.",
+        "Vinci dopo 8 round."
+      ],
+      "statusLabel": "STATO",
+      "guideVoiceEnabled": "Voce guida attivata.",
+      "guideVoiceDisabled": "Voce guida disattivata.",
+      "guideVoiceUpdated": "Voce guida aggiornata.",
+      "storyVoiceUpdated": "Voce narratore aggiornata.",
+      "debugEnabled": "Modalita debug attiva: usa i pulsanti rapidi per simulare i QR code.",
+      "familyVoiceAccessActive": "Accesso attivo. Le registrazioni di famiglia possono essere usate dal gioco quando disponibili.",
+      "openStudio": "Apri lo studio",
+      "playerCardSlot": "La tua\ncarta"
+    },
     "promptCatalog": {
       "groupGameplayTitle": "Frasi di gioco",
       "groupGameplayDescription": "Prompt essenziali del gameplay che possono usare voci di famiglia.",
