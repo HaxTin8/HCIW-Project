@@ -1920,7 +1920,7 @@ function loadCardIntoSlot(templateId) {
   slotEmptyFrames = 0;
   audio.playCard();
   const card = playerSlots[0];
-  tts.speak(`${getCardLearningLine(card)} Togli la carta.`, {
+  tts.speak(t('sketch.cardInSingleSlot', { line: getCardLearningLine(card) }), {
     channel: 'gameplay',
     promptKey: getCardPromptKey(card, true)
   });
