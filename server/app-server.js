@@ -243,7 +243,8 @@ function createAppHandler(options = {}) {
         }
 
         if (requestUrl.pathname === '/api/family-voice/library' && req.method === 'GET') {
-          const catalog = buildPromptCatalog(rootDir);
+          const locale = requestUrl.searchParams.get('lang') || 'it';
+          const catalog = buildPromptCatalog(rootDir, { locale });
           const statusMap = store.listRecordingStatus(user.id);
           json(res, 200, annotateCatalog(catalog, statusMap));
           return true;
@@ -251,7 +252,8 @@ function createAppHandler(options = {}) {
 
         if (requestUrl.pathname.startsWith('/api/family-voice/recordings/')) {
           const promptId = decodeURIComponent(requestUrl.pathname.replace('/api/family-voice/recordings/', ''));
-          const catalog = buildPromptCatalog(rootDir);
+          const locale = requestUrl.searchParams.get('lang') || 'it';
+          const catalog = buildPromptCatalog(rootDir, { locale });
           if (!catalog.promptMap[promptId]) {
             badRequest(res, 'invalid_prompt_id');
             return true;

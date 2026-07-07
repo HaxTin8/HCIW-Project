@@ -1,0 +1,33 @@
+:: StoryTitle
+The Strength of the Earth
+
+:: StoryData
+{
+  "id": "radici-dimenticate",
+  "author": "Specula Elementae",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+A tiny plant sprouts from the ground. Nature grows all around you: watch it change and learn to know it step by step.
+
+[[Follow the growth->inizio-avventura]]
+
+:: inizio-avventura
+The earth moves with calm and steady strength. Every turn of the game changes like a season of the year: observe carefully before you play your card.
+
+:: evento-round-2 [mid-story]
+A strong root rises from the ground to help you. The earth gives you its energy: the next card you play will be even stronger.
+
+```gameEffects
+{
+  "nextCardPowerBonus": 1,
+  "roundSpecific": 2
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Your strategy worked. The plants you cared for have grown strong and safe, and the forest is now protected thanks to you.
+
+:: epilogo-sconfitta [ending defeat]
+A seed needs time underground before it becomes a great tree. Look at your cards, gather your strength, and play another game.

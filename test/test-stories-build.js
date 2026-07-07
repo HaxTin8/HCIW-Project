@@ -21,5 +21,7 @@ assert.strictEqual(gameEffectPassage.gameEffects.firstRoundOnly, true);
 const generatedIndex = buildStories();
 assert(generatedIndex.ROSSO, 'ROSSO dovrebbe essere presente nell\'indice generato');
 assert.strictEqual(generatedIndex.ROSSO.file, 'stories/generated/story-rosso.json');
+assert.strictEqual(generatedIndex.ROSSO.locales.it.file, 'stories/generated/story-rosso.json');
+assert.strictEqual(generatedIndex.ROSSO.locales.en.file, 'stories/generated/story-rosso.en.json');
 
 console.log('✅ test-stories-build.js passati');

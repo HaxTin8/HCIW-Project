@@ -6,6 +6,7 @@
  */
 
 import { speculaEnv } from './app-env.js';
+import { getLanguagePrefixes, getLocale, onLocaleChange, t } from './i18n.js';
 
 const STORAGE_KEY = 'specula-elementae-tts-settings';
 const LEGACY_STORAGE_KEY = 'deck-of-shadows-tts-settings';
@@ -42,7 +43,7 @@ function resolveApiUrl(pathname) {
 
       this.channels = {
         gameplay: {
-          label: 'Voce guida',
+          label: t('tts.guideVoice'),
           browserVoiceURI: '',
           piperVoice: '',
           rateDesktop: 1.08,
@@ -51,7 +52,7 @@ function resolveApiUrl(pathname) {
           volume: 1
         },
         story: {
-          label: 'Voce narratore',
+          label: t('tts.storyVoice'),
           browserVoiceURI: '',
           piperVoice: '',
           rateDesktop: 0.96,
@@ -62,6 +63,11 @@ function resolveApiUrl(pathname) {
       };
 
       this._loadPreferences();
+      this._syncChannelLabels();
+      onLocaleChange(() => {
+        this._syncChannelLabels();
+        this.refreshProviders(true);
+      });
 
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         this._loadBrowserVoices();
@@ -127,6 +133,11 @@ function resolveApiUrl(pathname) {
       } catch (error) {
         console.warn('Impossibile salvare le preferenze TTS:', error);
       }
+    }
+
+    _syncChannelLabels() {
+      this.channels.gameplay.label = t('tts.guideVoice');
+      this.channels.story.label = t('tts.storyVoice');
     }
 
     setEnabled(value) {
@@ -300,8 +311,12 @@ function resolveApiUrl(pathname) {
     _pickBestVoice(voices, channel) {
       if (!voices || voices.length === 0) return null;
 
-      const italianVoices = voices.filter((voice) => voice.lang && String(voice.lang).toLowerCase().startsWith('it'));
-      const pool = italianVoices.length > 0 ? italianVoices : voices;
+      const prefixes = getLanguagePrefixes(getLocale());
+      const matchingVoices = voices.filter((voice) => {
+        const lang = String(voice.lang || '').toLowerCase();
+        return prefixes.some((prefix) => lang.startsWith(prefix));
+      });
+      const pool = matchingVoices.length > 0 ? matchingVoices : voices;
 
       if (channel === 'story') {
         const warmNarrator = pool.find((voice) => /alice|elsa|federica|paola|natural|premium/i.test(voice.name));
@@ -332,22 +347,22 @@ function resolveApiUrl(pathname) {
     getProviderState() {
       const browserAvailable = this.browserVoices.length > 0;
       const piperAvailable = this.piperAvailable;
-      let message = 'Sintesi vocale non disponibile.';
+      let message = t('tts.providerUnavailable');
 
       if (this.activeProvider === 'piper' && this.preferredProvider === 'auto') {
-        message = 'Provider attivo: Piper server.';
+        message = t('tts.providerPiper');
       } else if (this.activeProvider === 'piper' && this.preferredProvider === 'piper') {
-        message = 'Provider attivo: Piper server.';
+        message = t('tts.providerPiper');
       } else if (this.activeProvider === 'browser' && this.preferredProvider === 'browser') {
-        message = 'Provider attivo: voci del browser.';
+        message = t('tts.providerBrowser');
       } else if (this.activeProvider === 'browser' && this.preferredProvider === 'auto') {
         message = piperAvailable
-          ? 'Provider attivo: voci del browser.'
-          : 'Piper non raggiungibile, uso le voci del browser.';
+          ? t('tts.providerBrowser')
+          : t('tts.providerBrowserFallback');
       } else if (this.activeProvider === 'browser' && this.preferredProvider === 'piper') {
-        message = 'Piper non raggiungibile, fallback sulle voci del browser.';
+        message = t('tts.providerBrowserFallback');
       } else if (this.activeProvider === 'piper' && this.preferredProvider === 'browser') {
-        message = 'Voci browser non disponibili, fallback su Piper.';
+        message = t('tts.providerPiperFallback');
       }
 
       return {
@@ -757,7 +772,7 @@ function resolveApiUrl(pathname) {
         const utter = new SpeechSynthesisUtterance(text);
         const voice = this._resolveBrowserVoice(channel);
 
-        utter.lang = voice ? (voice.lang || 'it-IT') : 'it-IT';
+        utter.lang = voice ? (voice.lang || getLanguagePrefixes(getLocale())[0]) : getLanguagePrefixes(getLocale())[0];
         utter.rate = this._getChannelRate(channel);
         utter.pitch = channelConfig.pitch;
         utter.volume = channelConfig.volume;

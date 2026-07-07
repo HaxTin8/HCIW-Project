@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 /**
  * Database of card templates.
  * The "id" is the text to be encoded in the QR code printed on the card.
@@ -8,24 +10,36 @@
  * - use the card's color scheme for the QR code modules (while maintaining good contrast)
  */
 const ELEMENTS = {
-  FIRE: { id: 'FIRE', name: 'Braci', emoji: '🔥', color: '#DD4B50', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
-  WATER: { id: 'WATER', name: 'Goccia', emoji: '💧', color: '#498AE2', weakTo: ['NATURE', 'SHADOW'], strongVs: ['FIRE', 'THUNDER'] },
-  NATURE: { id: 'NATURE', name: 'Germoglio', emoji: '🌿', color: '#97B481', weakTo: ['FIRE', 'THUNDER'], strongVs: ['WATER', 'LIGHT'] },
-  LIGHT: { id: 'LIGHT', name: 'Raggio', emoji: '☀️', color: '#ECE64E', weakTo: ['NATURE', 'FIRE'], strongVs: ['SHADOW', 'THUNDER'] },
-  SHADOW: { id: 'SHADOW', name: 'Eclissi', emoji: '🌑', color: '#8380BC', weakTo: ['FIRE', 'LIGHT'], strongVs: ['WATER', 'NATURE'] },
-  THUNDER: { id: 'THUNDER', name: 'Saetta', emoji: '⚡', color: '#ECBA4E', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] }
+  FIRE: { id: 'FIRE', emoji: '🔥', color: '#DD4B50', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] },
+  WATER: { id: 'WATER', emoji: '💧', color: '#498AE2', weakTo: ['NATURE', 'SHADOW'], strongVs: ['FIRE', 'THUNDER'] },
+  NATURE: { id: 'NATURE', emoji: '🌿', color: '#97B481', weakTo: ['FIRE', 'THUNDER'], strongVs: ['WATER', 'LIGHT'] },
+  LIGHT: { id: 'LIGHT', emoji: '☀️', color: '#ECE64E', weakTo: ['NATURE', 'FIRE'], strongVs: ['SHADOW', 'THUNDER'] },
+  SHADOW: { id: 'SHADOW', emoji: '🌑', color: '#8380BC', weakTo: ['FIRE', 'LIGHT'], strongVs: ['WATER', 'NATURE'] },
+  THUNDER: { id: 'THUNDER', emoji: '⚡', color: '#ECBA4E', weakTo: ['WATER', 'LIGHT'], strongVs: ['NATURE', 'SHADOW'] }
 };
 
 const CARD_TEMPLATES = [
-  { id: 'ROSSO', name: 'Braci', element: 'FIRE', power: 3, animation: 'pulse', description: 'Le Braci scaldano e danno luce, ma vanno usate con attenzione.' },
-  { id: 'BLU', name: 'Goccia', element: 'WATER', power: 3,  animation: 'waves', description: 'La Goccia aiuta le piante a crescere, ma va usata con calma.' },
-  { id: 'VERDE', name: 'Germoglio', element: 'NATURE', power: 3,  animation: 'leaves', description: 'Il Germoglio cresce forte, ma solo con tanta pazienza.' },
-  { id: 'GIALLO', name: 'Raggio', element: 'LIGHT', power: 3,  animation: 'sunburst', description: 'Il Raggio illumina la strada, ma acceca chi lo guarda troppo da vicino ' },
-  { id: 'VIOLA', name: 'Eclissi', element: 'SHADOW', power: 3, animation: 'bats', description: 'L\'Eclissi ti fa fermare e osservare, ma chi resta troppo nell\'ombra rischia di perdersi."' },
-  { id: 'NERO', name: 'Saetta', element: 'THUNDER', power: 3,  animation: 'notes', description: 'La Saetta arriva veloce e forte, ma chi la usa senza pensare rischia di perdere il controllo. ' }
+  { id: 'ROSSO', element: 'FIRE', power: 3, animation: 'pulse' },
+  { id: 'BLU', element: 'WATER', power: 3,  animation: 'waves' },
+  { id: 'VERDE', element: 'NATURE', power: 3,  animation: 'leaves' },
+  { id: 'GIALLO', element: 'LIGHT', power: 3,  animation: 'sunburst' },
+  { id: 'VIOLA', element: 'SHADOW', power: 3, animation: 'bats' },
+  { id: 'NERO', element: 'THUNDER', power: 3,  animation: 'notes' }
 ];
 const TEMPLATE_MAP = Object.fromEntries(CARD_TEMPLATES.map(c => [c.id, c]));
 const SPECIAL_IDS = ['RESTART'];
+
+function getLocalizedElementName(elementId, locale = undefined) {
+  return t(`cards.elements.${elementId}.name`, {}, locale);
+}
+
+function getLocalizedTemplateName(templateId, locale = undefined) {
+  return t(`cards.templates.${templateId}.name`, {}, locale);
+}
+
+function getLocalizedTemplateDescription(templateId, locale = undefined) {
+  return t(`cards.templates.${templateId}.description`, {}, locale);
+}
 
 let _uidCounter = 0;
 
@@ -38,13 +52,13 @@ function createCard(templateId, bonusPower = 0) {
     return {
       uid: templateId + '_' + _uidCounter,
       templateId: template.id,
-      name: template.name,
+      name: getLocalizedTemplateName(template.id),
       element: template.element,
       power: template.power + bonusPower,
       color: elem.color,
       emoji: elem.emoji,
       animation: template.animation,
-      description: template.description
+      description: getLocalizedTemplateDescription(template.id)
     };
   }
 
@@ -88,6 +102,9 @@ if (typeof window !== 'undefined') {
     CARD_TEMPLATES,
     TEMPLATE_MAP,
     SPECIAL_IDS,
+    getLocalizedElementName,
+    getLocalizedTemplateName,
+    getLocalizedTemplateDescription,
     createCard,
     resolveCombat,
     elementAdvantage
@@ -99,6 +116,9 @@ export {
   CARD_TEMPLATES,
   TEMPLATE_MAP,
   SPECIAL_IDS,
+  getLocalizedElementName,
+  getLocalizedTemplateName,
+  getLocalizedTemplateDescription,
   createCard,
   resolveCombat,
   elementAdvantage

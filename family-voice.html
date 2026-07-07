@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Specula Elementae - Studio Voci di Famiglia</title>
+  <title data-i18n="familyVoicePage.title">Specula Elementae - Studio Voci di Famiglia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,46 +14,52 @@
     <header class="family-voice-page-header">
       <div>
         <p class="family-voice-studio-kicker" data-app-name>Specula Elementae</p>
-        <h1>Studio Voci di Famiglia</h1>
-        <p>Registra indicazioni e storie con una voce familiare, usando il teleprompter su canvas e una scaletta semplice da seguire.</p>
+        <h1 data-i18n="familyVoicePage.heading">Studio Voci di Famiglia</h1>
+        <p data-i18n="familyVoicePage.intro">Registra indicazioni e storie con una voce familiare, usando il teleprompter su canvas e una scaletta semplice da seguire.</p>
         <div class="family-voice-page-badges" aria-label="Punti chiave studio">
-          <span class="family-voice-badge">Voce privata</span>
-          <span class="family-voice-badge">Teleprompter guidato</span>
-          <span class="family-voice-badge">Perfetto per bambini</span>
+          <span class="family-voice-badge" data-i18n="familyVoicePage.badgePrivate">Voce privata</span>
+          <span class="family-voice-badge" data-i18n="familyVoicePage.badgeTeleprompter">Teleprompter guidato</span>
+          <span class="family-voice-badge" data-i18n="familyVoicePage.badgeKids">Perfetto per bambini</span>
         </div>
       </div>
-      <a class="secondary-btn subtle family-voice-link" href="index.html">Torna al gioco</a>
+      <div class="family-voice-toolbar">
+        <label class="voice-field" for="family-locale-select">
+          <span data-i18n="ui.languageLabel">Lingua</span>
+          <select id="family-locale-select"></select>
+        </label>
+        <a class="secondary-btn subtle family-voice-link" href="index.html" data-i18n="familyVoicePage.backToGame">Torna al gioco</a>
+      </div>
     </header>
 
     <main class="family-voice-page-layout">
       <section class="family-voice-panel family-voice-panel-page" id="family-voice-panel">
-        <div class="family-voice-panel-ribbon">Profilo famiglia</div>
+        <div class="family-voice-panel-ribbon" data-i18n="familyVoicePage.profileRibbon">Profilo famiglia</div>
         <div class="family-voice-header">
           <div>
-            <h2>Profilo Studio</h2>
-            <p>Accedi, scegli il tipo di prompt e registra una clip chiara e rassicurante per il bambino.</p>
+            <h2 data-i18n="familyVoicePage.profileTitle">Profilo Studio</h2>
+            <p data-i18n="familyVoicePage.profileBody">Accedi, scegli il tipo di prompt e registra una clip chiara e rassicurante per il bambino.</p>
           </div>
           <label class="tts-toggle">
             <input type="checkbox" id="family-voice-enabled" checked>
-            Usa registrazioni
+            <span data-i18n="familyVoicePage.useRecordings">Usa registrazioni</span>
           </label>
         </div>
 
-        <div id="family-voice-status" class="provider-status">Accedi o crea un profilo per salvare registrazioni private.</div>
+        <div id="family-voice-status" class="provider-status" data-i18n="familyVoicePage.loginHint">Accedi o crea un profilo per salvare registrazioni private.</div>
         <p id="family-voice-message" class="family-voice-message"></p>
 
         <div class="family-voice-auth" id="family-voice-auth-form">
           <label class="voice-field" for="family-voice-username">
-            <span>Username</span>
-            <input id="family-voice-username" type="text" autocomplete="username" placeholder="genitore">
+            <span data-i18n="familyVoicePage.username">Username</span>
+            <input id="family-voice-username" type="text" autocomplete="username" data-i18n-attr="placeholder:familyVoicePage.usernamePlaceholder" placeholder="genitore">
           </label>
           <label class="voice-field" for="family-voice-password">
-            <span>Password</span>
-            <input id="family-voice-password" type="password" autocomplete="current-password" placeholder="password semplice">
+            <span data-i18n="familyVoicePage.password">Password</span>
+            <input id="family-voice-password" type="password" autocomplete="current-password" data-i18n-attr="placeholder:familyVoicePage.passwordPlaceholder" placeholder="password semplice">
           </label>
           <div class="family-voice-auth-actions">
-            <button class="secondary-btn" type="button" data-action="register">Crea profilo</button>
-            <button class="secondary-btn" type="button" data-action="login">Accedi</button>
+            <button class="secondary-btn" type="button" data-action="register" data-i18n="familyVoicePage.createProfile">Crea profilo</button>
+            <button class="secondary-btn" type="button" data-action="login" data-i18n="familyVoicePage.login">Accedi</button>
           </div>
         </div>
 
@@ -63,42 +69,42 @@
         <div class="family-voice-studio-shell family-voice-studio-shell-page" role="region" aria-labelledby="family-voice-studio-title">
           <div class="family-voice-studio-topbar">
             <div>
-              <p class="family-voice-studio-kicker">Teleprompter</p>
-              <h3 id="family-voice-studio-title">Registrazione guidata</h3>
-              <p class="family-voice-studio-subtitle">Leggi con calma, segui il ritmo consigliato e salva una voce che il bambino riconosce subito.</p>
+              <p class="family-voice-studio-kicker" data-i18n="familyVoicePage.teleprompterKicker">Teleprompter</p>
+              <h3 id="family-voice-studio-title" data-i18n="familyVoicePage.teleprompterTitle">Registrazione guidata</h3>
+              <p class="family-voice-studio-subtitle" data-i18n="familyVoicePage.teleprompterBody">Leggi con calma, segui il ritmo consigliato e salva una voce che il bambino riconosce subito.</p>
             </div>
             <div class="family-voice-toolbar">
-              <button id="family-voice-refresh" class="secondary-btn subtle" type="button" hidden>Aggiorna prompt</button>
-              <button id="family-voice-logout" class="secondary-btn subtle" type="button" hidden>Esci</button>
+              <button id="family-voice-refresh" class="secondary-btn subtle" type="button" hidden data-i18n="familyVoicePage.refresh">Aggiorna prompt</button>
+              <button id="family-voice-logout" class="secondary-btn subtle" type="button" hidden data-i18n="familyVoicePage.logout">Esci</button>
             </div>
           </div>
 
           <div class="family-voice-studio-filterbar">
             <div class="family-voice-filter-group">
-              <button class="secondary-btn subtle family-voice-filter-btn is-active" type="button" data-filter="all" id="family-voice-filter-all">Tutti</button>
-              <button class="secondary-btn subtle family-voice-filter-btn" type="button" data-filter="gameplay" id="family-voice-filter-gameplay">Suggerimenti</button>
-              <button class="secondary-btn subtle family-voice-filter-btn" type="button" data-filter="story" id="family-voice-filter-story">Storie</button>
+              <button class="secondary-btn subtle family-voice-filter-btn is-active" type="button" data-filter="all" id="family-voice-filter-all" data-i18n="familyVoicePage.filterAll">Tutti</button>
+              <button class="secondary-btn subtle family-voice-filter-btn" type="button" data-filter="gameplay" id="family-voice-filter-gameplay" data-i18n="familyVoicePage.filterGameplay">Suggerimenti</button>
+              <button class="secondary-btn subtle family-voice-filter-btn" type="button" data-filter="story" id="family-voice-filter-story" data-i18n="familyVoicePage.filterStory">Storie</button>
             </div>
             <div class="family-voice-studio-counter" id="family-voice-studio-counter">0 di 0 completati</div>
           </div>
 
           <div class="family-voice-studio-nav">
-            <button class="secondary-btn subtle family-voice-nav-btn" type="button" id="family-voice-prev-prompt">Prompt precedente</button>
+            <button class="secondary-btn subtle family-voice-nav-btn" type="button" id="family-voice-prev-prompt" data-i18n="familyVoicePage.prevPrompt">Prompt precedente</button>
             <div class="family-voice-studio-current">
-              <span class="family-voice-studio-label">Prompt attuale</span>
+              <span class="family-voice-studio-label" data-i18n="familyVoicePage.currentPrompt">Prompt attuale</span>
               <strong id="family-voice-studio-position">0 / 0</strong>
-              <span id="family-voice-studio-group">Nessun filtro attivo</span>
+              <span id="family-voice-studio-group" data-i18n="familyVoicePage.noFilter">Nessun filtro attivo</span>
             </div>
-            <button class="secondary-btn subtle family-voice-nav-btn" type="button" id="family-voice-next-prompt">Prompt successivo</button>
+            <button class="secondary-btn subtle family-voice-nav-btn" type="button" id="family-voice-next-prompt" data-i18n="familyVoicePage.nextPrompt">Prompt successivo</button>
           </div>
 
           <div class="family-voice-studio-meta">
             <div>
-              <span class="family-voice-studio-label">Prompt</span>
-              <strong id="family-voice-studio-prompt-title">Seleziona un testo</strong>
+              <span class="family-voice-studio-label" data-i18n="familyVoicePage.promptLabel">Prompt</span>
+              <strong id="family-voice-studio-prompt-title" data-i18n="familyVoicePage.promptPlaceholder">Seleziona un testo</strong>
             </div>
             <div>
-              <span class="family-voice-studio-label">Durata consigliata</span>
+              <span class="family-voice-studio-label" data-i18n="familyVoicePage.durationLabel">Durata consigliata</span>
               <strong id="family-voice-studio-duration">0s</strong>
             </div>
           </div>
@@ -106,20 +112,20 @@
           <canvas id="family-voice-stage" class="family-voice-stage" width="960" height="540"></canvas>
 
           <div class="family-voice-studio-hint">
-            <p id="family-voice-studio-copy">Scegli un prompt dalla libreria per iniziare a registrare nello studio.</p>
+            <p id="family-voice-studio-copy" data-i18n="familyVoicePage.studioHint">Scegli un prompt dalla libreria per iniziare a registrare nello studio.</p>
             <div class="family-voice-studio-progress">
               <div id="family-voice-studio-progress-bar" class="family-voice-studio-progress-bar"></div>
             </div>
             <div class="family-voice-studio-stats">
-              <span id="family-voice-studio-state">Pronto a registrare</span>
+              <span id="family-voice-studio-state" data-i18n="familyVoicePage.studioReady">Pronto a registrare</span>
               <span id="family-voice-studio-elapsed">0.0s</span>
             </div>
           </div>
 
           <div class="family-voice-studio-actions">
-            <button class="secondary-btn family-voice-btn" type="button" id="family-voice-record-main">Inizia registrazione</button>
-            <button class="secondary-btn family-voice-btn" type="button" id="family-voice-play-main" disabled>Riascolta clip</button>
-            <button class="secondary-btn subtle family-voice-btn" type="button" id="family-voice-delete-main" disabled>Elimina clip</button>
+            <button class="secondary-btn family-voice-btn" type="button" id="family-voice-record-main" data-i18n="familyVoicePage.record">Inizia registrazione</button>
+            <button class="secondary-btn family-voice-btn" type="button" id="family-voice-play-main" disabled data-i18n="familyVoicePage.play">Riascolta clip</button>
+            <button class="secondary-btn subtle family-voice-btn" type="button" id="family-voice-delete-main" disabled data-i18n="familyVoicePage.delete">Elimina clip</button>
           </div>
         </div>
       </section>

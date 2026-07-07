@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const SOURCE_INDEX_PATH = path.join(ROOT, 'stories', 'twine', 'index.json');
 const OUTPUT_DIR = path.join(ROOT, 'stories', 'generated');
+const DEFAULT_LOCALE = 'it';
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -185,6 +186,16 @@ function compileStory(sourcePath) {
   };
 }
 
+function getEntrySources(entry) {
+  if (entry && entry.sources && typeof entry.sources === 'object') {
+    return entry.sources;
+  }
+  if (entry && typeof entry.source === 'string') {
+    return { [DEFAULT_LOCALE]: entry.source };
+  }
+  throw new Error('Sorgente storia mancante o non valida');
+}
+
 function buildStories() {
   const sourceIndex = JSON.parse(fs.readFileSync(SOURCE_INDEX_PATH, 'utf8'));
   ensureDir(OUTPUT_DIR);
@@ -203,18 +214,35 @@ function buildStories() {
       continue;
     }
 
-    const sourcePath = path.join(ROOT, entry.source);
-    const story = compileStory(sourcePath);
-    const outputName = `${path.basename(entry.source, path.extname(entry.source))}.json`;
-    const outputRelativePath = path.posix.join('stories', 'generated', outputName);
-    const outputPath = path.join(OUTPUT_DIR, outputName);
+    const sources = getEntrySources(entry);
+    const locales = {};
+    let defaultStory = null;
 
-    fs.writeFileSync(outputPath, `${JSON.stringify(story, null, 2)}\n`);
+    for (const [locale, source] of Object.entries(sources)) {
+      const sourcePath = path.join(ROOT, source);
+      const story = compileStory(sourcePath);
+      const outputName = `${path.basename(source, path.extname(source))}.json`;
+      const outputRelativePath = path.posix.join('stories', 'generated', outputName);
+      const outputPath = path.join(OUTPUT_DIR, outputName);
+
+      fs.writeFileSync(outputPath, `${JSON.stringify(story, null, 2)}\n`);
+
+      locales[locale] = {
+        id: story.id,
+        title: story.title,
+        file: outputRelativePath
+      };
+
+      if (locale === DEFAULT_LOCALE || !defaultStory) {
+        defaultStory = story;
+      }
+    }
 
     generatedIndex[cardId] = {
-      id: story.id,
-      title: story.title,
-      file: outputRelativePath
+      id: defaultStory.id,
+      title: defaultStory.title,
+      file: locales[DEFAULT_LOCALE] ? locales[DEFAULT_LOCALE].file : Object.values(locales)[0].file,
+      locales
     };
   }
 
@@ -232,6 +260,7 @@ export {
   buildStories,
   clearOutputDir,
   compileStory,
+  getEntrySources,
   parseLinks,
   parseGameEffects,
   parseStoryPassages

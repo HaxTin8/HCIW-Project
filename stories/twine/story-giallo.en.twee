@@ -1,0 +1,33 @@
+:: StoryTitle
+The Light Before Dawn
+
+:: StoryData
+{
+  "id": "luce-prima-dellalba",
+  "author": "Specula Elementae",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+Ray lights up softly and brightens the path before you. With its light you can see better, understand where to go, and help anyone who has lost the way.
+
+[[Shine ahead->inizio-avventura]]
+
+:: inizio-avventura
+Even the brightest light begins with a spark. Play with courage. Looking carefully before acting is already a special power.
+
+:: evento-round-4 [mid-story]
+Dawn is close. In its light, even the greatest strength seems less frightening.
+
+```gameEffects
+{
+  "halfElementBonus": true,
+  "roundSpecific": 4
+}
+```
+
+:: epilogo-vittoria [ending victory]
+You brought a gentle dawn into the world around you. Now you know that the best light is the one that guides without blinding.
+
+:: epilogo-sconfitta [ending defeat]
+Night may seem long, but it never lasts forever. Your ray will soon light the road again.

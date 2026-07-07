@@ -4,9 +4,10 @@
   "type": "module",
   "description": "Gioco di carte educativo con storie Twine, TTS e riconoscimento QR via webcam",
   "scripts": {
+    "build:locales": "node scripts/build-locales.js",
     "build:stories": "node scripts/build-stories.js",
-    "build": "node scripts/build-stories.js && vite build",
-    "test": "node scripts/build-stories.js && node test/test-stories-build.js && node test/test-cards.js && node test/test-game.js && node test/test-prompt-catalog.js && node test/test-auth-store.js",
+    "build": "node scripts/build-locales.js && node scripts/build-stories.js && vite build",
+    "test": "node scripts/build-locales.js && node scripts/build-stories.js && node test/test-stories-build.js && node test/test-cards.js && node test/test-game.js && node test/test-prompt-catalog.js && node test/test-auth-store.js",
     "serve": "node scripts/dev-server.js",
     "dev": "node scripts/dev.js",
     "debug": "node scripts/dev.js --debug",

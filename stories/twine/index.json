@@ -4,21 +4,39 @@
     "version": "1.0"
   },
   "ROSSO": {
-    "source": "stories/twine/story-rosso.twee"
+    "sources": {
+      "it": "stories/twine/story-rosso.twee",
+      "en": "stories/twine/story-rosso.en.twee"
+    }
   },
   "BLU": {
-    "source": "stories/twine/story-blu.twee"
+    "sources": {
+      "it": "stories/twine/story-blu.twee",
+      "en": "stories/twine/story-blu.en.twee"
+    }
   },
   "VERDE": {
-    "source": "stories/twine/story-verde.twee"
+    "sources": {
+      "it": "stories/twine/story-verde.twee",
+      "en": "stories/twine/story-verde.en.twee"
+    }
   },
   "GIALLO": {
-    "source": "stories/twine/story-giallo.twee"
+    "sources": {
+      "it": "stories/twine/story-giallo.twee",
+      "en": "stories/twine/story-giallo.en.twee"
+    }
   },
   "VIOLA": {
-    "source": "stories/twine/story-viola.twee"
+    "sources": {
+      "it": "stories/twine/story-viola.twee",
+      "en": "stories/twine/story-viola.en.twee"
+    }
   },
   "NERO": {
-    "source": "stories/twine/story-nero.twee"
+    "sources": {
+      "it": "stories/twine/story-nero.twee",
+      "en": "stories/twine/story-nero.en.twee"
+    }
   }
 }

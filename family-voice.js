@@ -1,4 +1,5 @@
 import { speculaEnv } from './app-env.js';
+import { getLocale, getLocaleOptions, localizeDocument, onLocaleChange, setLocale, t } from './i18n.js';
 
 const TOKEN_KEY = 'specula-elementae-family-voice-token';
 const ENABLED_KEY = 'specula-elementae-family-voice-enabled';
@@ -66,6 +67,7 @@ function resolveApiUrl(pathname) {
       this.enabledToggle = null;
       this.libraryEl = null;
       this.messageEl = null;
+      this.localeSelect = null;
 
       this._loadState();
     }
@@ -236,6 +238,7 @@ function resolveApiUrl(pathname) {
       this.enabledToggle = document.getElementById('family-voice-enabled');
       this.libraryEl = document.getElementById('family-voice-library');
       this.messageEl = document.getElementById('family-voice-message');
+      this.localeSelect = document.getElementById('family-locale-select');
       this.stageCanvas = document.getElementById('family-voice-stage');
       this.stageCtx = this.stageCanvas ? this.stageCanvas.getContext('2d') : null;
       this.studioTitleEl = document.getElementById('family-voice-studio-prompt-title');
@@ -342,6 +345,18 @@ function resolveApiUrl(pathname) {
         });
       }
 
+      this._setupLocaleSelect();
+      localizeDocument();
+      onLocaleChange(() => {
+        localizeDocument();
+        this._setupLocaleSelect();
+        if (this.user) {
+          this.loadLibrary();
+        } else {
+          this.render();
+        }
+      });
+
       if (typeof ResizeObserver !== 'undefined' && this.stageCanvas) {
         this.stageResizeObserver = new ResizeObserver(() => {
           this._drawStage();
@@ -375,7 +390,7 @@ function resolveApiUrl(pathname) {
         await this.loadLibrary();
       } catch (error) {
         this._clearSession();
-        this._setMessage('Sessione scaduta. Fai di nuovo login.', true);
+        this._setMessage(t('familyVoice.sessionExpired'), true);
         this.render();
       }
     }
@@ -384,7 +399,7 @@ function resolveApiUrl(pathname) {
       try {
         const payload = await this._submitAuth('/api/family-voice/auth/register');
         this._applySession(payload);
-        this._setMessage('Profilo creato. Ora puoi registrare le voci.');
+        this._setMessage(t('familyVoice.profileCreated'));
         await this.loadLibrary();
       } catch (error) {
         this._setMessage(this._humanizeError(error), true);
@@ -395,7 +410,7 @@ function resolveApiUrl(pathname) {
       try {
         const payload = await this._submitAuth('/api/family-voice/auth/login');
         this._applySession(payload);
-        this._setMessage('Login eseguito. Libreria vocale pronta.');
+        this._setMessage(t('familyVoice.loginDone'));
         await this.loadLibrary();
       } catch (error) {
         this._setMessage(this._humanizeError(error), true);
@@ -409,7 +424,7 @@ function resolveApiUrl(pathname) {
         console.warn('Logout non completato:', error);
       }
       this._clearSession();
-      this._setMessage('Sessione terminata.');
+      this._setMessage(t('familyVoice.logoutDone'));
       this.render();
     }
 
@@ -419,9 +434,9 @@ function resolveApiUrl(pathname) {
         return;
       }
 
-      this._setStatus('Sto caricando il teleprompter...');
+      this._setStatus(t('familyVoice.loadingTeleprompter'));
       try {
-        const response = await this._request('/api/family-voice/library', { method: 'GET' });
+        const response = await this._request(`/api/family-voice/library?lang=${encodeURIComponent(getLocale())}`, { method: 'GET' });
         this.library = await response.json();
         this.render();
       } catch (error) {
@@ -434,7 +449,7 @@ function resolveApiUrl(pathname) {
       const username = this.usernameInput ? this.usernameInput.value.trim() : '';
       const password = this.passwordInput ? this.passwordInput.value : '';
       if (!username || !password) {
-        throw new Error('Inserisci username e password.');
+        throw new Error(t('familyVoice.missingCredentials'));
       }
 
       const response = await fetch(resolveApiUrl(url), {
@@ -480,6 +495,19 @@ function resolveApiUrl(pathname) {
       if (!this.messageEl) return;
       this.messageEl.textContent = message || '';
       this.messageEl.dataset.tone = isError ? 'error' : 'neutral';
+    }
+
+    _setupLocaleSelect() {
+      if (!this.localeSelect) return;
+      this.localeSelect.innerHTML = getLocaleOptions()
+        .map((option) => `<option value="${option.value}">${option.label}</option>`)
+        .join('');
+      this.localeSelect.value = getLocale();
+      if (this.localeSelect.dataset.bound === 'true') return;
+      this.localeSelect.addEventListener('change', () => {
+        setLocale(this.localeSelect.value);
+      });
+      this.localeSelect.dataset.bound = 'true';
     }
 
     _releaseCachedAudio(promptKey = null) {
@@ -624,7 +652,7 @@ function resolveApiUrl(pathname) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = `600 ${20 * ratio}px "Hanken Grotesk", sans-serif`;
-        ctx.fillText('Scegli un prompt dalla libreria per iniziare', w / 2, h / 2);
+        ctx.fillText(t('familyVoice.idleCanvas'), w / 2, h / 2);
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         return;
@@ -669,7 +697,7 @@ function resolveApiUrl(pathname) {
 
       ctx.fillStyle = '#9f7a34';
       ctx.font = `${18 * ratio}px "Space Grotesk", sans-serif`;
-      ctx.fillText('VOCE DI FAMIGLIA', cardInset + 48 * ratio, cardInset + 52 * ratio);
+      ctx.fillText(t('familyVoice.canvasLabel'), cardInset + 48 * ratio, cardInset + 52 * ratio);
 
       let currentWordIndex = 0;
       let y = cardInset + 120 * ratio;
@@ -751,7 +779,7 @@ function resolveApiUrl(pathname) {
 
     async startRecording(promptId) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
-        this._setMessage('Registrazione audio non supportata da questo browser.', true);
+        this._setMessage(t('familyVoice.recordUnsupported'), true);
         return;
       }
 
@@ -788,13 +816,13 @@ function resolveApiUrl(pathname) {
           this.render();
 
           if (blob.size === 0) {
-            this._setMessage('Registrazione vuota, riprova.', true);
+            this._setMessage(t('familyVoice.emptyRecording'), true);
             return;
           }
 
           try {
             await this.uploadPrompt(completedPromptId, blob);
-            this._setMessage('Registrazione salvata.');
+            this._setMessage(t('familyVoice.recordingSaved'));
             await this.loadLibrary();
           } catch (error) {
             this._setMessage(this._humanizeError(error), true);
@@ -802,7 +830,7 @@ function resolveApiUrl(pathname) {
         };
 
         this.mediaRecorder.start();
-        this._setMessage('Registrazione in corso...');
+        this._setMessage(t('familyVoice.recording'));
         this.render();
       } catch (error) {
         this._setMessage(this._humanizeError(error), true);
@@ -841,7 +869,7 @@ function resolveApiUrl(pathname) {
           method: 'DELETE'
         });
         this._releaseCachedAudio(promptId);
-        this._setMessage('Registrazione eliminata.');
+        this._setMessage(t('familyVoice.recordingDeleted'));
         await this.loadLibrary();
         if (this.selectedPromptId === promptId) {
           this.selectedPrompt = this.getPromptById(promptId);
@@ -854,17 +882,8 @@ function resolveApiUrl(pathname) {
 
     _humanizeError(error) {
       const message = error && error.message ? error.message : String(error || 'unknown_error');
-      const map = {
-        username_taken: 'Questo username esiste gia.',
-        unauthorized: 'Username o password non corretti.',
-        username_password_required: 'Servono username e password.',
-        invalid_prompt_id: 'Prompt non valido.',
-        empty_audio: 'La registrazione e vuota.',
-        payload_too_large: 'File audio troppo grande.',
-        NotAllowedError: 'Permesso microfono negato.',
-        NotFoundError: 'Nessun microfono disponibile.'
-      };
-      return map[message] || message;
+      const localized = t(`familyVoice.errors.${message}`);
+      return localized === `familyVoice.errors.${message}` ? message : localized;
     }
 
     render() {
@@ -878,7 +897,7 @@ function resolveApiUrl(pathname) {
         }
         document.body.classList.add('family-voice-auth-only');
         document.body.classList.remove('family-voice-studio-only');
-        this._setStatus('Accedi o crea un profilo per salvare registrazioni private.');
+        this._setStatus(t('familyVoicePage.loginHint'));
         if (this.libraryEl) this.libraryEl.innerHTML = '';
         if (this.logoutBtn) this.logoutBtn.hidden = true;
         if (this.refreshBtn) this.refreshBtn.hidden = true;
@@ -896,7 +915,7 @@ function resolveApiUrl(pathname) {
       if (this.logoutBtn) this.logoutBtn.hidden = false;
       if (this.refreshBtn) this.refreshBtn.hidden = false;
       if (this.authForm) this.authForm.hidden = true;
-      this._setStatus(`Profilo attivo: ${this.user.username}`);
+      this._setStatus(t('familyVoice.profileActive', { username: this.user.username }));
 
       if (!this.library) {
         this._renderStudio();
@@ -917,10 +936,10 @@ function resolveApiUrl(pathname) {
         this.libraryEl.innerHTML = `
           <div class="family-voice-summary-card">
             <div class="family-voice-summary-top">
-              <span class="family-voice-pill${completed > 0 ? ' is-ready' : ''}">${completed}/${prompts.length} completati</span>
-              <span class="family-voice-summary-filter">${this.currentFilter === 'story' ? 'Filtro: storie' : this.currentFilter === 'gameplay' ? 'Filtro: suggerimenti' : 'Filtro: tutti'}</span>
+              <span class="family-voice-pill${completed > 0 ? ' is-ready' : ''}">${t('familyVoice.summaryCompleted', { completed, total: prompts.length })}</span>
+              <span class="family-voice-summary-filter">${this.currentFilter === 'story' ? t('familyVoice.summaryFilterStory') : this.currentFilter === 'gameplay' ? t('familyVoice.summaryFilterGameplay') : t('familyVoice.summaryFilterAll')}</span>
             </div>
-            <p class="family-voice-group-copy">I prompt si registrano dal teleprompter centrale. Usa i pulsanti sopra la canvas per passare al testo successivo o precedente.</p>
+            <p class="family-voice-group-copy">${t('familyVoice.summaryBody')}</p>
           </div>
         `;
       }
@@ -956,34 +975,34 @@ function resolveApiUrl(pathname) {
       if (this.studioGroupEl) {
         this.studioGroupEl.textContent = hasPrompt && prompts[selectedIndex]
           ? prompts[selectedIndex].groupTitle
-          : 'Seleziona un prompt';
+          : t('familyVoice.selectPrompt');
       }
       if (this.studioCounterEl) {
-        this.studioCounterEl.textContent = `${completed} di ${prompts.length} completati`;
+        this.studioCounterEl.textContent = t('familyVoicePage.counter', { completed, total: prompts.length });
       }
       if (this.studioDurationEl) {
         this.studioDurationEl.textContent = `${recommended}s`;
       }
       if (this.studioCopyEl) {
         this.studioCopyEl.textContent = hasPrompt
-          ? `Leggi con voce calma e naturale. Il testo si illumina seguendo il ritmo consigliato per questa frase.`
-          : 'Scegli un prompt per iniziare.';
+          ? t('familyVoice.copyHint')
+          : t('familyVoice.copyEmpty');
       }
       if (this.studioProgressEl) {
         this.studioProgressEl.style.width = `${progress * 100}%`;
       }
       if (this.studioStateEl) {
         this.studioStateEl.textContent = isRecording
-          ? 'Registrazione in corso'
+          ? t('familyVoice.stateRecording')
           : hasPrompt
-            ? 'Pronto a registrare'
-            : 'Nessun prompt selezionato';
+            ? t('familyVoice.stateReady')
+            : t('familyVoice.stateEmpty');
       }
       if (this.studioElapsedEl) {
         this.studioElapsedEl.textContent = `${elapsed.toFixed(1)}s`;
       }
       if (this.studioRecordBtn) {
-        this.studioRecordBtn.textContent = isRecording ? 'Ferma e salva' : 'Inizia registrazione';
+        this.studioRecordBtn.textContent = isRecording ? t('familyVoice.recordStop') : t('familyVoice.recordStart');
         this.studioRecordBtn.disabled = !hasPrompt;
       }
       if (this.prevPromptBtn) {
