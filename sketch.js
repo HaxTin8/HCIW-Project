@@ -1,8 +1,9 @@
-import { ELEMENTS, TEMPLATE_MAP, createCard } from './cards.js';
+import { ELEMENTS, TEMPLATE_MAP, createCard, getLocalizedElementName } from './cards.js';
 import { Game, GAME_STATE } from './game.js';
 import { audio } from './audio.js';
 import { speculaEnv } from './app-env.js';
 import { familyVoice } from './family-voice.js';
+import { getLocale, getLocaleOptions, getMessages, localizeDocument, onLocaleChange, setLocale, t } from './i18n.js';
 import { tts } from './tts.js';
 import { StoryEngine } from './stories/story-engine.js';
 import magicSchoolFontUrl from './fonts/magic-school.ttf?url';
@@ -27,8 +28,8 @@ var enemyShake = 0;
 var screenFlash = 0;
 
 var webcamState = 'loading';
-var webcamMessage = 'Sto preparando la fotocamera...';
-var statusMessage = 'Mostra una carta alla webcam per iniziare la tua avventura.';
+var webcamMessage = t('sketch.webcamPreparing');
+var statusMessage = t('sketch.showCard');
 
 // Player load one card at a time
 var playerSlots = [];
@@ -66,6 +67,7 @@ var debugOpenBtn;
 var debugCloseBtn;
 var familyVoiceEntryLink;
 var familyVoiceEntryStatus;
+var localeSelect;
 var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
@@ -82,6 +84,10 @@ const MAP_ROUND_POINTS = [
 ];
 var heroImages = {};
 var heroIntroStart = 0;
+var statusMessageKey = 'sketch.showCard';
+var statusMessageParams = {};
+var webcamMessageKey = 'sketch.webcamPreparing';
+var webcamMessageParams = {};
 const HERO_APPEAR = ['fire', 'water', 'river', 'towers', 'mountains'];
 const HERO_ZORDER = ['mountains', 'towers', 'river', 'water', 'fire'];
 const HERO_LAYOUT = {
@@ -178,6 +184,27 @@ function sy(v) {
   return v * scaleFactor;
 }
 
+function setStatusMessage(key, params = {}) {
+  statusMessageKey = key || '';
+  statusMessageParams = params;
+  statusMessage = key ? t(key, params) : String(params.message || '');
+}
+
+function setWebcamMessage(key, params = {}) {
+  webcamMessageKey = key || '';
+  webcamMessageParams = params;
+  webcamMessage = key ? t(key, params) : String(params.message || '');
+}
+
+function refreshLocalizedRuntimeText() {
+  if (statusMessageKey) {
+    statusMessage = t(statusMessageKey, statusMessageParams);
+  }
+  if (webcamMessageKey) {
+    webcamMessage = t(webcamMessageKey, webcamMessageParams);
+  }
+}
+
 function detectDebugMode() {
   return Boolean(speculaEnv.enableDebug);
 }
@@ -187,9 +214,9 @@ function populateProviderSelect(selectEl, providerState) {
 
   const current = providerState.preferredProvider || 'auto';
   const options = [
-    `<option value="auto"${current === 'auto' ? ' selected' : ''}>Automatico</option>`,
-    `<option value="piper"${current === 'piper' ? ' selected' : ''}>Piper server</option>`,
-    `<option value="browser"${current === 'browser' ? ' selected' : ''}>Browser</option>`
+    `<option value="auto"${current === 'auto' ? ' selected' : ''}>${t('gamePage.ttsProviderAuto')}</option>`,
+    `<option value="piper"${current === 'piper' ? ' selected' : ''}>${t('gamePage.ttsProviderPiper')}</option>`,
+    `<option value="browser"${current === 'browser' ? ' selected' : ''}>${t('gamePage.ttsProviderBrowser')}</option>`
   ];
 
   selectEl.html(options.join(''));
@@ -197,7 +224,7 @@ function populateProviderSelect(selectEl, providerState) {
 
 function updateProviderStatus(providerState) {
   if (!ttsProviderStatus || !ttsProviderStatus.elt || !providerState) return;
-  ttsProviderStatus.html(providerState.message || 'Sintesi vocale non disponibile.');
+  ttsProviderStatus.html(providerState.message || t('tts.providerUnavailable'));
   ttsProviderStatus.elt.dataset.provider = providerState.activeProvider || 'none';
 }
 
@@ -210,7 +237,7 @@ function populateVoiceSelect(selectEl, catalog, channel) {
   const currentVoiceURI = config
     ? (provider === 'piper' ? config.piperVoice : config.browserVoiceURI)
     : '';
-  const autoLabel = provider === 'piper' ? 'Automatica (server)' : 'Automatica (browser)';
+  const autoLabel = provider === 'piper' ? t('tts.autoServer') : t('tts.autoBrowser');
   const options = [`<option value="">${autoLabel}</option>`];
 
   for (const voice of voices) {
@@ -268,6 +295,7 @@ function setup() {
   debugCloseBtn = select('#debug-close-btn');
   familyVoiceEntryLink = select('#family-voice-entry-link');
   familyVoiceEntryStatus = select('#family-voice-entry-status');
+  localeSelect = select('#locale-select');
   debugMode = detectDebugMode();
 
   if (debugOpenBtn && debugOpenBtn.elt) {
@@ -362,7 +390,7 @@ function setup() {
     ttsToggle.changed(() => {
       const enabled = ttsToggle.checked();
       tts.setEnabled(enabled);
-      logToStatus(enabled ? 'Voce guida attivata.' : 'Voce guida disattivata.');
+      logToStatus(t(enabled ? 'sketch.guideVoiceEnabled' : 'sketch.guideVoiceDisabled'));
     });
   }
 
@@ -385,16 +413,31 @@ function setup() {
   if (ttsGameplayVoiceSelect) {
     ttsGameplayVoiceSelect.changed(() => {
       tts.setChannelVoice('gameplay', ttsGameplayVoiceSelect.value(), tts.getVoiceCatalog().activeProvider);
-      logToStatus('Voce guida aggiornata.');
+      logToStatus(t('sketch.guideVoiceUpdated'));
     });
   }
 
   if (ttsStoryVoiceSelect) {
     ttsStoryVoiceSelect.changed(() => {
       tts.setChannelVoice('story', ttsStoryVoiceSelect.value(), tts.getVoiceCatalog().activeProvider);
-      logToStatus('Voce narratore aggiornata.');
+      logToStatus(t('sketch.storyVoiceUpdated'));
     });
   }
+
+  setupLocaleControls();
+  localizeDocument();
+  onLocaleChange(() => {
+    localizeDocument();
+    setupLocaleControls();
+    refreshLocalizedRuntimeText();
+    updateFamilyVoiceSettingsState();
+    const providerState = tts.getProviderState();
+    populateProviderSelect(ttsProviderSelect, providerState);
+    updateProviderStatus(providerState);
+    const catalog = tts.getVoiceCatalog();
+    populateVoiceSelect(ttsGameplayVoiceSelect, catalog, 'gameplay');
+    populateVoiceSelect(ttsStoryVoiceSelect, catalog, 'story');
+  });
 
   tts.onVoicesChanged((catalog) => {
     populateProviderSelect(ttsProviderSelect, catalog.providerState);
@@ -417,15 +460,14 @@ function setup() {
     setupWebcam();
   } else {
     webcamState = 'waiting';
-    webcamMessage = 'Tocca il pulsante per attivare la fotocamera.';
+    setWebcamMessage('gamePage.cameraActivate');
     if (helpPanel && helpPanel.elt) {
       helpPanel.elt.open = false;
     }
     updateCameraButton();
   }
-  logToStatus(debugMode
-    ? 'Modalita debug attiva: usa i pulsanti rapidi per simulare i QR code.'
-    : 'Mostra una carta alla webcam per iniziare la tua avventura.');
+  setStatusMessage(debugMode ? 'sketch.debugEnabled' : 'sketch.showCard');
+  logToStatus(statusMessage);
 
   const loadingOverlay = select('#loading-overlay');
   if (loadingOverlay && loadingOverlay.elt) {
@@ -512,14 +554,27 @@ function updateFamilyVoiceSettingsState() {
 
   if (familyVoiceEntryStatus && familyVoiceEntryStatus.elt) {
     familyVoiceEntryStatus.elt.textContent = authenticated
-      ? 'Accesso attivo. Le registrazioni di famiglia possono essere usate dal gioco quando disponibili.'
-      : 'Accesso richiesto. Prima entra nello studio, poi potrai usare le registrazioni di famiglia nel gioco.';
+      ? t('sketch.familyVoiceAccessActive')
+      : t('gamePage.familyVoiceStatus');
   }
 
   if (familyVoiceEntryLink && familyVoiceEntryLink.elt) {
-    familyVoiceEntryLink.elt.textContent = authenticated ? 'Apri lo studio' : 'Accedi per usare la voce';
+    familyVoiceEntryLink.elt.textContent = authenticated ? t('sketch.openStudio') : t('gamePage.familyVoiceLink');
     familyVoiceEntryLink.elt.dataset.state = authenticated ? 'ready' : 'locked';
   }
+}
+
+function setupLocaleControls() {
+  if (!localeSelect || !localeSelect.elt) return;
+  localeSelect.html(getLocaleOptions()
+    .map((option) => `<option value="${option.value}">${option.label}</option>`)
+    .join(''));
+  localeSelect.elt.value = getLocale();
+  if (localeSelect.elt.dataset.bound === 'true') return;
+  localeSelect.elt.addEventListener('change', () => {
+    setLocale(localeSelect.value());
+  });
+  localeSelect.elt.dataset.bound = 'true';
 }
 function togglePrivacyInfoPopover() {
   if (!privacyInfoPopover || !privacyInfoPopover.elt) return;
@@ -564,7 +619,7 @@ function switchCamera() {
   currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
   console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
   webcamState = 'loading';
-  webcamMessage = 'Sto cambiando fotocamera...';
+  setWebcamMessage('sketch.webcamChanging');
   updateCameraButton();
   setTimeout(() => {
     setupWebcam();
@@ -577,15 +632,16 @@ function setupWebcam() {
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     webcamState = 'unsupported';
-    webcamMessage = 'Questo browser non supporta bene la fotocamera. Prova Chrome, Edge o Safari.';
+    setWebcamMessage('sketch.webcamUnsupported');
     console.error('[Webcam]', webcamMessage);
-    logToStatus(webcamMessage);
+    setStatusMessage(webcamMessageKey, webcamMessageParams);
+    logToStatus(statusMessage);
     updateCameraButton();
     return;
   }
 
   webcamState = 'loading';
-  webcamMessage = 'Sto chiedendo il permesso per usare la fotocamera...';
+  setWebcamMessage('sketch.webcamRequestingPermission');
 
   const constraints = {
     video: {
@@ -635,8 +691,9 @@ function tryCreateCapture(constraints, attempt) {
           console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
           if (webcamState !== 'active') {
             webcamState = 'active';
-            webcamMessage = 'Fotocamera attiva.';
-            logToStatus('Fotocamera attiva. Mostra una carta per iniziare la tua avventura.');
+            setWebcamMessage('sketch.webcamActive');
+            setStatusMessage('sketch.webcamActiveStatus');
+            logToStatus(statusMessage);
             updateCameraButton();
           }
         }
@@ -670,20 +727,22 @@ function tryCreateCapture(constraints, attempt) {
     if (isPlaying) {
       console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
       webcamState = 'active';
-      webcamMessage = 'Fotocamera attiva.';
-      logToStatus('Fotocamera attiva. Mostra una carta per iniziare la tua avventura.');
+      setWebcamMessage('sketch.webcamActive');
+      setStatusMessage('sketch.webcamActiveStatus');
+      logToStatus(statusMessage);
       updateCameraButton();
       return;
     }
 
     console.warn(`[Webcam] Video nero o non attivo al tentativo ${attempt}`);
     if (attempt < 3) {
-      webcamMessage = `Tentativo fotocamera ${attempt + 1}/3...`;
+      setWebcamMessage('sketch.webcamAttempt', { attempt: attempt + 1 });
       tryFallbackDevice(attempt + 1);
     } else {
       webcamState = 'error';
-      webcamMessage = 'Non riesco ad attivare la fotocamera. Tocca il pulsante per riprovare.';
-      logToStatus(webcamMessage);
+      setWebcamMessage('sketch.webcamRetry');
+      setStatusMessage(webcamMessageKey, webcamMessageParams);
+      logToStatus(statusMessage);
       updateCameraButton();
     }
   }, timeoutMs);
@@ -709,8 +768,9 @@ function tryFallbackDevice(attempt) {
           tryCreateCapture(mobileConstraints, attempt + 1);
         } else {
           webcamState = 'error';
-          webcamMessage = 'Non trovo una fotocamera. Collegane una e ricarica.';
-          logToStatus(webcamMessage);
+          setWebcamMessage('sketch.webcamNotFound');
+          setStatusMessage(webcamMessageKey, webcamMessageParams);
+          logToStatus(statusMessage);
           updateCameraButton();
         }
         return;
@@ -733,16 +793,18 @@ function tryFallbackDevice(attempt) {
         tryCreateCapture(constraints, attempt);
       } else {
         webcamState = 'error';
-        webcamMessage = 'Non ho trovato una fotocamera funzionante.';
-        logToStatus(webcamMessage);
+        setWebcamMessage('sketch.webcamNotWorking');
+        setStatusMessage(webcamMessageKey, webcamMessageParams);
+        logToStatus(statusMessage);
         updateCameraButton();
       }
     })
     .catch(err => {
       console.error('[Webcam] enumerateDevices error:', err);
       webcamState = 'error';
-      webcamMessage = 'C\'e stato un problema mentre cercavo le fotocamere.';
-      logToStatus(webcamMessage);
+      setWebcamMessage('sketch.webcamSearchError');
+      setStatusMessage(webcamMessageKey, webcamMessageParams);
+      logToStatus(statusMessage);
       updateCameraButton();
     });
 }
@@ -798,10 +860,10 @@ function draw() {
       drawRoundResult();
       break;
     case GAME_STATE.GAME_OVER:
-      drawEndScreen('AVVENTURA FINITA', '#e74c3c', 'Mostra una carta per ricominciare.');
+      drawEndScreen(t('sketch.gameOverTitle'), '#e74c3c', t('sketch.gameOverSubtitle'));
       break;
     case GAME_STATE.VICTORY:
-      drawEndScreen('BRAVISSIMO!', '#2ecc71', 'Mostra una carta per una nuova avventura.');
+      drawEndScreen(t('sketch.victoryTitle'), '#2ecc71', t('sketch.victorySubtitle'));
       break;
   }
 
@@ -849,17 +911,17 @@ function drawIdle() {
     fill('#5a4a34');
     textFont(kiddosFont || 'Space Grotesk');
     textAlign(CENTER, TOP);
-    text('Un solitario elementale guidato dalla magia della tua webcam.', tx, sy(195), tw);
+    text(t('sketch.introSubtitle'), tx, sy(195), tw);
 
     if (webcamState === 'active') {
-      const t = millis() / 1000;
-      const pulse = sin(t * 3) * sx(4);
+      const time = millis() / 1000;
+      const pulse = sin(time * 3) * sx(4);
       fill('#498AE2');
       textFont('Beachday');
       textSize(24 * scaleFactor);
       textLeading(30 * scaleFactor);
       textAlign(CENTER, TOP);
-      text('Mostra una carta alla webcam per iniziare', tx, sy(245) + pulse, tw);
+      text(t('sketch.introPrompt'), tx, sy(245) + pulse, tw);
     }
 
     fill('#2b2318');
@@ -899,17 +961,17 @@ function drawIdle() {
     fill('#5a4a34');
     textFont(kiddosFont || 'Space Grotesk');
     textAlign(CENTER, TOP);
-    text('Un solitario elementale guidato dalla magia della tua webcam.', tx, sy(330), tw);
+    text(t('sketch.introSubtitle'), tx, sy(330), tw);
 
     if (webcamState === 'active') {
-      const t = millis() / 1000;
-      const pulse = sin(t * 3) * sx(4);
+      const time = millis() / 1000;
+      const pulse = sin(time * 3) * sx(4);
       fill('#498AE2');
       textFont('Beachday');
       textSize(26 * scaleFactor);
       textLeading(36 * scaleFactor);
       textAlign(CENTER, TOP);
-      text('Mostra una carta alla webcam per iniziare', tx, sy(400) + pulse, tw);
+      text(t('sketch.introPrompt'), tx, sy(400) + pulse, tw);
     }
   }
 
@@ -985,19 +1047,19 @@ function drawRoundResult() {
 
   if (game.lastResult === 'win') {
     fill('#2ecc71');
-    text('ROUND VINTO!', width / 2, height / 2 - 30);
+    text(t('sketch.roundWon'), width / 2, height / 2 - 30);
   } else if (game.lastResult === 'lose') {
     fill('#e74c3c');
-    text('ROUND PERSO', width / 2, height / 2 - 30);
+    text(t('sketch.roundLost'), width / 2, height / 2 - 30);
   } else {
     fill('#8380BC');
-    text('PAREGGIO', width / 2, height / 2 - 30);
+    text(t('sketch.roundDraw'), width / 2, height / 2 - 30);
   }
 
   textStyle(NORMAL);
   textSize(18);
   fill(255);
-  text(game.lastResult === 'win' ? 'Hai superato la prova.' : game.lastResult === 'lose' ? 'Perdi un cuore, ma puoi imparare dal round.' : 'Osserva meglio gli elementi per il prossimo turno.', width / 2, height / 2 + 30);
+  text(game.lastResult === 'win' ? t('sketch.roundWonBody') : game.lastResult === 'lose' ? t('sketch.roundLostBody') : t('sketch.roundDrawBody'), width / 2, height / 2 + 30);
 
   resultTimer++;
   if (resultTimer > 90 && !tts.isSpeaking()) {
@@ -1180,20 +1242,20 @@ function drawHUD() {
   textSize(layout.hudFont);
   textStyle(BOLD);
   if (heartImage && heartImage.width > 0) {
-    text('Cuori:', layout.hudX, layout.hudY);
-    const labelWidth = textWidth('Cuori:');
+    text(t('sketch.hearts'), layout.hudX, layout.hudY);
+    const labelWidth = textWidth(t('sketch.hearts'));
     const heartSize = layout.compact ? 18 : 22;
     const heartY = layout.hudY - 2;
     for (let i = 0; i < max(game.hp, 0); i++) {
       image(heartImage, layout.hudX + labelWidth + 10 + i * (heartSize + 4), heartY, heartSize, heartSize);
     }
   } else {
-    text(`Cuori: ${'❤️'.repeat(max(game.hp, 0))}`, layout.hudX, layout.hudY);
+    text(`${t('sketch.hearts')} ${'❤️'.repeat(max(game.hp, 0))}`, layout.hudX, layout.hudY);
   }
   fill('#000000');
-  text(`Round: ${game.round}/${game.roundsToWin}`, layout.hudX, layout.hudY + (layout.compact ? 24 : 28));
+  text(t('sketch.roundCounter', { current: game.round, total: game.roundsToWin }), layout.hudX, layout.hudY + (layout.compact ? 24 : 28));
   if (game.enemies.length > 0) {
-    text(`Carta avversaria: ${game.currentEnemyIndex + 1}/${game.enemies.length}`, layout.hudX, layout.hudY + (layout.compact ? 48 : 56));
+    text(t('sketch.enemyCounter', { current: game.currentEnemyIndex + 1, total: game.enemies.length }), layout.hudX, layout.hudY + (layout.compact ? 48 : 56));
   }
   textStyle(NORMAL);
 
@@ -1316,7 +1378,7 @@ function drawWebcamOverlay() {
 
   const isProblem = webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported';
   const accent = isProblem ? '#DD4B50' : '#498AE2';
-  const hint = isProblem ? 'Concedi il permesso e premi F5 per ricaricare.' : null;
+  const hint = isProblem ? t('sketch.webcamPermissionHint') : null;
   const alertW = isCompact ? width - sx(30) : sx(440);
   const alertH = hint ? sy(88) : sy(64);
   const x = width / 2 - alertW / 2;
@@ -1346,7 +1408,7 @@ function drawWebcamOverlay() {
   textStyle(BOLD);
   fill('#2b2318');
   textSize(13 * scaleFactor);
-  text('Webcam', tx, hint ? y + sy(22) : icoY - sy(8));
+  text(t('sketch.webcamLabel'), tx, hint ? y + sy(22) : icoY - sy(8));
   textStyle(NORMAL);
 
   textFont('Nunito');
@@ -1399,17 +1461,10 @@ function drawHelpPanel() {
   fill('#498AE2');
   textAlign(LEFT, TOP);
   textSize(16 * scaleFactor);
-  text('COME SI GIOCA', px + padX, py + sy(12));
+  text(t('sketch.howToPlay'), px + padX, py + sy(12));
   textStyle(NORMAL);
 
-  const lines = [
-    'Le tue carte sono fisiche.',
-    'Mostrale alla webcam per giocarle.',
-    'Il computer legge e parla.',
-    'Se vinci avanzi nella mappa.',
-    'Se perdi, -1 HP.',
-    'Vinci dopo 8 round.'
-  ];
+  const lines = getMessages().sketch.howToPlayLines || [];
 
   textFont('Nunito');
   textSize(11 * scaleFactor);
@@ -1437,7 +1492,7 @@ function drawHelpPanel() {
   textStyle(BOLD);
   fill('#498AE2');
   textSize(13 * scaleFactor);
-  text('STATO', px + padX, cursorY);
+  text(t('sketch.statusLabel'), px + padX, cursorY);
   textStyle(NORMAL);
   cursorY += sy(20);
 
@@ -1540,24 +1595,22 @@ function drawMapOverlay() {
 function getStrongAgainstText(elementId) {
   const element = ELEMENTS[elementId];
   if (!element || !element.strongVs || element.strongVs.length === 0) return '';
-  return element.strongVs.map((id) => ELEMENTS[id].name).join(' e ');
+  return element.strongVs.map((id) => getLocalizedElementName(id)).join(' e ');
 }
 
 function getWeakAgainstText(elementId) {
   const element = ELEMENTS[elementId];
   if (!element || !element.weakTo || element.weakTo.length === 0) return '';
-  return element.weakTo.map((id) => ELEMENTS[id].name).join(' e ');
+  return element.weakTo.map((id) => getLocalizedElementName(id)).join(' e ');
 }
 
 function getEnemyHint(enemy) {
   const strongChoices = getWeakAgainstText(enemy.element);
-  const elementName = ELEMENTS[enemy.element].name;
-  return `Suggerimento: contro ${enemy.name}, prova ${strongChoices}.`;
+  return t('sketch.enemyHint', { enemy: enemy.name, choices: strongChoices });
 }
 
 function getCardLearningLine(card) {
-  const strongChoices = getStrongAgainstText(card.element);
-  return `${ELEMENTS[card.element].name}.`;
+  return `${getLocalizedElementName(card.element)}.`;
 }
 
 function getEnemyAnnouncement(enemy) {
@@ -1835,7 +1888,7 @@ function drawSlots() {
       textFont('Beachday');
       textSize(layout.compact ? 16 : 22);
       textLeading(layout.compact ? 19 : 26);
-      text('La tua\ncarta', 0, 0);
+      text(t('sketch.playerCardSlot'), 0, 0);
     }
 
     pop();
@@ -1867,7 +1920,7 @@ function loadCardIntoSlot(templateId) {
   slotEmptyFrames = 0;
   audio.playCard();
   const card = playerSlots[0];
-  tts.speak(`${getCardLearningLine(card)} Togli la carta.`, {
+  tts.speak(t('sketch.cardInSingleSlot', { line: getCardLearningLine(card) }), {
     channel: 'gameplay',
     promptKey: getCardPromptKey(card, true)
   });
@@ -1927,7 +1980,7 @@ function drawTTSPause() {
   textAlign(CENTER, CENTER);
   textFont('Beachday');
   textSize(layout.compact ? 28 : 42);
-  text('Ascolta...', width / 2, height * 0.42);
+  text(t('sketch.listening'), width / 2, height * 0.42);
 }
 
 // QR reader
@@ -1969,7 +2022,7 @@ function handleQRDetected(id) {
 
     if (event.action === 'start' || event.action === 'restart') {
       audio.playStart();
-      tts.speak('Inizia l\'avventura.', {
+      tts.speak(t('game.startAdventure'), {
         priority: true,
         channel: 'gameplay',
         promptKey: 'game.start'
@@ -1977,7 +2030,7 @@ function handleQRDetected(id) {
       lastPlayedCard = null;
       animProgress = 0;
       resetSlots();
-      logToStatus(event.action === 'start' ? 'Avventura iniziata.' : 'Nuova avventura.');
+      logToStatus(event.action === 'start' ? t('sketch.adventureStarted') : t('sketch.adventureRestarted'));
 
       if (event.action === 'start' && id && TEMPLATE_MAP[id]) {
         storyEngine.selectStory(id).then(() => {
@@ -2017,7 +2070,7 @@ function handleQRDetected(id) {
       }
       return;
     } else if (event.action === 'unknown') {
-      logToStatus(`Non riconosco questa carta: ${id}.`);
+      logToStatus(t('sketch.unrecognizedCard', { id }));
     }
     return;
   }
@@ -2041,6 +2094,10 @@ function handleQRDetected(id) {
 
 // UI DOM
 function logToStatus(message) {
+  if (message !== statusMessage) {
+    statusMessageKey = '';
+    statusMessageParams = {};
+  }
   statusMessage = message;
   if (statusEl) statusEl.html(message);
   if (logBalloonEl) {

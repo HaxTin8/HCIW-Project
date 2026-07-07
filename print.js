@@ -1,16 +1,21 @@
 import './app-env.js';
-import { CARD_TEMPLATES, ELEMENTS } from './cards.js';
+import { CARD_TEMPLATES, ELEMENTS, getLocalizedElementName, getLocalizedTemplateName } from './cards.js';
+import { getLocale, getLocaleOptions, localizeDocument, onLocaleChange, setLocale, t } from './i18n.js';
 
 const sheet = document.getElementById('sheet');
+const localeSelect = document.getElementById('print-locale-select');
+const introEl = document.getElementById('print-intro');
+const printBtn = document.getElementById('print-btn');
 
 function beatsDescription(elementId) {
   const elem = ELEMENTS[elementId];
   const icons = elem.strongVs.map((id) => {
     const name = id.toLowerCase();
-    return `<img class="vs-icon" src="assets/elements/${name}.png" alt="${ELEMENTS[id].name}" title="${ELEMENTS[id].name}">`;
+    const localizedName = getLocalizedElementName(id);
+    return `<img class="vs-icon" src="assets/elements/${name}.png" alt="${localizedName}" title="${localizedName}">`;
   });
-  const verb = elementId === 'FIRE' ? 'battono' : 'batte';
-  return `<span>${elem.name} ${verb}</span> ${icons[0]} <span>e</span> ${icons[1]}`;
+  const verb = elementId === 'FIRE' ? t('printPage.beatsPlural') : t('printPage.beatsSingle');
+  return `<span>${getLocalizedElementName(elementId)} ${verb}</span> ${icons[0]} <span>e</span> ${icons[1]}`;
 }
 
 function elementIcon(elementId) {
@@ -49,7 +54,7 @@ function createCardElement(template) {
   const qrImg = generateQR(template.id);
 
   card.innerHTML = `
-    <div class="card-name" style="color: ${elem.color}">${template.name}</div>
+    <div class="card-name" style="color: ${elem.color}">${getLocalizedTemplateName(template.id)}</div>
     <div class="card-medallion-wrap">
       <div class="card-medallion">${elementIcon(template.element)}</div>
     </div>
@@ -59,30 +64,59 @@ function createCardElement(template) {
   return card;
 }
 
-for (const template of CARD_TEMPLATES) {
-  sheet.appendChild(createCardElement(template));
-}
-
-const specialCards = [
-  { id: 'RESTART', name: 'Ricomincia', desc: 'Ricomincia la partita.', color: '#1C0A0A' }
-];
-
-for (const special of specialCards) {
+function createSpecialCardElement() {
   const card = document.createElement('div');
   card.className = 'card';
-  let medallionContent = special.emoji;
-
-  if (special.id === 'RESTART') {
-    medallionContent = '<img src="assets/elements/restart.png" alt="Ricomincia" style="width: 80%; height: 80%; object-fit: contain;">';
-  }
-
   card.innerHTML = `
-    <div class="card-name" style="color: ${special.color}">${special.name}</div>
+    <div class="card-name" style="color: #1C0A0A">${t('printPage.restartName')}</div>
     <div class="card-medallion-wrap">
-      <div class="card-medallion circle">${medallionContent}</div>
+      <div class="card-medallion circle"><img src="assets/elements/restart.png" alt="${t('printPage.restartName')}" style="width: 80%; height: 80%; object-fit: contain;"></div>
     </div>
-    <div class="card-desc">${special.desc}</div>
-    <div class="card-qr">${generateQR(special.id)}</div>
+    <div class="card-desc">${t('printPage.restartDescription')}</div>
+    <div class="card-qr">${generateQR('RESTART')}</div>
   `;
-  sheet.appendChild(card);
+  return card;
 }
+
+function renderIntro() {
+  if (!introEl) return;
+  introEl.innerHTML = t('printPage.intro', { app: '<span data-app-name>Specula Elementae</span>' });
+}
+
+function renderSheet() {
+  sheet.innerHTML = '';
+  for (const template of CARD_TEMPLATES) {
+    sheet.appendChild(createCardElement(template));
+  }
+  sheet.appendChild(createSpecialCardElement());
+}
+
+function setupLocaleControls() {
+  if (!localeSelect) return;
+  localeSelect.innerHTML = getLocaleOptions()
+    .map((option) => `<option value="${option.value}">${option.label}</option>`)
+    .join('');
+  localeSelect.value = getLocale();
+  if (localeSelect.dataset.bound === 'true') return;
+  localeSelect.addEventListener('change', () => {
+    setLocale(localeSelect.value);
+  });
+  localeSelect.dataset.bound = 'true';
+}
+
+function renderPage() {
+  localizeDocument();
+  setupLocaleControls();
+  renderIntro();
+  renderSheet();
+}
+
+if (printBtn) {
+  printBtn.addEventListener('click', () => window.print());
+}
+
+onLocaleChange(() => {
+  renderPage();
+});
+
+renderPage();

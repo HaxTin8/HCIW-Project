@@ -1,0 +1,34 @@
+:: StoryTitle
+The Thunder of Origins
+
+:: StoryData
+{
+  "id": "tuono-delle-origini",
+  "author": "Specula Elementae",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+Bolt cuts across the sky and thunder makes you jump. It is a beautiful power that must be used with care.
+
+[[Strike->inizio-avventura]]
+
+:: inizio-avventura
+Lightning never arrives in exactly the same way: sometimes fast, sometimes slow. That is why you must look carefully before you move.
+
+:: evento-round-2 [mid-story]
+A storm arrives. Thunder gives you a lot of extra strength. But when you are very strong, you must also be more careful not to make mistakes.
+
+```gameEffects
+{
+  "allCardsPowerBonus": 2,
+  "hpPenaltyOnLoss": 1,
+  "roundSpecific": 2
+}
+```
+
+:: epilogo-vittoria [ending victory]
+You learned to use thunder with care. The sky seems pleased with you.
+
+:: epilogo-sconfitta [ending defeat]
+Lightning returns to the clouds, but it is not over. Storms always come back, and you can try again.

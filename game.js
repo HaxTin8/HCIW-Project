@@ -4,6 +4,7 @@
  */
 
 import { CARD_TEMPLATES, TEMPLATE_MAP, createCard, resolveCombat } from './cards.js';
+import { t } from './i18n.js';
 
 const GAME_STATE = {
     IDLE: 'idle',
@@ -50,9 +51,9 @@ class Game {
     start(seedTemplateId = null) {
       this.reset();
       this.state = GAME_STATE.PLAYING;
-      this.log('Inizia l\'avventura.');
+      this.log(t('game.startAdventure'));
       if (seedTemplateId && TEMPLATE_MAP[seedTemplateId]) {
-        this.log(`Carta iniziale: ${seedTemplateId}.`);
+        this.log(t('game.startingCard', { cardId: seedTemplateId }));
       }
       this.spawnEnemies();
       return this.state;
@@ -116,7 +117,7 @@ class Game {
 
       if (result === 'win') {
         this.lastResult = 'win';
-        this.log(`${card.name} batte ${this.currentEnemy.name}.`);
+        this.log(t('game.winCombat', { player: card.name, enemy: this.currentEnemy.name }));
         this.state = GAME_STATE.ROUND_RESULT;
       } else if (result === 'lose') {
         this.lastResult = 'lose';
@@ -124,11 +125,11 @@ class Game {
         if (this._storyHpPenaltyOnLoss) {
           this.hp -= this._storyHpPenaltyOnLoss;
         }
-        this.log(`${card.name} perde contro ${this.currentEnemy.name}.`);
+        this.log(t('game.loseCombat', { player: card.name, enemy: this.currentEnemy.name }));
         this.state = GAME_STATE.ROUND_RESULT;
       } else {
         this.lastResult = 'draw';
-        this.log(`${card.name} pareggia con ${this.currentEnemy.name}.`);
+        this.log(t('game.drawCombat', { player: card.name, enemy: this.currentEnemy.name }));
         this.state = GAME_STATE.ROUND_RESULT;
       }
 
@@ -145,14 +146,14 @@ class Game {
       if (this.lastResult === 'win') {
         if (this.round >= this.roundsToWin) {
           this.state = GAME_STATE.VICTORY;
-          this.log('Hai completato l\'avventura!');
+          this.log(t('game.victory'));
           return this.state;
         }
         this.spawnEnemies();
       } else if (this.lastResult === 'lose') {
         if (this.hp <= 0) {
           this.state = GAME_STATE.GAME_OVER;
-          this.log('L\'avventura si ferma qui, ma puoi riprovare.');
+          this.log(t('game.gameOver'));
           return this.state;
         }
       } else {
@@ -161,7 +162,7 @@ class Game {
 
       this.resetStoryEffects();
       this.state = GAME_STATE.PLAYING;
-      this.log('Si riparte.');
+      this.log(t('game.resume'));
       return this.state;
     }
 
@@ -180,13 +181,13 @@ class Game {
           this.start(id);
           return { action: 'start', state: this.state };
         }
-        this.log(`Carta non riconosciuta: ${id}.`);
+        this.log(t('game.unknownCard', { id }));
         return { action: 'unknown', state: this.state };
       }
 
       if (this.state === GAME_STATE.PLAYING) {
         if (!TEMPLATE_MAP[id]) {
-          this.log(`Carta non riconosciuta: ${id}.`);
+          this.log(t('game.unknownCard', { id }));
           return { action: 'unknown', state: this.state };
         }
         const res = this.playCardSequential(id);

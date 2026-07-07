@@ -1,72 +1,67 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { CARD_TEMPLATES, ELEMENTS } from '../cards.js';
+import { CARD_TEMPLATES, getLocalizedElementName, getLocalizedTemplateName } from '../cards.js';
+import { normalizeLocale, t } from '../i18n.js';
 
-function getStrongAgainstText(elementId) {
-  const element = ELEMENTS[elementId];
-  if (!element || !element.strongVs || element.strongVs.length === 0) return '';
-  return element.strongVs.map((id) => ELEMENTS[id].name).join(' e ');
+function getCardLearningLine(template, locale) {
+  return `${getLocalizedElementName(template.element, locale)}.`;
 }
 
-function getCardLearningLine(template) {
-  const strongChoices = getStrongAgainstText(template.element);
-  return `${ELEMENTS[template.element].name}`;
-}
-
-function buildGameplayPrompts() {
+function buildGameplayPrompts(locale) {
   const prompts = [
     {
       id: 'game.start',
       groupId: 'gameplay',
       channel: 'gameplay',
-      title: 'Inizio avventura',
-      script: 'Inizia l\'avventura.'
+      title: t('promptCatalog.titleGameStart', {}, locale),
+      script: t('game.startAdventure', {}, locale)
     },
     {
       id: 'game.mode.sequential',
       groupId: 'gameplay',
       channel: 'gameplay',
-      title: 'Modalita una carta alla volta',
-      script: 'Modalita una carta alla volta.'
+      title: t('promptCatalog.titleModeSequential', {}, locale),
+      script: t('sketch.modeSequential', {}, locale)
     },
     {
       id: 'game.mode.simultaneous',
       groupId: 'gameplay',
       channel: 'gameplay',
-      title: 'Modalita sfida multipla',
-      script: 'Modalita sfida multipla.'
+      title: t('promptCatalog.titleModeSimultaneous', {}, locale),
+      script: t('sketch.modeSimultaneous', {}, locale)
     }
   ];
 
   for (const template of CARD_TEMPLATES) {
-    const learningLine = getCardLearningLine(template);
+    const learningLine = getCardLearningLine(template, locale);
+    const localizedName = getLocalizedTemplateName(template.id, locale);
     prompts.push({
       id: `game.card.${template.id}`,
       groupId: 'gameplay',
       channel: 'gameplay',
-      title: `${template.name} nello slot`,
+      title: t('promptCatalog.titleCardSlot', { name: localizedName }, locale),
       script: learningLine
     });
     prompts.push({
       id: `game.card.${template.id}.remove`,
       groupId: 'gameplay',
       channel: 'gameplay',
-      title: `${template.name} nello slot singolo`,
-      script: `${learningLine} Togli la carta.`
+      title: t('promptCatalog.titleCardSingle', { name: localizedName }, locale),
+      script: t('sketch.cardInSingleSlot', { line: learningLine }, locale)
     });
     prompts.push({
       id: `game.enemy.${template.id}`,
       groupId: 'gameplay',
       channel: 'gameplay',
-      title: `${template.name} nemico`,
-      script: template.name
+      title: t('promptCatalog.titleEnemy', { name: localizedName }, locale),
+      script: localizedName
     });
   }
 
   return prompts;
 }
 
-function loadGeneratedStories(rootDir) {
+function loadGeneratedStories(rootDir, locale = 'it') {
   const generatedDir = path.join(rootDir, 'stories', 'generated');
   const indexPath = path.join(generatedDir, 'index.json');
   if (!fs.existsSync(indexPath)) {
@@ -78,7 +73,12 @@ function loadGeneratedStories(rootDir) {
 
   for (const [cardId, entry] of Object.entries(storyIndex)) {
     if (cardId === '_meta') continue;
-    const storyPath = path.join(rootDir, entry.file);
+    const localizedEntry = entry.locales && entry.locales[locale]
+      ? entry.locales[locale]
+      : entry.locales && entry.locales.it
+        ? entry.locales.it
+        : entry;
+    const storyPath = path.join(rootDir, localizedEntry.file);
     if (!fs.existsSync(storyPath)) continue;
     stories.push(JSON.parse(fs.readFileSync(storyPath, 'utf8')));
   }
@@ -86,8 +86,8 @@ function loadGeneratedStories(rootDir) {
   return stories;
 }
 
-function buildStoryGroups(rootDir) {
-  const stories = loadGeneratedStories(rootDir);
+function buildStoryGroups(rootDir, locale) {
+  const stories = loadGeneratedStories(rootDir, locale);
   const groups = [];
 
   for (const story of stories) {
@@ -109,7 +109,7 @@ function buildStoryGroups(rootDir) {
     groups.push({
       id: `story-${story.id}`,
       title: story.title,
-      description: `Passaggi narrativi della storia ${story.title}`,
+      description: t('promptCatalog.storyGroupDescription', { title: story.title }, locale),
       prompts
     });
   }
@@ -117,15 +117,16 @@ function buildStoryGroups(rootDir) {
   return groups;
 }
 
-function buildPromptCatalog(rootDir) {
-  const gameplayPrompts = buildGameplayPrompts();
-  const storyGroups = buildStoryGroups(rootDir);
+function buildPromptCatalog(rootDir, options = {}) {
+  const locale = normalizeLocale(options.locale);
+  const gameplayPrompts = buildGameplayPrompts(locale);
+  const storyGroups = buildStoryGroups(rootDir, locale);
 
   const groups = [
     {
       id: 'gameplay',
-      title: 'Frasi di gioco',
-      description: 'Prompt essenziali del gameplay che possono usare voci di famiglia.',
+      title: t('promptCatalog.groupGameplayTitle', {}, locale),
+      description: t('promptCatalog.groupGameplayDescription', {}, locale),
       prompts: gameplayPrompts
     },
     ...storyGroups

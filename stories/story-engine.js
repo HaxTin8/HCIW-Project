@@ -12,6 +12,8 @@
  * 6. Fornisce testo da leggere via TTS
  */
 
+import { getLocale, normalizeLocale } from '../i18n.js';
+
 class StoryEngine {
     constructor() {
       this.index = null;          // stories/index.json
@@ -20,6 +22,7 @@ class StoryEngine {
       this.passageHistory = [];   // passaggi visitati
       this.pendingTTS = [];       // testo in coda per TTS
       this.loaded = false;
+      this.loadedLocale = '';
     }
 
     /**
@@ -31,6 +34,7 @@ class StoryEngine {
         this.index = await res.json();
         delete this.index._meta;
         this.loaded = true;
+        this.loadedLocale = normalizeLocale(getLocale());
         console.log('[StoryEngine] Indice caricato:', Object.keys(this.index));
         return true;
       } catch (e) {
@@ -43,7 +47,8 @@ class StoryEngine {
      * Seleziona e carica una storia in base all'ID carta
      */
     async selectStory(cardId) {
-      if (!this.loaded) {
+      const activeLocale = normalizeLocale(getLocale());
+      if (!this.loaded || this.loadedLocale !== activeLocale) {
         await this.loadIndex();
       }
 
@@ -55,7 +60,12 @@ class StoryEngine {
       }
 
       try {
-        const res = await fetch(entry.file);
+        const localizedEntry = entry.locales && entry.locales[activeLocale]
+          ? entry.locales[activeLocale]
+          : entry.locales && entry.locales.it
+            ? entry.locales.it
+            : entry;
+        const res = await fetch(localizedEntry.file);
         this.currentStory = await res.json();
         this.currentPassage = this.currentStory.startPassage;
         this.passageHistory = [];

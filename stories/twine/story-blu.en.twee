@@ -1,0 +1,33 @@
+:: StoryTitle
+The Waters of Time
+
+:: StoryData
+{
+  "id": "acque-del-tempo",
+  "author": "Specula Elementae",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+A Droplet falls into your hands. Water is patient, it flows little by little, circles around stones, and helps every plant grow.
+
+[[Begin->inizio-avventura]]
+
+:: inizio-avventura
+Water always finds its path. Play calmly: you will see that being gentle is a great strength.
+
+:: evento-round-3 [mid-story]
+A small wave crosses the field. The enemies become a little confused. Sometimes staying balanced is as good as winning.
+
+```gameEffects
+{
+  "drawCountsAsWin": true,
+  "roundSpecific": 3
+}
+```
+
+:: epilogo-vittoria [ending victory]
+You followed every current with calm. Now you know that water teaches us to listen, to wait, and to help life begin.
+
+:: epilogo-sconfitta [ending defeat]
+Even rivers meet stones and waterfalls along the way. But water never stops: you will flow again, with more patience and more trust.

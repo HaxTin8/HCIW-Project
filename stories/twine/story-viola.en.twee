@@ -1,0 +1,33 @@
+:: StoryTitle
+The Power of Shadow
+
+:: StoryData
+{
+  "id": "ombre-del-passato",
+  "author": "Specula Elementae",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+The sky grows dark and everything slows down. In the dark you can hear sounds that disappear during the day and notice things that were hidden before.
+
+[[Step into the shadow->inizio-avventura]]
+
+:: inizio-avventura
+Darkness dims the lights and helps you focus. Look at the screen carefully and choose the right card without rushing.
+
+:: evento-round-5 [mid-story]
+A great shadowy cloak covers you and protects you from enemy attacks. Use this moment to rest and prepare your move.
+
+```gameEffects
+{
+  "ignoreWeakness": true,
+  "roundSpecific": 5
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Your choice was precise. You used the dark to observe the enemy and found the right path to win.
+
+:: epilogo-sconfitta [ending defeat]
+This time the darkness slowed your steps. Take a deep breath, look carefully at the cards, and try again.

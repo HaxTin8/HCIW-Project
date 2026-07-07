@@ -14,7 +14,9 @@ COPY family-voice.html ./family-voice.html
 COPY family-voice.js ./family-voice.js
 COPY fonts ./fonts
 COPY game.js ./game.js
+COPY i18n.js ./i18n.js
 COPY index.html ./index.html
+COPY locales ./locales
 COPY print.html ./print.html
 COPY print.js ./print.js
 COPY sketch.js ./sketch.js
@@ -26,7 +28,7 @@ COPY tts.js ./tts.js
 COPY vite.config.js ./vite.config.js
 COPY assets ./assets
 
-RUN node scripts/build-stories.js && npx vite build
+RUN node scripts/build-locales.js && node scripts/build-stories.js && npx vite build
 
 # Runtime Node leggero: statici, auth, salvataggio registrazioni e proxy Piper
 FROM node:24-alpine
@@ -37,6 +39,8 @@ COPY package.json ./package.json
 COPY package-lock.json ./package-lock.json
 COPY app-env.js ./app-env.js
 COPY cards.js ./cards.js
+COPY i18n.js ./i18n.js
+COPY locales ./locales
 COPY server ./server
 COPY --from=app-build /app/stories/generated ./stories/generated
 COPY --from=app-build /app/dist ./dist

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Specula Elementae - Carte da stampare</title>
+  <title data-i18n="printPage.title">Specula Elementae - Carte da stampare</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -234,19 +234,25 @@
 </head>
 <body>
   <div class="no-print">
-    <h1>Carte da stampare</h1>
-    <p>Ogni carta include il proprio QR code. Usale con <span data-app-name>Specula Elementae</span>.</p>
-    <p>Suggerimento: stampa su carta rigida o plastifica le carte.</p>
+    <div class="no-print-actions" style="justify-content: space-between; margin-top: 0; margin-bottom: 12px;">
+      <label class="voice-field" for="print-locale-select" style="text-align:left; color:#ffffff; font-weight:700;">
+        <span data-i18n="ui.languageLabel">Lingua</span>
+        <select id="print-locale-select" style="margin-left:8px; padding:8px 10px; border-radius:999px; border:none;"></select>
+      </label>
+    </div>
+    <h1 data-i18n="printPage.heading">Carte da stampare</h1>
+    <p id="print-intro">Ogni carta include il proprio QR code. Usale con <span data-app-name>Specula Elementae</span>.</p>
+    <p data-i18n="printPage.tip">Suggerimento: stampa su carta rigida o plastifica le carte.</p>
     <div class="play-modes">
-      <h2>Due modi per giocare</h2>
-      <p><strong>Modalita libera:</strong> tutte le 6 carte restano sempre disponibili, quindi il gioco e' piu' immediato e adatto ai bambini piu' piccoli.</p>
-      <p><strong>Modalita mazzo:</strong> prepara un mazzo con piu' copie delle 6 carte, pesca 5 carte all'inizio e poi continua a pescare durante la partita. In questo modo il gioco diventa piu' difficile e strategico.</p>
+      <h2 data-i18n="printPage.playModesTitle">Due modi per giocare</h2>
+      <p><strong data-i18n="printPage.playModeFreeTitle">Modalita libera:</strong> <span data-i18n="printPage.playModeFreeBody">tutte le 6 carte restano sempre disponibili, quindi il gioco e' piu' immediato e adatto ai bambini piu' piccoli.</span></p>
+      <p><strong data-i18n="printPage.playModeDeckTitle">Modalita mazzo:</strong> <span data-i18n="printPage.playModeDeckBody">prepara un mazzo con piu' copie delle 6 carte, pesca 5 carte all'inizio e poi continua a pescare durante la partita. In questo modo il gioco diventa piu' difficile e strategico.</span></p>
     </div>
     <div class="no-print-actions">
-      <button>
-        <a href="index.html">Torna al gioco</a>
+      <button type="button">
+        <a href="index.html" data-i18n="printPage.backToGame">Torna al gioco</a>
       </button>
-      <button onclick="window.print()">Stampa</button>
+      <button type="button" id="print-btn" data-i18n="printPage.printButton">Stampa</button>
     </div>
   </div>
 

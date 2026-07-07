@@ -1,0 +1,46 @@
+:: StoryTitle
+The Fire of Destiny
+
+:: StoryData
+{
+  "id": "fuoco-del-destino",
+  "author": "Specula Elementae",
+  "startPassage": "prologo"
+}
+
+:: prologo [opening]
+Ember warms your hands like a kind little campfire. Fire can give light and warmth, but you must be careful when you use it.
+
+[[Continue->nemici-modificati]]
+
+:: nemici-modificati [game-effect]
+Ember keeps you warm and gives you courage. The enemy grows weaker. Fire is strong when it helps, not when it hurts.
+
+[[Start the adventure->inizio-avventura]]
+
+```gameEffects
+{
+  "enemyPowerModifier": -1,
+  "firstRoundOnly": true
+}
+```
+
+:: inizio-avventura
+The road is long, but every step matters. Whether you win or lose, you are growing a little more.
+
+:: evento-round-3 [mid-story]
+A cold wind arrives from the mountains halfway through the journey. The enemies grow stronger, but you feel more courage inside you.
+
+```gameEffects
+{
+  "hpBonus": 1,
+  "enemyPowerModifier": 1,
+  "roundSpecific": 3
+}
+```
+
+:: epilogo-vittoria [ending victory]
+Ember has become a warm light for everyone. You learned that fire is meant to protect friends, not destroy them.
+
+:: epilogo-sconfitta [ending defeat]
+Ember fades a little, but a small spark stays alive. Next time you will know how to use fire with even more care.
