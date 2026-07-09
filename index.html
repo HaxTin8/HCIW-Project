@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,14 +8,11 @@
   <title data-i18n="gamePage.title">Specula Elementae</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
-
 <body class="game-page">
   <div id="loading-overlay" aria-hidden="true">
     <div class="loading-spinner">
@@ -31,10 +27,7 @@
   <div id="app">
     <header class="page-header">
       <div class="page-top-actions">
-        <button id="fullscreen-btn" class="top-action-btn" type="button" data-i18n="gamePage.fullscreenEnter">Schermo
-          intero</button>
-        <button id="switch-camera-btn" class="secondary-btn" type="button" data-i18n="gamePage.cameraSwitch">Cambia
-          fotocamera</button>
+        <button id="fullscreen-btn" class="top-action-btn" type="button" data-i18n="gamePage.fullscreenEnter">Schermo intero</button>
       </div>
     </header>
 
@@ -43,51 +36,41 @@
         <div id="log-balloon" class="desktop-only" aria-live="polite"></div>
         <div class="canvas-actions">
           <div class="icon-btn-row">
-            <button id="settings-open-btn" class="icon-btn" type="button"
-              data-i18n-attr="aria-label:gamePage.settingsAria;title:gamePage.settingsAria">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                <circle cx="12" cy="12" r="3" />
+            <button id="settings-open-btn" class="icon-btn" type="button" data-i18n-attr="aria-label:gamePage.settingsAria;title:gamePage.settingsAria">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
-            <button id="privacy-info-btn" class="icon-btn" type="button"
-              data-i18n-attr="aria-label:gamePage.privacyAria;title:gamePage.privacyAria">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4" />
-                <path d="M12 8h.01" />
+            <button id="privacy-info-btn" class="icon-btn" type="button" data-i18n-attr="aria-label:gamePage.privacyAria;title:gamePage.privacyAria">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4"/>
+                <path d="M12 8h.01"/>
               </svg>
             </button>
-            <button id="debug-open-btn" class="icon-btn" type="button"
-              data-i18n-attr="aria-label:gamePage.debugAria;title:gamePage.debugAria" hidden>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 3h6" />
-                <path d="M10 9h4" />
-                <path d="M12 17v.01" />
-                <rect x="7" y="5" width="10" height="14" rx="3" />
-                <path d="M4 10h3" />
-                <path d="M17 10h3" />
+            <button id="debug-open-btn" class="icon-btn" type="button" data-i18n-attr="aria-label:gamePage.debugAria;title:gamePage.debugAria" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3h6"/>
+                <path d="M10 9h4"/>
+                <path d="M12 17v.01"/>
+                <rect x="7" y="5" width="10" height="14" rx="3"/>
+                <path d="M4 10h3"/>
+                <path d="M17 10h3"/>
               </svg>
             </button>
-            <a class="icon-btn" href="print.html"
-              data-i18n-attr="aria-label:gamePage.printAria;title:gamePage.printAria">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V3h12v6" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <path d="M6 14h12v7H6z" />
-                <path d="M18 12h.01" />
+            <a class="icon-btn" href="print.html" data-i18n-attr="aria-label:gamePage.printAria;title:gamePage.printAria">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9V3h12v6"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <path d="M6 14h12v7H6z"/>
+                <path d="M18 12h.01"/>
               </svg>
             </a>
           </div>
           <div id="privacy-info-popover" class="privacy-info-popover" hidden>
             <strong data-i18n="gamePage.privacyTitle">Privacy webcam</strong>
-            <p data-i18n="gamePage.privacyBody">La fotocamera serve solo al riconoscimento delle carte nel browser.
-              Nessun video viene inviato ai server.</p>
+            <p data-i18n="gamePage.privacyBody">La fotocamera serve solo al riconoscimento delle carte nel browser. Nessun video viene inviato ai server.</p>
           </div>
         </div>
         <aside id="debug-panel" class="debug-floating-panel" hidden aria-labelledby="debug-panel-title">
@@ -96,8 +79,7 @@
               <p class="settings-kicker" data-i18n="gamePage.debugKicker">Strumenti</p>
               <h2 id="debug-panel-title" data-i18n="gamePage.debugTitle">Debug Rapido</h2>
             </div>
-            <button id="debug-close-btn" class="settings-close-btn" type="button"
-              data-i18n-attr="aria-label:gamePage.debugCloseAria">×</button>
+            <button id="debug-close-btn" class="settings-close-btn" type="button" data-i18n-attr="aria-label:gamePage.debugCloseAria">×</button>
           </div>
           <div class="debug-grid">
             <button class="secondary-btn debug-btn" type="button" data-debug-id="ROSSO">ROSSO</button>
@@ -110,8 +92,7 @@
           <div class="debug-grid debug-specials">
             <button class="secondary-btn debug-btn" type="button" data-debug-id="RESTART">RESTART</button>
           </div>
-          <p class="debug-note" data-i18n="gamePage.debugNote">Simula i QR code senza usare carte fisiche o webcam. Il
-            pannello compare solo quando il debug e' abilitato nell'ambiente.</p>
+          <p class="debug-note" data-i18n="gamePage.debugNote">Simula i QR code senza usare carte fisiche o webcam. Il pannello compare solo quando il debug e' abilitato nell'ambiente.</p>
         </aside>
         <div class="camera-section" id="camera-section">
           <button id="camera-btn" class="camera-btn" data-i18n="gamePage.cameraActivate">Attiva la fotocamera</button>
@@ -121,29 +102,35 @@
   </div>
 
   <div id="settings-modal" class="settings-modal" hidden>
-    <button id="settings-backdrop" class="settings-modal-backdrop" type="button"
-      data-i18n-attr="aria-label:gamePage.settingsCloseAria"></button>
+    <button id="settings-backdrop" class="settings-modal-backdrop" type="button" data-i18n-attr="aria-label:gamePage.settingsCloseAria"></button>
     <section class="settings-modal-shell" aria-labelledby="settings-title" role="dialog" aria-modal="true">
       <div class="settings-modal-topbar">
         <div>
           <p class="settings-kicker" data-i18n="gamePage.settingsKicker">Opzioni avanzate</p>
           <h2 id="settings-title" data-i18n="gamePage.settingsTitle">Impostazioni</h2>
         </div>
-        <button id="settings-close-btn" class="settings-close-btn" type="button"
-          data-i18n-attr="aria-label:gamePage.settingsCloseAria">×</button>
+        <button id="settings-close-btn" class="settings-close-btn" type="button" data-i18n-attr="aria-label:gamePage.settingsCloseAria">×</button>
       </div>
 
       <label class="voice-field" for="locale-select">
         <span data-i18n="ui.languageLabel">Lingua</span>
         <select id="locale-select"></select>
       </label>
+
+      <section class="settings-section">
+        <div class="settings-section-copy">
+          <p class="settings-kicker" data-i18n="gamePage.cameraSettingsKicker">Fotocamera</p>
+          <h3 data-i18n="gamePage.cameraSettingsTitle">Controlli webcam</h3>
+        </div>
+        <button id="switch-camera-btn" class="secondary-btn" type="button" data-i18n="gamePage.cameraSwitch">Cambia fotocamera</button>
+      </section>
+
       <div class="audio-controls">
         <label class="tts-toggle">
           <input type="checkbox" id="tts-toggle" checked>
           <span class="tts-toggle-check" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12.5 9.5 18 20 6" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12.5 9.5 18 20 6"/>
             </svg>
           </span>
           <span data-i18n="gamePage.ttsEnabled">Voce guida attiva</span>
@@ -156,8 +143,7 @@
             <option value="browser" data-i18n="gamePage.ttsProviderBrowser">Browser</option>
           </select>
         </label>
-        <div id="tts-provider-status" class="provider-status" data-i18n="gamePage.ttsProviderChecking">Controllo del
-          motore voce in corso...</div>
+        <div id="tts-provider-status" class="provider-status" data-i18n="gamePage.ttsProviderChecking">Controllo del motore voce in corso...</div>
         <div class="voice-selects">
           <label class="voice-field" for="tts-gameplay-voice">
             <span data-i18n="gamePage.ttsGameplayLabel">Voce guida</span>
@@ -168,18 +154,14 @@
             <select id="tts-story-voice"></select>
           </label>
         </div>
-        <button id="tts-repeat-btn" class="secondary-btn" type="button" data-i18n="gamePage.ttsRepeat">Ripeti ultimo
-          messaggio</button>
+        <button id="tts-repeat-btn" class="secondary-btn" type="button" data-i18n="gamePage.ttsRepeat">Ripeti ultimo messaggio</button>
       </div>
 
       <section class="family-voice-entry">
         <h2 data-i18n="gamePage.familyVoiceTitle">Studio Voci di Famiglia</h2>
-        <p data-i18n="gamePage.familyVoiceBody">Per registrare o richiamare una voce familiare serve prima l'accesso
-          allo studio dedicato.</p>
-        <p id="family-voice-entry-status" class="family-voice-entry-status" data-i18n="gamePage.familyVoiceStatus">
-          Controllo accesso in corso...</p>
-        <a id="family-voice-entry-link" class="secondary-btn family-voice-link" href="family-voice.html"
-          data-i18n="gamePage.familyVoiceLink">Accedi per usare la voce</a>
+        <p data-i18n="gamePage.familyVoiceBody">Per registrare o richiamare una voce familiare serve prima l'accesso allo studio dedicato.</p>
+        <p id="family-voice-entry-status" class="family-voice-entry-status" data-i18n="gamePage.familyVoiceStatus">Controllo accesso in corso...</p>
+        <a id="family-voice-entry-link" class="secondary-btn family-voice-link" href="family-voice.html" data-i18n="gamePage.familyVoiceLink">Accedi per usare la voce</a>
       </section>
 
     </section>
@@ -187,5 +169,4 @@
 
   <script type="module" src="sketch.js"></script>
 </body>
-
 </html>
