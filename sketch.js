@@ -644,10 +644,9 @@ async function refreshAvailableCameras() {
 function updateCameraButton() {
   if (!cameraBtn || !switchCameraBtn) return;
   const hasMultipleCameras = availableVideoInputs.length > 1;
-  const canSwitchCamera = isMobile() || hasMultipleCameras;
 
   if (switchCameraBtn.elt) {
-    switchCameraBtn.elt.disabled = isSwitchingCamera || !canSwitchCamera || webcamState === 'loading';
+    switchCameraBtn.elt.disabled = isSwitchingCamera || !hasMultipleCameras || webcamState === 'loading';
   }
 
   if (webcamState === 'active') {
