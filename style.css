@@ -42,8 +42,50 @@ body {
 }
 
 header {
-  text-align: center;
   margin-bottom: 16px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.page-top-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+.top-action-btn {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid #d8cfbf;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #23466d;
+  font-family: 'Space Grotesk', 'Hanken Grotesk', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(30, 60, 90, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.top-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(30, 60, 90, 0.12);
+}
+
+.top-action-btn:active {
+  background: rgba(240, 247, 255, 0.96);
+  transform: translateY(0);
+}
+
+.top-action-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: 0 6px 14px rgba(30, 60, 90, 0.05);
 }
 
 header h1 {
@@ -1265,7 +1307,7 @@ main {
   top: 46px;
   right: 0;
   z-index: 21;
-  width: 260px;
+  width: min(260px, calc(100vw - 32px));
   background: #ffffff;
   border: 1px solid #dce6f2;
   border-radius: 14px;
@@ -1538,16 +1580,18 @@ body.settings-modal-open {
     padding: 12px;
   }
 
-
-
   main {
     gap: 12px;
     padding: 52px 0 0;
+    min-height: calc(100dvh - 24px);
   }
 
   #canvas-container {
+    width: min(100%, 430px);
     min-height: 0;
     padding: 0;
+    border-radius: 18px;
+    overflow: hidden;
   }
 
   .canvas-actions {
@@ -1555,6 +1599,16 @@ body.settings-modal-open {
     left: 15px;
     right: auto;
     top: 15px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(30, 60, 90, 0.16);
+  }
+
+  .icon-btn-row {
     flex-direction: row;
   }
 
@@ -1574,6 +1628,18 @@ body.settings-modal-open {
     transform: none;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 28px rgba(30, 60, 90, 0.18);
+  }
+
+  #canvas-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none;
   }
 
   .settings-modal {
@@ -1585,6 +1651,10 @@ body.settings-modal-open {
     padding: 14px;
     border-radius: 20px;
   }
+
+  .top-action-btn {
+    flex: 1 1 0;
+  }
 }
 
 @media (max-width: 420px) {
@@ -1593,7 +1663,8 @@ body.settings-modal-open {
   }
 
   #canvas-container canvas {
-    max-height: 40vh;
+    width: 100% !important;
+    height: auto !important;
   }
 }
 

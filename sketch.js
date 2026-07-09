@@ -68,6 +68,7 @@ var debugCloseBtn;
 var familyVoiceEntryLink;
 var familyVoiceEntryStatus;
 var localeSelect;
+var fullscreenBtn;
 var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
@@ -167,10 +168,19 @@ function getCanvasSize() {
   if (availableW <= 0) availableW = windowWidth - 40;
   if (availableH <= 0) availableH = windowHeight - 200;
 
+  const mobileViewport = isMobile() || availableW <= 520;
   isCompact = availableW < 720;
-  const logicalW = !isCompact ? 900 : 380;
-  const logicalH = !isCompact ? 600 : 520;
 
+  if (mobileViewport) {
+    const mobileWidth = min(availableW, 430);
+    const preferredHeight = max(round(mobileWidth * 1.32), 500);
+    const mobileHeight = min(availableH, preferredHeight);
+    scaleFactor = min(mobileWidth / 380, mobileHeight / 520);
+    return { width: mobileWidth, height: mobileHeight };
+  }
+
+  const logicalW = 900;
+  const logicalH = 600;
   scaleFactor = min(availableW / logicalW, availableH / logicalH);
 
   return { width: availableW, height: availableH };
@@ -296,6 +306,7 @@ function setup() {
   familyVoiceEntryLink = select('#family-voice-entry-link');
   familyVoiceEntryStatus = select('#family-voice-entry-status');
   localeSelect = select('#locale-select');
+  fullscreenBtn = select('#fullscreen-btn');
   debugMode = detectDebugMode();
 
   if (debugOpenBtn && debugOpenBtn.elt) {
@@ -359,6 +370,8 @@ function setup() {
         closeDebugPanel();
       }
     });
+    document.addEventListener('fullscreenchange', updateFullscreenButtonLabel);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenButtonLabel);
     window.addEventListener('family-voice-session-changed', updateFamilyVoiceSettingsState);
     window.addEventListener('click', (event) => {
       if (!privacyInfoPopover || !privacyInfoPopover.elt || privacyInfoPopover.elt.hidden) return;
@@ -384,6 +397,10 @@ function setup() {
 
   if (switchCameraBtn) {
     switchCameraBtn.mousePressed(switchCamera);
+  }
+
+  if (fullscreenBtn) {
+    fullscreenBtn.mousePressed(toggleFullscreenMode);
   }
 
   if (ttsToggle) {
@@ -429,6 +446,7 @@ function setup() {
   onLocaleChange(() => {
     localizeDocument();
     setupLocaleControls();
+    updateFullscreenButtonLabel();
     refreshLocalizedRuntimeText();
     updateFamilyVoiceSettingsState();
     const providerState = tts.getProviderState();
@@ -455,6 +473,7 @@ function setup() {
   });
 
   updateFamilyVoiceSettingsState();
+  updateFullscreenButtonLabel();
 
   if (!isMobile()) {
     setupWebcam();
@@ -609,6 +628,42 @@ function updateCameraButton() {
   } else {
     cameraBtn.style('display', 'none');
     switchCameraBtn.style('display', 'none');
+  }
+}
+
+function isFullscreenActive() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function updateFullscreenButtonLabel() {
+  if (!fullscreenBtn || !fullscreenBtn.elt) return;
+  fullscreenBtn.elt.textContent = isFullscreenActive()
+    ? t('gamePage.fullscreenExit')
+    : t('gamePage.fullscreenEnter');
+}
+
+async function toggleFullscreenMode() {
+  const root = document.documentElement;
+
+  try {
+    if (isFullscreenActive()) {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      return;
+    }
+
+    if (root.requestFullscreen) {
+      await root.requestFullscreen();
+    } else if (root.webkitRequestFullscreen) {
+      root.webkitRequestFullscreen();
+    }
+  } catch (error) {
+    console.warn('[Fullscreen] Operazione non riuscita:', error);
+  } finally {
+    updateFullscreenButtonLabel();
   }
 }
 

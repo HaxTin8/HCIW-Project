@@ -28,6 +28,8 @@
     "debugNote": "Simulate QR codes without physical cards or a webcam. The panel only appears when debug is enabled in the environment.",
     "cameraActivate": "Enable camera",
     "cameraSwitch": "Switch camera",
+    "fullscreenEnter": "Full screen",
+    "fullscreenExit": "Exit full screen",
     "settingsKicker": "Advanced options",
     "settingsTitle": "Settings",
     "settingsCloseAria": "Close settings",

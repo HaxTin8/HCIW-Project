@@ -28,6 +28,8 @@
     "debugNote": "Simula i QR code senza usare carte fisiche o webcam. Il pannello compare solo quando il debug e' abilitato nell'ambiente.",
     "cameraActivate": "Attiva la fotocamera",
     "cameraSwitch": "Cambia fotocamera",
+    "fullscreenEnter": "Schermo intero",
+    "fullscreenExit": "Esci da schermo intero",
     "settingsKicker": "Opzioni avanzate",
     "settingsTitle": "Impostazioni",
     "settingsCloseAria": "Chiudi impostazioni",
