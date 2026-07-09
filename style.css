@@ -53,6 +53,7 @@ header {
 .page-top-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
   width: 100%;
 }
 
@@ -68,10 +69,23 @@ header {
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(30, 60, 90, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.top-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(30, 60, 90, 0.12);
 }
 
 .top-action-btn:active {
   background: rgba(240, 247, 255, 0.96);
+  transform: translateY(0);
+}
+
+.top-action-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: 0 6px 14px rgba(30, 60, 90, 0.05);
 }
 
 header h1 {
@@ -950,11 +964,6 @@ body.family-voice-page {
   color: #ffffff;
 }
 
-#switch-camera-btn {
-  background: linear-gradient(135deg, #97B481 0%, #ECBA4E 100%);
-  color: #ffffff;
-}
-
 @media (max-width: 1100px) {
   main {
     flex-direction: column;
@@ -1605,8 +1614,7 @@ body.settings-modal-open {
   }
 
   .top-action-btn {
-    width: 100%;
-    justify-content: center;
+    flex: 1 1 0;
   }
 
   main {
