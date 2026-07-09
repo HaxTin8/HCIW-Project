@@ -71,6 +71,8 @@ var localeSelect;
 var debugMode = false;
 var currentFacingMode = 'environment';
 var isSwitchingCamera = false;
+var availableVideoInputs = [];
+var activeVideoDeviceId = '';
 var magicFont;
 var kiddosFont;
 var debugDragState = null;
@@ -167,10 +169,19 @@ function getCanvasSize() {
   if (availableW <= 0) availableW = windowWidth - 40;
   if (availableH <= 0) availableH = windowHeight - 200;
 
+  const mobileViewport = isMobile() || availableW <= 520;
   isCompact = availableW < 720;
-  const logicalW = !isCompact ? 900 : 380;
-  const logicalH = !isCompact ? 600 : 520;
 
+  if (mobileViewport) {
+    const mobileWidth = min(availableW, 430);
+    const preferredHeight = max(round(mobileWidth * 1.32), 500);
+    const mobileHeight = min(availableH, preferredHeight);
+    scaleFactor = min(mobileWidth / 380, mobileHeight / 520);
+    return { width: mobileWidth, height: mobileHeight };
+  }
+
+  const logicalW = 900;
+  const logicalH = 600;
   scaleFactor = min(availableW / logicalW, availableH / logicalH);
 
   return { width: availableW, height: availableH };
@@ -386,6 +397,11 @@ function setup() {
     switchCameraBtn.mousePressed(switchCamera);
   }
 
+  refreshAvailableCameras();
+  if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+    navigator.mediaDevices.addEventListener('devicechange', refreshAvailableCameras);
+  }
+
   if (ttsToggle) {
     ttsToggle.changed(() => {
       const enabled = ttsToggle.checked();
@@ -590,11 +606,42 @@ function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
+async function refreshAvailableCameras() {
+  if (!navigator.mediaDevices || typeof navigator.mediaDevices.enumerateDevices !== 'function') {
+    availableVideoInputs = [];
+    updateCameraButton();
+    return [];
+  }
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    availableVideoInputs = devices.filter((device) => device.kind === 'videoinput');
+
+    if (activeVideoDeviceId && !availableVideoInputs.some((device) => device.deviceId === activeVideoDeviceId)) {
+      activeVideoDeviceId = '';
+    }
+
+    updateCameraButton();
+    return availableVideoInputs;
+  } catch (error) {
+    console.warn('[Webcam] enumerateDevices non disponibile:', error);
+    availableVideoInputs = [];
+    updateCameraButton();
+    return [];
+  }
+}
+
 function updateCameraButton() {
   if (!cameraBtn || !switchCameraBtn) return;
+  const hasMultipleCameras = availableVideoInputs.length > 1;
+
+  if (switchCameraBtn.elt) {
+    switchCameraBtn.elt.disabled = isSwitchingCamera || !hasMultipleCameras || webcamState === 'loading';
+  }
+
   if (webcamState === 'active') {
     cameraBtn.style('display', 'none');
-    if (isMobile()) {
+    if (hasMultipleCameras) {
       switchCameraBtn.style('display', 'block');
     } else {
       switchCameraBtn.style('display', 'none');
@@ -605,19 +652,32 @@ function updateCameraButton() {
     } else {
       cameraBtn.style('display', 'none');
     }
-    switchCameraBtn.style('display', 'none');
+    switchCameraBtn.style('display', hasMultipleCameras ? 'block' : 'none');
   } else {
     cameraBtn.style('display', 'none');
-    switchCameraBtn.style('display', 'none');
+    switchCameraBtn.style('display', hasMultipleCameras ? 'block' : 'none');
   }
 }
 
 function switchCamera() {
-  if (!isMobile() || isSwitchingCamera) return;
+  if (isSwitchingCamera || availableVideoInputs.length <= 1) return;
   tts.prime();
   isSwitchingCamera = true;
-  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-  console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
+
+  const currentIndex = availableVideoInputs.findIndex((device) => device.deviceId === activeVideoDeviceId);
+  const nextIndex = currentIndex >= 0
+    ? (currentIndex + 1) % availableVideoInputs.length
+    : 0;
+  const nextDevice = availableVideoInputs[nextIndex];
+
+  if (nextDevice && nextDevice.deviceId) {
+    activeVideoDeviceId = nextDevice.deviceId;
+    console.log('[Webcam] Cambio fotocamera:', nextDevice.label || nextDevice.deviceId);
+  } else if (isMobile()) {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    console.log('[Webcam] Cambio fotocamera via facingMode:', currentFacingMode);
+  }
+
   webcamState = 'loading';
   setWebcamMessage('sketch.webcamChanging');
   updateCameraButton();
@@ -652,7 +712,9 @@ function setupWebcam() {
     audio: false
   };
 
-  if (isMobile()) {
+  if (activeVideoDeviceId) {
+    constraints.video.deviceId = { exact: activeVideoDeviceId };
+  } else if (isMobile()) {
     constraints.video.facingMode = { ideal: currentFacingMode };
   }
 
@@ -691,9 +753,17 @@ function tryCreateCapture(constraints, attempt) {
           console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
           if (webcamState !== 'active') {
             webcamState = 'active';
+            const exactDeviceId = constraints
+              && constraints.video
+              && constraints.video.deviceId
+              && constraints.video.deviceId.exact;
+            if (exactDeviceId) {
+              activeVideoDeviceId = exactDeviceId;
+            }
             setWebcamMessage('sketch.webcamActive');
             setStatusMessage('sketch.webcamActiveStatus');
             logToStatus(statusMessage);
+            refreshAvailableCameras();
             updateCameraButton();
           }
         }
@@ -780,6 +850,7 @@ function tryFallbackDevice(attempt) {
         const index = videoDevices.length - attempt;
         const deviceId = videoDevices[index].deviceId;
         console.log(`[Webcam] Provo dispositivo ${index}:`, videoDevices[index].label || 'senza nome');
+        activeVideoDeviceId = deviceId;
 
         const constraints = {
           video: {
