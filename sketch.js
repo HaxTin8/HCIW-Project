@@ -613,9 +613,7 @@ function closePrivacyInfoPopover() {
 }
 
 function isMobile() {
-  const ua = navigator.userAgent || '';
-  const touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || touchMac;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 async function refreshAvailableCameras() {
@@ -649,7 +647,7 @@ function updateCameraButton() {
   const canSwitchCamera = isMobile() || hasMultipleCameras;
 
   if (switchCameraBtn.elt) {
-    switchCameraBtn.elt.disabled = isSwitchingCamera || !canSwitchCamera;
+    switchCameraBtn.elt.disabled = isSwitchingCamera || !canSwitchCamera || webcamState === 'loading';
   }
 
   if (webcamState === 'active') {
