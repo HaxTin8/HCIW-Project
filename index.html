@@ -25,7 +25,11 @@
     </div>
   </div>
   <div id="app">
-    <header></header>
+    <header class="page-header">
+      <div class="page-top-actions">
+        <button id="fullscreen-btn" class="top-action-btn" type="button" data-i18n="gamePage.fullscreenEnter">Schermo intero</button>
+      </div>
+    </header>
 
     <main>
       <div id="canvas-container">
@@ -92,7 +96,6 @@
         </aside>
         <div class="camera-section" id="camera-section">
           <button id="camera-btn" class="camera-btn" data-i18n="gamePage.cameraActivate">Attiva la fotocamera</button>
-          <button id="switch-camera-btn" class="camera-btn" data-i18n="gamePage.cameraSwitch">Cambia fotocamera</button>
         </div>
       </div>
     </main>
@@ -113,6 +116,14 @@
         <span data-i18n="ui.languageLabel">Lingua</span>
         <select id="locale-select"></select>
       </label>
+
+      <section class="settings-section">
+        <div class="settings-section-copy">
+          <p class="settings-kicker" data-i18n="gamePage.cameraSettingsKicker">Fotocamera</p>
+          <h3 data-i18n="gamePage.cameraSettingsTitle">Controlli webcam</h3>
+        </div>
+        <button id="switch-camera-btn" class="secondary-btn" type="button" data-i18n="gamePage.cameraSwitch">Cambia fotocamera</button>
+      </section>
 
       <div class="audio-controls">
         <label class="tts-toggle">
