@@ -82,6 +82,17 @@ g8.endRound();
 assert.strictEqual(g8.state, GAME_STATE.GAME_OVER);
 assert.strictEqual(g8.hp, 0);
 
+// Test: l'effetto del Raggio al round 4 riduce solo il bonus elementale del nemico
+const lightCard = createCard('GIALLO');
+const shadowEnemy = createCard('VIOLA');
+assert.strictEqual(resolveCombat(lightCard, shadowEnemy), 'win');
+assert.strictEqual(resolveCombat(lightCard, shadowEnemy, { halfElementBonus: true }), 'win');
+
+const waterCard = createCard('BLU');
+const natureEnemy = createCard('VERDE');
+assert.strictEqual(resolveCombat(waterCard, natureEnemy), 'lose');
+assert.strictEqual(resolveCombat(waterCard, natureEnemy, { halfElementBonus: true }), 'draw');
+
 // Test: i QR di modalità non fanno nulla di speciale
 const g9 = new Game();
 g9.start();

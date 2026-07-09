@@ -69,18 +69,19 @@ function resolveCombat(playerCard, enemyCard, options = {}) {
 
     let playerPower = playerCard.power;
     let enemyPower = enemyCard.power;
-    const elemBonus = options.halfElementBonus ? 1 : 3;
+    const playerElemBonus = 3;
+    const enemyElemBonus = options.halfElementBonus ? 1 : 3;
 
     if (pElem.strongVs.includes(enemyCard.element)) {
-      playerPower += elemBonus;
+      playerPower += playerElemBonus;
     } else if (pElem.weakTo.includes(enemyCard.element) && !options.ignoreWeakness) {
-      playerPower -= elemBonus;
+      playerPower -= playerElemBonus;
     }
 
     if (eElem.strongVs.includes(playerCard.element) && !options.ignoreWeakness) {
-      enemyPower += elemBonus;
+      enemyPower += enemyElemBonus;
     } else if (eElem.weakTo.includes(playerCard.element)) {
-      enemyPower -= elemBonus;
+      enemyPower -= enemyElemBonus;
     }
 
     if (playerPower > enemyPower) return 'win';
