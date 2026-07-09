@@ -760,7 +760,7 @@ function setupWebcam() {
   };
 
   if (activeVideoDeviceId) {
-    constraints.video.deviceId = { ideal: activeVideoDeviceId };
+    constraints.video.deviceId = { exact: activeVideoDeviceId };
   } else if (isMobile()) {
     constraints.video.facingMode = { ideal: currentFacingMode };
   }
