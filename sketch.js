@@ -643,24 +643,30 @@ async function refreshAvailableCameras() {
 
 function updateCameraButton() {
   if (!cameraBtn || !switchCameraBtn) return;
-  const hasSwitchableCamera = isMobile() || availableVideoInputs.length > 1;
-  const canSwitchCamera = hasSwitchableCamera && !isSwitchingCamera && webcamState !== 'loading';
+  const hasMultipleCameras = availableVideoInputs.length > 1;
 
   if (switchCameraBtn.elt) {
-    switchCameraBtn.elt.disabled = !canSwitchCamera;
-    switchCameraBtn.elt.hidden = false;
+    switchCameraBtn.elt.disabled = isSwitchingCamera || !hasMultipleCameras || webcamState === 'loading';
+    switchCameraBtn.elt.hidden = !hasMultipleCameras;
   }
 
   if (webcamState === 'active') {
     cameraBtn.style('display', 'none');
+    if (hasMultipleCameras) {
+      switchCameraBtn.style('display', 'block');
+    } else {
+      switchCameraBtn.style('display', 'none');
+    }
   } else if (webcamState === 'waiting' || webcamState === 'denied' || webcamState === 'error' || webcamState === 'unsupported') {
     if (isMobile()) {
       cameraBtn.style('display', 'block');
     } else {
       cameraBtn.style('display', 'none');
     }
+    switchCameraBtn.style('display', hasMultipleCameras ? 'block' : 'none');
   } else {
     cameraBtn.style('display', 'none');
+    switchCameraBtn.style('display', hasMultipleCameras ? 'block' : 'none');
   }
 }
 
@@ -701,26 +707,22 @@ async function toggleFullscreenMode() {
 }
 
 function switchCamera() {
-  const hasSwitchableCamera = isMobile() || availableVideoInputs.length > 1;
-  if (isSwitchingCamera || !hasSwitchableCamera) return;
+  if (isSwitchingCamera || availableVideoInputs.length <= 1) return;
   tts.prime();
   isSwitchingCamera = true;
 
-  if (isMobile()) {
-    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-    activeVideoDeviceId = '';
-    console.log('[Webcam] Cambio fotocamera via facingMode:', currentFacingMode);
-  } else {
-    const currentIndex = availableVideoInputs.findIndex((device) => device.deviceId === activeVideoDeviceId);
-    const nextIndex = currentIndex >= 0
-      ? (currentIndex + 1) % availableVideoInputs.length
-      : 0;
-    const nextDevice = availableVideoInputs[nextIndex];
+  const currentIndex = availableVideoInputs.findIndex((device) => device.deviceId === activeVideoDeviceId);
+  const nextIndex = currentIndex >= 0
+    ? (currentIndex + 1) % availableVideoInputs.length
+    : 0;
+  const nextDevice = availableVideoInputs[nextIndex];
 
-    if (nextDevice && nextDevice.deviceId) {
-      activeVideoDeviceId = nextDevice.deviceId;
-      console.log('[Webcam] Cambio fotocamera:', nextDevice.label || nextDevice.deviceId);
-    }
+  if (nextDevice && nextDevice.deviceId) {
+    activeVideoDeviceId = nextDevice.deviceId;
+    console.log('[Webcam] Cambio fotocamera:', nextDevice.label || nextDevice.deviceId);
+  } else if (isMobile()) {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    console.log('[Webcam] Cambio fotocamera via facingMode:', currentFacingMode);
   }
 
   webcamState = 'loading';
@@ -757,10 +759,10 @@ function setupWebcam() {
     audio: false
   };
 
-  if (isMobile()) {
-    constraints.video.facingMode = { exact: currentFacingMode };
-  } else if (activeVideoDeviceId) {
-    constraints.video.deviceId = { exact: activeVideoDeviceId };
+  if (activeVideoDeviceId) {
+    constraints.video.deviceId = { ideal: activeVideoDeviceId };
+  } else if (isMobile()) {
+    constraints.video.facingMode = { ideal: currentFacingMode };
   }
 
   tryCreateCapture(constraints, 1);
@@ -873,7 +875,7 @@ function tryFallbackDevice(attempt) {
         if (isMobile() && attempt === 1) {
           const mobileConstraints = {
             video: {
-              facingMode: { exact: currentFacingMode },
+              facingMode: { exact: 'user' },
               width: { ideal: 640 },
               height: { ideal: 480 },
               frameRate: { ideal: 30 }
