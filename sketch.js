@@ -699,11 +699,23 @@ async function toggleFullscreenMode() {
 }
 
 function switchCamera() {
-  if (!isMobile() || isSwitchingCamera) return;
+  if (isSwitchingCamera || availableVideoInputs.length <= 1) return;
   tts.prime();
   isSwitchingCamera = true;
-  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-  console.log('[Webcam] Cambio fotocamera:', currentFacingMode);
+
+  const currentIndex = availableVideoInputs.findIndex((device) => device.deviceId === activeVideoDeviceId);
+  const nextIndex = currentIndex >= 0
+    ? (currentIndex + 1) % availableVideoInputs.length
+    : 0;
+  const nextDevice = availableVideoInputs[nextIndex];
+
+  if (nextDevice && nextDevice.deviceId) {
+    activeVideoDeviceId = nextDevice.deviceId;
+    console.log('[Webcam] Cambio fotocamera:', nextDevice.label || nextDevice.deviceId);
+  } else if (isMobile()) {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    console.log('[Webcam] Cambio fotocamera via facingMode:', currentFacingMode);
+  }
 
   webcamState = 'loading';
   setWebcamMessage('sketch.webcamChanging');
@@ -739,7 +751,9 @@ function setupWebcam() {
     audio: false
   };
 
-  if (isMobile()) {
+  if (activeVideoDeviceId) {
+    constraints.video.deviceId = { exact: activeVideoDeviceId };
+  } else if (isMobile()) {
     constraints.video.facingMode = { ideal: currentFacingMode };
   }
 
@@ -778,9 +792,17 @@ function tryCreateCapture(constraints, attempt) {
           console.log('[Webcam] Video attivo, dimensioni:', video.elt.videoWidth, video.elt.videoHeight);
           if (webcamState !== 'active') {
             webcamState = 'active';
+            const exactDeviceId = constraints
+              && constraints.video
+              && constraints.video.deviceId
+              && constraints.video.deviceId.exact;
+            if (exactDeviceId) {
+              activeVideoDeviceId = exactDeviceId;
+            }
             setWebcamMessage('sketch.webcamActive');
             setStatusMessage('sketch.webcamActiveStatus');
             logToStatus(statusMessage);
+            refreshAvailableCameras();
             updateCameraButton();
           }
         }
@@ -867,6 +889,7 @@ function tryFallbackDevice(attempt) {
         const index = videoDevices.length - attempt;
         const deviceId = videoDevices[index].deviceId;
         console.log(`[Webcam] Provo dispositivo ${index}:`, videoDevices[index].label || 'senza nome');
+        activeVideoDeviceId = deviceId;
 
         const constraints = {
           video: {
